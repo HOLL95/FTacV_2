@@ -24,7 +24,7 @@ for data in files:
     if (Method in data)  and (type in data):
         results=np.loadtxt(path+"/"+data)
         print data
-length_list=[1.5e4]
+length_list=[2e4]
 dec_list=[8]
 repeat_num=20
 for lcv_1 in range(0, len(length_list)):
@@ -53,7 +53,7 @@ for lcv_1 in range(0, len(length_list)):
                 'k_0': 10000.0, #(reaction rate s-1)
                 'k0_std': 0.0,
                 'alpha': 0.5,
-                'sampling_freq' : (1.0/200),
+                'sampling_freq' : (1.0/400),
                 'phase' : 3*(math.pi/2),
                 'time_end':1000,
                 'num_peaks': 50
@@ -85,7 +85,7 @@ for lcv_1 in range(0, len(length_list)):
             #plt.plot(time_results, test)
             #plt.show()
             param_boundaries=[[param_list['E_start'], 1, 0, 0, 1.0e-11, 0.98*param_list['omega'], 0],
-                                [param_list['E_reverse'],100000,100*param_list['omega'],1e-5, 1e-9,1.02*param_list['omega'], 2*math.pi]]# #
+                                [param_list['E_reverse'],100000,100*param_list['omega'],0.1, 1e-9,1.02*param_list['omega'], 2*math.pi]]# #
             #param_boundaries=[[param_list['E_start'], 1,0,  1.0e-10, 0.98*param_list['omega']], \
             #                    [param_list['E_reverse'],100000,100*param_list['omega'],  1e-9,1.02*param_list['omega']]]# #
             noramp_fit.define_boundaries(param_boundaries)
@@ -94,6 +94,8 @@ for lcv_1 in range(0, len(length_list)):
             data_harmonics=harm_class.generate_harmonics(time_results, current_results)
             noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl','gamma', 'omega', 'phase']
             means=[2.33195239e-01, 9, 2.88373076e+02, 5.71063563e-04,1.35310666e-10, 8.94067108e+00, 3*math.pi/2]
+            means=[2.33152423e-01, 5.83534674e+00, 2.04498067e+02, 1.53421861e-04, 1.17532353e-10, 8.94050130e+00, 8.07572569e-01]
+
             test=noramp_fit.simulate(means,frequencies, "no", "timeseries", "no" )
             exp_harmonics=harm_class.generate_harmonics(time_results, test)
             harm_class.plot_harmonics(time_results, exp_harmonics,data_harmonics, "abs")
@@ -136,6 +138,7 @@ for lcv_1 in range(0, len(length_list)):
                 cmaes_results=np.array([4.61167988e-01, 6.69473249e-06, 1.51714385e-01, 1.00000000e+00,2.82272614e-01, 5.01565153e-01])
                 cmaes_prediction=noramp_fit.simulate(cmaes_results,frequencies, "optimise", "fourier", "no" )
             error=np.std(np.subtract(cmaes_prediction, likelihood_func))
+            """
             #error=np.std(np.subtract(cmaes_time, current_results))
             mcmc_problem=pints.SingleOutputProblem(noramp_fit, dummy_times, likelihood_func)
             #mcmc_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
@@ -173,6 +176,7 @@ for lcv_1 in range(0, len(length_list)):
             f=open(filename, "w")
             np.save(f, chains)
             f.close()
+            """
 #best_so_far="[4.57076403e-01 2.76438997e-02 1.00989565e-01 4.83961049e-06 1.43033271e-01]"
 #best_so_far_red=[0.2876, 10000, 660, 0.000094, 1.47e-10]
 #best_high_freq=[0.237, 13.5, 120, 0.0020, 4.1e-10]

@@ -55,17 +55,17 @@ class single_electron:
         #plt.plot(f,Y)
         #Y_pow=np.power(copy.deepcopy(Y[0:len(frequencies)]),2)
         top_hat=copy.deepcopy(Y[0:len(frequencies)])
-        results=np.zeros(len(frequencies), dtype=complex)
-        for i in range(0, self.num_harmonics):
-            true_harm=self.harmonic_range[i]*self.nd_param.omega*self.nd_param.c_T0
-            filter_bit=top_hat[np.where((frequencies<(true_harm+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm-(self.nd_param.omega*self.filter_val)))]
-            results[np.where((frequencies<(true_harm+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm-(self.nd_param.omega*self.filter_val)))]=filter_bit
 
+        #for i in range(0, self.num_harmonics):
+        #    true_harm=self.harmonic_range[i]*self.nd_param.omega*self.nd_param.c_T0
+        #    filter_bit=top_hat[np.where((frequencies<(true_harm+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm-(self.nd_param.omega*self.filter_val)))]
+        #    results[np.where((frequencies<(true_harm+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm-(self.nd_param.omega*self.filter_val)))]=filter_bit
+        true_harm=self.nd_param.omega*self.nd_param.c_T0
+        first_harm=(self.harmonic_range[0]*true_harm)-(self.nd_param.omega*self.filter_val)
         last_harm=(self.harmonic_range[-1]*true_harm)+(self.nd_param.omega*self.filter_val)
-        last_point=np.where(frequencies<last_harm)
-        #plt.plot(frequencies, results)
-        results=results[:last_point[0][-1]]
-        #plt.show()
+        likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
+        results=np.zeros(len(top_hat), dtype=complex)
+        results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
         return abs(results)
     def times(self, num_points):
         self.num_points=num_points
