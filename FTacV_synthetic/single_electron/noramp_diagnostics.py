@@ -30,7 +30,7 @@ for lcv_1 in range(0, len(noises)):
             'v': 24.97e-3,   #       (scan rate s^-1)
             'area': 0.03, #(electrode surface area cm^2)
             'Ru': 20.0,  #     (uncompensated resistance ohms)
-            'Cdl': 0.000134, #(capacitance parameters)
+            'Cdl': 0, #(capacitance parameters)
             'CdlE1': 0,#0.000653657774506,
             'CdlE2': 0,#0.000245772700637,
             'CdlE3': 0,#1.10053945995e-06,
@@ -62,6 +62,8 @@ for lcv_1 in range(0, len(noises)):
                             [-0.2, 1e4, 1.5e-11,1,1,0.1,0.1]]# #
         noramp.optim_list=[]
         synthetic_data=noramp.simulate([], frequencies, "nah", "timeseries", "no")
+        plt.plot(synthetic_data)
+        plt.show()
         noise_val=noises[lcv_1]
         noise_max=max(synthetic_data)*noise_val
         noise=np.random.normal(0,noise_max, len(synthetic_data))

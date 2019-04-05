@@ -45,6 +45,23 @@ class single_electron:
         filtered_val[:int(signal_length/divisor)]=time_series[:int(signal_length/divisor)]
         filtered_val[int(endl*signal_length/divisor):]=time_series[int(endl*signal_length/divisor):]
         return filtered_val
+    def fourier_plotter(self, time_series_1, label1, time_series_2, label2, fourier_end):
+        L=len(time_series_1)
+        window=np.hanning(L)
+        time_series_1=np.multiply(time_series_1, window)
+        time_series_2=np.multiply(time_series_2, window)
+        f=np.fft.fftfreq(len(time_series_1), self.time_vec[1]-self.time_vec[0])
+        true_harm=self.nd_param.omega*self.nd_param.c_T0
+        last_harm=(fourier_end*true_harm)+(self.nd_param.omega*self.filter_val)
+        freqs=f[np.where((f>0) & (f<last_harm))]
+        Y1=np.fft.fft(time_series_1)
+        Y2=np.fft.fft(time_series_2)
+        Y1=Y1[np.where((f>0) & (f<last_harm))]
+        Y2=Y2[np.where((f>0) & (f<last_harm))]
+        plt.plot(freqs,abs(Y1), label=label1)
+        plt.plot(freqs, abs(Y2), label=label2, alpha=0.7)
+        plt.xlabel("frequency")
+        plt.legend()
     def kaiser_filter(self, time_series, harmonical=False):
         frequencies=self.frequencies
         L=len(time_series)
@@ -81,12 +98,12 @@ class single_electron:
                 normed_params[i]=self.normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         return normed_params
     def simulate(self,parameters, frequencies, flag='optimise', flag2='fourier', test="no"):
+        if len(parameters)!= len(self.optim_list):
+            raise ValueError('Wrong number of parameters')
         if flag=='optimise' and self.label=="cmaes":
             normed_params=self.change_norm_group(parameters, "un_norm")
         else:
             normed_params=copy.deepcopy(parameters)
-
-
         for i in range(0, len(self.optim_list)):
                 self.nd_param.non_dimensionalise(self.optim_list[i], normed_params[i])
         time_series=isolver_noramp.e_surface(self.nd_param.Cdl,self.nd_param.CdlE1,self.nd_param.CdlE2,self.nd_param.CdlE3,self.nd_param.nd_omega,1, self.nd_param.alpha , \
@@ -101,8 +118,15 @@ class single_electron:
         if flag2=='fourier':
             filtered=self.kaiser_filter(time_series)
             if test=="yes":
-                plt.plot(self.secret_data_fourier)
-                plt.plot(filtered, alpha=0.7)
+                plt.subplot(1,2,1)
+                plt.title("Likelihood function (4-9th harmonics)")
+                plt.plot(self.secret_data_fourier[:len(filtered)/15], label="data")
+                plt.plot(filtered[:len(filtered)/15] , alpha=0.7, label="numerical")
+                plt.legend()
+                plt.subplot(1,2,2)
+                fourier_end=12
+                plt.title("Fourier spectrum up to harmonic " + str(fourier_end))
+                self.fourier_plotter(self.secret_data_time_series, "Data", time_series, "numerical", fourier_end)
                 plt.show()
 
             return filtered

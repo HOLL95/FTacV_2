@@ -90,14 +90,14 @@ class params:
         self.c_I0=(self.F*self.area*self.gamma)/self.c_T0
         self.c_Gamma=param_dict['gamma']
         self.method_switch={
-                            'E_0':self.e0,
+                            'e_0':self.e0,
                             'k_0':self.k0,
-                            'Cdl':self.cdl,
-                            'E_start' :self.estart,
-                            'E_reverse': self.erev,
+                            'cdl':self.cdl,
+                            'e_start' :self.estart,
+                            'e_reverse': self.erev,
                             'omega':self.omega_d,
-                            'd_E' :self.de,
-                            'Ru':self.ru,
+                            'd_e' :self.de,
+                            'ru':self.ru,
                             'gamma':self.Gamma,
                             'sampling_freq':self.sf,
                             'v':self.V,
@@ -107,10 +107,10 @@ class params:
                         }
 
     def non_dimensionalise(self, name,name_value):
-        if name in self.method_switch:
-            function = self.method_switch[name]
+        if name.lower() in self.method_switch:
+            function = self.method_switch[name.lower()]
             function(name_value, 'non_dim')
     def re_dimensionalise(self,name, name_value):
-        if name in self.method_switch:
-                function = self.method_switch[name]
+        if name.lower() in self.method_switch:
+                function = self.method_switch[name.lower()]
                 function(name_value, 're_dim')

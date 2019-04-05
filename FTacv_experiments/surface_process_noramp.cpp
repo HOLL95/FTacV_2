@@ -153,7 +153,7 @@ py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3,double 
     const double E = et(E_start, E_reverse, omega, phase, t1+dt);
     const double dE =dEdt(E_start, E_reverse, omega, phase, t1+0.5*dt);
     const double Cdlp = Cdl*(1.0 + CdlE*E + CdlE2*pow(E,2)+ CdlE3*pow(E,2));
-    const double Itot_bound = std::max(10*Cdlp*delta_E*omega/Nt,1.0);
+    const double Itot_bound =100000;// std::max(10*Cdlp*delta_E*omega/Nt,1.0);
     //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
     const int digits_accuracy = std::numeric_limits<double>::digits;
     const boost::uintmax_t maxit = 50;

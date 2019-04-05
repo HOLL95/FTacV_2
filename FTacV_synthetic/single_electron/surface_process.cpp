@@ -151,10 +151,10 @@ py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3,double 
     double t1 = 0.0;
     u1n0 = 1.0;
 
-    const double E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1);
-    const double dE = c_dEdt(E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1+0.5*dt);
-    //const double E = et(E_start, E_reverse, omega, phase, t1+dt);
-    //const double dE =dEdt(E_start, E_reverse, omega, phase, t1+0.5*dt);
+    //const double E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1);
+    //const double dE = c_dEdt(E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1+0.5*dt);
+    const double E = et(E_start, E_reverse, omega, phase, t1+dt);
+    const double dE =dEdt(E_start, E_reverse, omega, phase, t1+0.5*dt);
     const double Cdlp = Cdl*(1.0 + CdlE*E + CdlE2*pow(E,2)+ CdlE3*pow(E,2));
     const double Itot_bound = 100000;//std::max(10*Cdlp*delta_E*omega/Nt,1.0);
     //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
@@ -165,10 +165,10 @@ py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3,double 
     for (int n_out = 0; n_out < times.size(); n_out++) {
         while (t1 < times[n_out]) {
             Itot0 = Itot1;
-            //const double E = et(E_start, E_reverse, omega, phase, t1+dt);
-            //const double dE =dEdt(E_start, E_reverse, omega, phase, t1+0.5*dt);
-            const double E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1);
-            const double dE = c_dEdt(E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1+0.5*dt);
+            const double E = et(E_start, E_reverse, omega, phase, t1+dt);
+            const double dE =dEdt(E_start, E_reverse, omega, phase, t1+0.5*dt);
+            //const double E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1);
+            //const double dE = c_dEdt(E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1+0.5*dt);
             boost::uintmax_t it = maxit;
             e_surface_fun bc(E,dE,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,R,k0,alpha,Itot0,u1n0,dt,gamma);
             Itot1 = boost::math::tools::newton_raphson_iterate(bc, Itot0,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy);
