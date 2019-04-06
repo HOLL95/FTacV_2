@@ -1,4 +1,5 @@
 import isolver_noramp
+import isolver_martin
 import math
 import numpy as np
 import matplotlib.pyplot as plt
@@ -109,6 +110,11 @@ class single_electron:
         time_series=isolver_noramp.e_surface(self.nd_param.Cdl,self.nd_param.CdlE1,self.nd_param.CdlE2,self.nd_param.CdlE3,self.nd_param.nd_omega,1, self.nd_param.alpha , \
                                     self.nd_param.E_start,  self.nd_param.E_reverse,  self.nd_param.d_E,  self.nd_param.Ru,200, self.time_vec,  self.nd_param.gamma, \
                                      self.nd_param.E_0, self.nd_param.k_0, self.nd_param.phase, math.pi, self.num_points)
+        time_series_2=isolver_martin.martin_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec)
+        print self.nd_param.Ru
+        plt.plot(time_series_2)
+        plt.title("Martin's method")
+        plt.show()
         if ('method_label' in vars(self)):
             if ("time" in self.method_label):
                 flag2="timeseries"

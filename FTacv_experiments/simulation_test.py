@@ -84,13 +84,13 @@ plot_frequencies=frequencies[np.where(frequencies<last_point)]
 noramp_fit.test_frequencies=plot_frequencies
 #likelihood_func=noramp_fit.kaiser_filter(current_results)
 noramp_fit.pass_extra_data(current_results, False)
-noramp_fit.optim_list=['Cdl', 'gamma']
+noramp_fit.optim_list=['Cdl', 'gamma', 'Ru']
 param_boundaries=[[0, 1e-11],[1e-6, 1.0000001e-9]]
 noramp_fit.define_boundaries(param_boundaries)
 num_vals=20
 gamma_vals=np.linspace(1e-12, 1e-9, num_vals)
 cdl_vals=np.linspace(0, 1e-6, num_vals)
-ru_vals=np.linspace(0, 500, num_vals)
+ru_vals=np.linspace(0, 1000, num_vals)
 e0_vals=np.linspace(0.25, 0.6, num_vals)
 k0_vals=np.linspace(0, 1e4, num_vals)
 e0_vals=np.linspace(estart, ereverse, num_vals)
@@ -99,9 +99,10 @@ error_mat=np.zeros((num_vals, num_vals))
 for i in range(0, num_vals):
     #for j in range(0, num_vals):
             #series=noramp_fit.simulate([cdl_vals[i], gamma_vals[j]], frequencies, "no_optimisation", "fourier")
-            time_series=noramp_fit.simulate([0, gamma_vals[i]], frequencies, "no_optimisation", "timeseries")
-            plt.plot(time_series)
-            plt.show()
+            print ru_vals[i]
+            time_series=noramp_fit.simulate([1e-6, 1e-10, ru_vals[i]], frequencies, "no_optimisation", "timeseries")
+            #plt.plot(time_series)
+            #plt.show()
             #time_series=np.array(time_series)
             #if len(time_series[np.where(abs(time_series)>200)])>0:
         #        print [cdl_vals[i], gamma_vals[j], ru_vals[k],k0_vals[lcv_4],phase_vals[lcv_5]],

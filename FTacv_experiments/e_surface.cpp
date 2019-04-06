@@ -95,7 +95,7 @@ double dEdt(double omega, double phase, double delta_E, double t){
   double dedt=(delta_E*omega*std::cos(omega*t+phase));
 	return dedt;
 }
-py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double initial_val, double final_val) {
+py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double final_val, std::vector<double> t) {
     const double R = 0;
     const int Ntim = 200.0;
 
@@ -104,12 +104,19 @@ py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, d
     const double dt = (1.0/Ntim)*2*pi/omega;
     const double Tmax = final_val;
     const int Nt = Tmax/dt;
-    std::vector<std::vector<double> > Itot(2,std::vector<double>(Nt));
-    std::vector<double> t;
-    t.resize(Nt);
-    for (int i=0; i<Nt; i++) {
-        t[i] = i*dt;
-        }
+    std::vector<double> Itot;
+    if(t.size() == 0){
+      Itot.resize(Nt,0);
+      t.resize(Nt);
+      for (int i=0; i<Nt; i++) {
+          t[i] = i*dt;
+          }
+        } else {
+      #ifndef NDEBUG
+              //std::cout << "\thave "<<times.size()<<" samples from "<<times[0]<<" to "<<times[times.size()-1]<<std::endl;
+      #endif
+              Itot.resize(t.size(),0);
+          }
     double Itot0,Itot1;
     double u1n0;
     double t1 = 0.0;
@@ -118,10 +125,10 @@ py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, d
     const double E = et(Estart, omega, phase,delta_E ,t1+dt);
     const double dE = dEdt(omega, phase,delta_E , t1+0.5*dt);
     const double Cdlp = Cdl*(1.0 + CdlE*E + CdlE2*pow(E,2)+ CdlE3*pow(E,2));
-    const double Itot_bound = std::max(10*Cdlp*delta_E*omega/Nt,1.0);
+    const double Itot_bound =100000;//std::max(10*Cdlp*delta_E*omega/Nt,1.0);
     //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
 
-    Itot0 =Cdlp*delta_E;
+    Itot0 =Cdlp*dE;
     Itot1 = Itot0;
     for (int n_out = 0; n_out < t.size(); n_out++) {
         while (t1 < t[n_out]) {
@@ -138,8 +145,7 @@ py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, d
             u1n0 = bc.u1n1;
             t1 += dt;
         }
-        Itot[0][n_out] = (Itot1-Itot0)*(t[n_out]-t1+dt)/dt + Itot0;
-        Itot[1][n_out]=t[n_out];
+        Itot[n_out] = (Itot1-Itot0)*(t[n_out]-t1+dt)/dt + Itot0;
     }
     return py::cast(Itot);
 }
