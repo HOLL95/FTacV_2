@@ -60,7 +60,7 @@ for lcv_1 in range(0, len(length_list)):
             }
             de_novo=True
             param_list['E_0']=(param_list['E_reverse']-param_list['E_start'])/2
-            harmonic_range=np.arange(4,10,1)
+            harmonic_range=np.arange(3,10,1)
             noramp_fit=single_electron(param_list, params_for_opt, harmonic_range, 1.0)
             noramp_fit.label="cmaes"
             time_results=time_results[:desired_length]/noramp_fit.nd_param.c_T0
@@ -84,10 +84,10 @@ for lcv_1 in range(0, len(length_list)):
 
             #plt.plot(time_results, test)
             #plt.show()
-            param_boundaries=[[param_list['E_start'], 1, 0, 0, 1.0e-11, 0.98*param_list['omega'], 0],
-                                [param_list['E_reverse'],100000,100*param_list['omega'],0.1, 1e-9,1.02*param_list['omega'], 2*math.pi]]# #
-            #param_boundaries=[[param_list['E_start'], 1,0,  1.0e-10, 0.98*param_list['omega']], \
-            #                    [param_list['E_reverse'],100000,100*param_list['omega'],  1e-9,1.02*param_list['omega']]]# #
+            param_boundaries=[[param_list['E_start'], 1, 0,0 , 1.0e-11, 0.98*param_list['omega'], 0],
+                                [param_list['E_reverse'],100000,1000,0.1, 1e-9,1.02*param_list['omega'], 2*math.pi]]# #
+            #param_boundaries=[1,0,0.98*param_list['omega']], \
+        #                        [100*param_list['omega'], 0.1,1.02*param_list['omega']]]# #
             noramp_fit.define_boundaries(param_boundaries)
             #'E_0', 'k_0' 'Ru', 'Cdl','gamma'
             harm_class=harmonics(harmonic_range, noramp_fit.nd_param.omega*noramp_fit.nd_param.c_T0, 0.1)
@@ -95,6 +95,7 @@ for lcv_1 in range(0, len(length_list)):
             noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl','gamma', 'omega', 'phase']
             means=[2.33195239e-01, 9, 2.88373076e+02, 5.71063563e-04,1.35310666e-10, 8.94067108e+00, 3*math.pi/2]
             means=[2.33152423e-01, 5.83534674e+00, 2.04498067e+02, 1.53421861e-04, 1.17532353e-10, 8.94050130e+00, 8.07572569e-01]
+            means=[2.87138729e-01, 5.23513579e+00, 1.75815770e+02, 1.50944367e-04,1.14055339e-10, 8.94055641e+00, 3.70014760e+00]
 
             test=noramp_fit.simulate(means,frequencies, "no", "timeseries", "no" )
             exp_harmonics=harm_class.generate_harmonics(time_results, test)
