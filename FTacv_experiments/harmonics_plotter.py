@@ -49,6 +49,31 @@ class harmonics:
             ax[i].yaxis.set_label_position("right")
             ax[i].set_ylabel(str(self.harmonics[i]), rotation=0)
         plt.show()
+    def harmonics_and_time(self, times, harmonics, simulated_time, data_time=[False, False], harmonics2=[False, False],label1="", label2=""):
+        plt.figure(num=None, figsize=(15, 6), dpi=80, facecolor='w', edgecolor='k')
+        harm_axes=[]
+        harm_len=2
+        for i in range(0,self.num_harmonics):
+            harm_axes.append(plt.subplot2grid((self.num_harmonics,harm_len*2), (i,0), colspan=harm_len))
+            harm_axes[i].plot(times, abs(harmonics[i,:]), label=label1)
+            if label1!="" and i==0:
+                plt.legend()
+            if harmonics2.any()!=False:
+                harm_axes[i].plot(times, abs(harmonics2[i,:]),label=label2)
+                if label2!="" and i==0:
+                    plt.legend()
+                harm_axes[i].yaxis.set_label_position("right")
+                harm_axes[i].set_ylabel(str(self.harmonics[i]), rotation=0)
+        time_ax=plt.subplot2grid((self.num_harmonics,harm_len*2), (0,harm_len), rowspan=self.num_harmonics, colspan=harm_len)
+        time_ax.plot(times, simulated_time, label=label1)
+        if label1!="":
+            plt.legend()
+        if data_time.any()!=False:
+            time_ax.plot(times, data_time, label=label2)
+            if label2!="":
+                plt.legend()
+        plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.23)
+        plt.show()
     def comparison_harmonics_plot(self, times, harmonics, harmonics2, axis):
         for i in range(0, self.num_harmonics):
             axis.plot(times, abs(np.subtract(harmonics, harmonics2)))

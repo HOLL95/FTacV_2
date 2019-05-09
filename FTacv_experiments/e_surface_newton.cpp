@@ -47,14 +47,14 @@ struct e_surface_fun {
                     ) :
         E(E),Edc(Edc),dE(dE),Cdl(Cdl),CdlE(CdlE),CdlE2(CdlE2),CdlE3(CdlE3),E0(E0),Ru(Ru),R(R),k0(k0),alpha(alpha),In0(In0),u1n0(u1n0),dt(dt),gamma(gamma) { }
 
-  //boost::math::tuple<double,double> operator()(const double In1) {
-    //    update_temporaries(In1);
-      //  return boost::math::make_tuple(residual(In1),residual_gradient(In1));
-    //}
-    double operator()(double const In1){
-      update_temporaries(In1);
-      return abs(residual(In1));
+  boost::math::tuple<double,double> operator()(const double In1) {
+        update_temporaries(In1);
+        return boost::math::make_tuple(residual(In1),residual_gradient(In1));
     }
+    //double operator()(double const In1){
+      //update_temporaries(In1);
+      //return abs(residual(In1));
+    //}
 
     double residual(const double In1) const {
         return Cdlp*(dt*dE-Ru*(In1-In0)) + dt*R*(E-Ru*In1) - dt*In1 + gamma*(u1n1-u1n0);
@@ -128,7 +128,7 @@ std::vector<vector<double>> NR_function_surface(e_surface_fun &bc, double I_0, d
 }
 
 
-py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
+py::object martin_surface_newton(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
     const double R = 0;
     const int Ntim = 200.0;
 
@@ -171,11 +171,11 @@ py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, d
             const double Edc = 0.0;
             e_surface_fun bc(E,Edc,dE,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,R,k0,alpha,Itot0,u1n0,dt,gamma);
             boost::uintmax_t max_it = max_iterations;
-            //Itot1 = boost::math::tools::newton_raphson_iterate(bc, Itot0,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy, max_it);
-            std::pair <double, double> sol=boost::math::tools::brent_find_minima(bc,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy, max_it);
+            Itot1 = boost::math::tools::newton_raphson_iterate(bc, Itot0,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy, max_it);
+            //std::pair <double, double> sol=boost::math::tools::brent_find_minima(bc,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy, max_it);
             //cout.precision(std::numeric_limits<double>::digits10);
             ///if (max_it == max_iterations) throw std::runtime_error("non-linear solve for Itot[n+1] failed, max number of iterations reached");
-            Itot1=sol.first;
+            //Itot1=sol.first;
             bc.update_temporaries(Itot1);
             //cout<<" "<<bc.residual(sol.first)<<" "<<bc.residual(sol.second)<<" "<<sol.first<<" "<<sol.second<<"\n";
             if (debug!=-1 && debug<t[n_out]){
@@ -191,6 +191,6 @@ py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, d
     }
     return py::cast(Itot);
 }
-PYBIND11_MODULE(isolver_martin, m) {
-	m.def("martin_surface", &martin_surface, "solve for I_tot with dispersion");
+PYBIND11_MODULE(isolver_martin_newton, m) {
+	m.def("martin_surface_newton", &martin_surface_newton, "solve for I_tot with dispersion");
 }

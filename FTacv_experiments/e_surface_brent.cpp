@@ -48,8 +48,8 @@ struct e_surface_fun {
         E(E),Edc(Edc),dE(dE),Cdl(Cdl),CdlE(CdlE),CdlE2(CdlE2),CdlE3(CdlE3),E0(E0),Ru(Ru),R(R),k0(k0),alpha(alpha),In0(In0),u1n0(u1n0),dt(dt),gamma(gamma) { }
 
   //boost::math::tuple<double,double> operator()(const double In1) {
-    //    update_temporaries(In1);
-      //  return boost::math::make_tuple(residual(In1),residual_gradient(In1));
+        //update_temporaries(In1);
+        //return boost::math::make_tuple(residual(In1),residual_gradient(In1));
     //}
     double operator()(double const In1){
       update_temporaries(In1);
@@ -128,7 +128,7 @@ std::vector<vector<double>> NR_function_surface(e_surface_fun &bc, double I_0, d
 }
 
 
-py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
+py::object martin_surface_brent(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
     const double R = 0;
     const int Ntim = 200.0;
 
@@ -191,6 +191,6 @@ py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, d
     }
     return py::cast(Itot);
 }
-PYBIND11_MODULE(isolver_martin, m) {
-	m.def("martin_surface", &martin_surface, "solve for I_tot with dispersion");
+PYBIND11_MODULE(isolver_martin_brent, m) {
+	m.def("martin_surface_brent", &martin_surface_brent, "solve for I_tot with dispersion");
 }

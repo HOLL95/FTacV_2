@@ -124,6 +124,8 @@ double c_dEdt( double E_start, double E_reverse, double omega, double phase, dou
 
 	return dedt;
 }
+}
+
 py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3,double omega,double v,double alpha ,double E_start, double E_reverse, \
 	double delta_E, double Ru, int Nt,  std::vector<double> times, double gamma, double E0, double k0, double phase, double pi, int num_points) {
   //set up temporal mesh
@@ -182,7 +184,9 @@ py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3,double 
         //}
     }
   return py::cast(Itot);
-}
+
+
+
 PYBIND11_MODULE(isolver_noramp, m) {
 	m.def("e_surface", &e_surface, "solve for I_tot with dispersion");
   m.def("c_et", &c_et, "Classical potential input");
