@@ -18,22 +18,23 @@ data_path="/Experiment_data"
 folder="/Black"
 Method ="N_"
 type="current"
+type2="voltage"
 path=dir_path+data_path+folder
 files= os.listdir(path)
 for data in files:
     if (Method in data)  and (type in data):
         results=np.loadtxt(path+"/"+data)
-        print data
-length_list=[4e4]
-dec_list=[4]
+    elif (Method in data)  and (type2 in data):
+        results2=np.loadtxt(path+"/"+data)
+length_list=[1e5]
+dec_list=[8]
 repeat_num=20
-for lcv_1 in range(0, len(length_list)):
-    for lcv_2 in range(0, len(dec_list)):
-        for lcv_3 in range(0, repeat_num):
-            desired_length=int(length_list[lcv_1])
-            dec_amount=dec_list[lcv_2]
+for i in range(1,8):
+            desired_length=int(2e4)
+            dec_amount=8
             current_results=results[0::dec_amount, 1]
             time_results=results[0::dec_amount, 0]
+            voltage_results=results2[0::dec_amount, 1]
             de=300e-3
             estart=260e-3-de
             ereverse=estart+2*de
@@ -59,17 +60,23 @@ for lcv_1 in range(0, len(length_list)):
                 'num_peaks': 50
             }
             de_novo=True
-            no_transient=False
+            no_transient=True
             param_list['E_0']=2.36504746e-01#(param_list['E_reverse']-param_list['E_start'])/2
-            harmonic_range=np.arange(1,50,1)
+            harmonic_range=np.arange(1,9,1)
             noramp_fit=single_electron(param_list, params_for_opt, harmonic_range, 1.0)
             noramp_fit.label="cmaes"
+            solvers=["Bisect", "Brent minimisation", "Newton-Raphson"]
+            noramp_fit.numerical_method=solvers[1]
             time_results=time_results[:desired_length]/noramp_fit.nd_param.c_T0
             noramp_fit.time_vec=time_results
             current_results=current_results[:desired_length]/noramp_fit.nd_param.c_I0
+            current_results=np.multiply(current_results, -1)
+            #current_results=np.flip(current_results)
+            voltage_results=voltage_results[:desired_length]/noramp_fit.nd_param.c_E0
+            noramp_fit.voltages=voltage_results
             if no_transient==True:
                 noramp_fit.no_transient=0.3
-                time_results, current_results=noramp_fit.transient_remover(noramp_fit.no_transient, time_results, current_results)
+                current_results=noramp_fit.transient_remover(noramp_fit.no_transient, time_results, current_results)
             noramp_fit.throw_error=False
             signal_length=len(current_results)
             noramp_fit.num_points=signal_length
@@ -85,19 +92,19 @@ for lcv_1 in range(0, len(length_list)):
             test1=noramp_fit.simulate([],frequencies, "no", "timeseries", "y" )#
             noramp_fit.pass_extra_data(current_results, likelihood_func)
             param_bounds={
-                'E_0':[param_list['E_start'],param_list['E_reverse']],
+                'E_0':[0.1, 0.4],#[param_list['E_start'],param_list['E_reverse']],
                 'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
-                'Ru': [0, 1000],  #     (uncompensated resistance ohms)
-                'Cdl': [0,2e-5], #(capacitance parameters)
+                'Ru': [0, 1e3],  #     (uncompensated resistance ohms)
+                'Cdl': [0,1e-4], #(capacitance parameters)
                 'CdlE1': [0,0.1],#0.000653657774506,
                 'CdlE2': [0,0.1],#0.000245772700637,
                 'CdlE3': [0,0.1],#1.10053945995e-06,
                 'gamma': [1e-11,1e-9],
-                'k_0': [0, 10000.0], #(reaction rate s-1)
+                'k_0': [0, 1e4], #(reaction rate s-1)
                 'alpha': [0.4, 0.6],
                 'phase' : [0, 2*math.pi]
             }
-            noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'gamma','omega']
+            noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'gamma','omega', 'phase']
             #'E_0', 'k_0' 'Ru', 'Cdl','gamma'
             harm_class=harmonics(harmonic_range, noramp_fit.nd_param.omega*noramp_fit.nd_param.c_T0, 0.1)
             data_harmonics=harm_class.generate_harmonics(time_results, current_results)
@@ -105,44 +112,56 @@ for lcv_1 in range(0, len(length_list)):
             #means2=[9.30117566e+03,1.16018837e-10,1.05469193e-05,1.63103403e+03,8.94085502e+00]
 
             means=[param_list[key] for key in noramp_fit.optim_list]
-            means4_8=[2.86405711e-01, 5.60359640e+00, 4.41481648e+02, 4.69979970e-05, 1.20755658e-10, 8.94068026e+00]
-            means1_3=[9.71399639e+03, 1.86377845e+03, 9.67984081e-06, 1.21783314e-10, 8.94071276e+00] # no e0
-            means2_8=[[2.83833551e-01,2.36165230e-01],6.07805444e+00, 6.92406234e+02, 1.43380662e-05,1.26338603e-10, 8.94067087e+00]
-            means1_8=[2.36504746e-01, 5.39612131e+00, 6.80042862e+02, 1.04605736e-05, 1.26540511e-10, 8.94072567e+00]
-            #means1_8_2=[2.83495698e-01, 5.39793353e+0, 6.80176679e+02, 1.04602770e-05, 1.26540442e-10, 8.94072533e+00]
-
-            means=means1_8
+            means=[2.36958426e-01, 9.99999958e+03, 1.58653602e+02, 1.50881707e-05, 6.37371838e-11, 8.94639042e+00,4.71238898038469+math.pi]#9.58653602e+02#8.56987286e+02#1.62644682e+02
+            means2=[2.36958426e-01, 9.99999958e+03, 1.58653602e+02, 1.50881707e-05, 6.37371838e-11, 8.94639042e+00,4.71238898038469]
+            #means=[3.47301042e-01, 2.24569221e+03, 4.50000000e+05, 1.00000000e-06, 7.70422832e-10, 8.92022169e+00]
+            #means=means4_8
             test=noramp_fit.simulate(means,frequencies, "no", "timeseries", "no" )
-            fourier_test=noramp_fit.simulate(means,frequencies, "no", "fourier", "yes" )
+            test2=noramp_fit.simulate(means2,frequencies, "no", "timeseries", "no" )
+            noise_val=0.05
+            noise_max=max(test)*noise_val
+            noise=np.random.normal(0,noise_max, len(test))
+            synthetic_data=np.add(test, noise)
+            #fourier_test1=noramp_fit.simulate(means,frequencies, "no", "fourier", "no" )
+            fourier_test1=noramp_fit.kaiser_filter(synthetic_data)
             test_data=np.fft.ifft(likelihood_func)
-            fourier_test=np.fft.ifft(fourier_test)
-            L=len(fourier_test)
+            fourier_test=np.fft.ifft(fourier_test1)
+            L=len(test)
             time_len=range(0, len(time_results))
             f_len=np.linspace(0, time_results[-1], len(fourier_test))
             time_plot=np.interp(f_len, time_len, time_results)
             hann=np.hanning(L)
-            plt.plot(f_len, fourier_test, label="numerical")
-            plt.plot(f_len, test_data, label="data", linestyle="-", linewidth=3, alpha=0.5)
+            plt.plot(f_len, (fourier_test), label="numerical")
+            plt.plot(f_len, (test_data), label="data", linestyle="-", linewidth=3, alpha=0.7)
             plt.legend()
             plt.show()
             #noramp_fit.simulate(means,frequencies, "no", "fourier", "yes" )
             exp_harmonics=harm_class.generate_harmonics(time_results, test)
-            harm_class.plot_harmonics(time_results, exp_harmonics,data_harmonics, "abs")
-            harm_class.harmonics_and_time(time_results, exp_harmonics, test, current_results, data_harmonics, "numerical", "data")
-            cmaes_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
+
+            #harm_class.plot_harmonics(time_results, exp_harmonics,data_harmonics, "abs")
+            #harm_class.harmonics_and_time(time_results, exp_harmonics, test, current_results, data_harmonics, "numerical", "data")
+
             dummy_times=np.linspace(0, 1, len(likelihood_func))
             #noramp_fit.optim_list=['Ru', 'omega']
-            noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'gamma','omega']
+            noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl', 'gamma', 'omega', 'phase']#, 'alpha']
             param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
             for i in range(0, noramp_fit.n_parameters()):
                 param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]
                 param_boundaries[1][i]=param_bounds[noramp_fit.optim_list[i]][1]
             noramp_fit.define_boundaries(param_boundaries)
-            #cmaes_problem=pints.SingleOutputProblem(noramp_fit, dummy_times, likelihood_func)
+            fourier_arg=fourier_test1
+            true_data=current_results
+            noramp_fit.pass_extra_data(true_data, fourier_arg)
+            #cmaes_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
+            cmaes_problem=pints.SingleOutputProblem(noramp_fit, dummy_times, fourier_arg)
+            plt.plot(likelihood_func)
+            plt.show()
             score = pints.SumOfSquaresError(cmaes_problem)
             CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(noramp_fit.optim_list))], [np.ones(len(noramp_fit.optim_list))])
-            x0=abs(np.random.rand(len(param_boundaries[0])))#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
-            print len(x0), len(noramp_fit.optim_list)
+
+            x0=abs(np.random.rand(noramp_fit.n_parameters()))#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
+            print len(x0), noramp_fit.n_parameters()
+
             if de_novo==True:
                 for i in range(0, 1):
                     found_parameters, found_value=pints.optimise(
@@ -155,8 +174,9 @@ for lcv_1 in range(0, len(length_list)):
                 print cmaes_results
                 print [param_list[key] for key in noramp_fit.optim_list]
                 cmaes_time=noramp_fit.simulate(found_parameters,time_results, "optimise", "timeseries", "no" )
-                plt.plot(time_results, current_results)
+                plt.plot(time_results, true_data)
                 plt.plot(time_results, cmaes_time)
+                plt.show()
                 #hann=np.hanning(len(cmaes_time))
                 #f=np.fft.fftfreq(len(time_results), time_results[1]-time_results[0])
                 #Y1=np.multiply(hann, cmaes_time)
@@ -169,7 +189,7 @@ for lcv_1 in range(0, len(length_list)):
                 #plt.plot(f,abs(y2))
                 #plt.show()
                 cmaes_harmonics=harm_class.generate_harmonics(time_results, cmaes_time)
-                harm_class.plot_harmonics(time_results, cmaes_harmonics, data_harmonics,"abs", "numerical", "data")
+                harm_class.plot_harmonics(time_results, cmaes_harmonics, data_harmonics,"phased", "numerical", "data")
                 cmaes_prediction=noramp_fit.simulate(found_parameters,frequencies, "optimise", "fourier", "yes" )
 
                 print cmaes_results

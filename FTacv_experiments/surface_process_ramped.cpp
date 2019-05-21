@@ -3,6 +3,7 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <boost/math/tools/tuple.hpp>
+#include <boost/math/tools/minima.hpp>
 #include <math.h>
 #include <iostream>
 #include <exception>
@@ -46,10 +47,15 @@ struct e_surface_fun {
                     ) :
         E(E),dE(dE),Cdl(Cdl),CdlE(CdlE),CdlE2(CdlE2),CdlE3(CdlE3),E0(E0),Ru(Ru),R(R),k0(k0),alpha(alpha),In0(In0),u1n0(u1n0),dt(dt),gamma(gamma) { }
 
-    boost::math::tuple<double,double> operator()(const double In1) {
-        update_temporaries(In1);
-        return boost::math::make_tuple(residual(In1),residual_gradient(In1));
+    //boost::math::tuple<double,double> operator()(const double In1) {
+    //    update_temporaries(In1);
+    //    return boost::math::make_tuple(residual(In1),residual_gradient(In1));
+    //
+    double operator()(double const In1){
+      update_temporaries(In1);
+      return abs(residual(In1));
     }
+
 
     double residual(const double In1) const {
         return Cdlp*(dt*dE-Ru*(In1-In0)) + dt*R*(E-Ru*In1) - dt*In1 + gamma*(u1n1-u1n0);
@@ -122,11 +128,18 @@ double c_dEdt( double E_start, double E_reverse, double omega, double phase, dou
 
 	return dedt;
 }
-py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3,double omega,double v,double alpha ,double E_start, double E_reverse, \
-	double delta_E, double Ru, int Nt,  std::vector<double> times, double gamma, double E0, double k0, double phase, double pi, int num_points, double initial_val) {
+struct TerminationCondition  {
+  bool operator() (double min, double max)  {
+    return abs(min - max) <= 0.00000000001;
+  }
+};
+py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double E_start, double E_reverse, double delta_E, double Ru, double gamma,double E0, double k0, std::vector<double> times) {
   //set up temporal mesh
+  const int v =1;
+  const int Nt=200;
   vector<double> Itot;
   const double dt = (1.0/Nt)*2*pi/omega;
+
   if (times.size()==0) {
       const double Tmax = 2*(E_reverse-E_start)/v;
       const int Nt = Tmax/dt;
@@ -152,10 +165,10 @@ py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3,double 
     const double E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1);
     const double dE = c_dEdt(E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1+0.5*dt);
     const double Cdlp = Cdl*(1.0 + CdlE*E + CdlE2*pow(E,2)+ CdlE3*pow(E,2));
-    const double Itot_bound = 100000;//std::max(100*Cdlp*delta_E*omega/Nt,1.0);
+    const double Itot_bound = 1000000;//std::max(100*Cdlp*delta_E*omega/Nt,1.0);
     //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
     const int digits_accuracy = std::numeric_limits<double>::digits;
-    const boost::uintmax_t maxit = 1000;
+    const boost::uintmax_t max_it = 100;
     Itot0 = Cdlp*delta_E;
     Itot1 = Itot0;
     for (int n_out = 0; n_out < times.size(); n_out++) {
@@ -163,9 +176,11 @@ py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3,double 
             Itot0 = Itot1;
             const double E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1);
             const double dE = c_dEdt(E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1+0.5*dt);
-            boost::uintmax_t it = maxit;
+            boost::uintmax_t it = max_it;
             e_surface_fun bc(E,dE,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,R,k0,alpha,Itot0,u1n0,dt,gamma);
-            Itot1 =boost::math::tools::newton_raphson_iterate(bc, Itot0,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy);
+            std::pair <double, double> sol=boost::math::tools::brent_find_minima(bc,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy);
+            //std::pair <double, double> sol=boost::math::tools::bisect(bc,Itot0-Itot_bound,Itot0+Itot_bound, TerminationCondition(), max_it);
+            Itot1=sol.first;
             bc.update_temporaries(Itot1);
             u1n0 = bc.u1n1;
             t1 += dt;

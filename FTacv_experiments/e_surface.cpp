@@ -79,7 +79,7 @@ struct e_surface_fun {
 
         const double u1n1_top = dt*k0*exp11 + u1n0;
         const double du1n1_top = dt*k0*dexp11;
-        const double denom = (dt*k0*exp11 + dt*k0*exp12 + 1);
+        const double denom = (dt*k0*exp11 - dt*k0*exp12 + 1);
         const double ddenom = dt*k0*(dexp11 + dexp12);
         const double tmp = 1.0/denom;
         const double tmp2 = pow(tmp,2);
@@ -128,10 +128,11 @@ std::vector<vector<double>> NR_function_surface(e_surface_fun &bc, double I_0, d
 }
 
 
-py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
+py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double final_val, std::vector<double> t, std::vector<double> Edata, double debug=-1, double bounds_val=10) {
+    cout<<"called"<<"\n";
     const double R = 0;
     const int Ntim = 200.0;
-
+    const double dt_data=t[1]-t[0];
     const int digits_accuracy = std::numeric_limits<double>::digits;
     const double max_iterations = 100;
     const double dt = (1.0/Ntim)*2*pi/omega;
@@ -166,7 +167,19 @@ py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, d
     for (int n_out = 0; n_out < t.size(); n_out++) {
         while (t1 < t[n_out]) {
             Itot0 = Itot1;
-            const double E = et(Estart, omega, phase,delta_E ,t1+dt);
+            if (Edata.size()!=0){
+            //const double x = t1 / dt_data;
+            //const unsigned int x0 = floor(x);
+            //const unsigned int x1 = ceil(x);
+            //const double y0 = (Edata)[x0];
+            //const double y1 = (Edata)[x1];
+            const double E = Edata[n_out];//((x - x0) / dt_data) * y1 + ((x - x1) / dt_data) * y0;
+            cout<<Edata[n_out]<<"\n";
+            } else {
+              const double E = et(Estart, omega, phase,delta_E ,t1+dt);
+            }
+
+
             const double dE = dEdt(omega, phase,delta_E , t1+0.5*dt);
             const double Edc = 0.0;
             e_surface_fun bc(E,Edc,dE,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,R,k0,alpha,Itot0,u1n0,dt,gamma);
@@ -175,7 +188,7 @@ py::object martin_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, d
             std::pair <double, double> sol=boost::math::tools::brent_find_minima(bc,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy, max_it);
             //cout.precision(std::numeric_limits<double>::digits10);
             ///if (max_it == max_iterations) throw std::runtime_error("non-linear solve for Itot[n+1] failed, max number of iterations reached");
-            Itot1=sol.first;
+            Itot1=E;//sol.first;
             bc.update_temporaries(Itot1);
             //cout<<" "<<bc.residual(sol.first)<<" "<<bc.residual(sol.second)<<" "<<sol.first<<" "<<sol.second<<"\n";
             if (debug!=-1 && debug<t[n_out]){

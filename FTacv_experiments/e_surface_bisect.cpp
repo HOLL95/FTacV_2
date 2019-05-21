@@ -164,7 +164,7 @@ py::object martin_surface_bisect(double Cdl, double CdlE, double CdlE2, double C
     const double Cdlp = Cdl*(1.0 + CdlE*E + CdlE2*pow(E,2)+ CdlE3*pow(E,2));
     double Itot_bound =bounds_val;//std::max(10*Cdlp*delta_E*omega/Nt,1.0);
     //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
-
+    cout<<"called<<"<<"\n";
     Itot0 =Cdlp*dE;
     Itot1 = Itot0;
     for (int n_out = 0; n_out < t.size(); n_out++) {

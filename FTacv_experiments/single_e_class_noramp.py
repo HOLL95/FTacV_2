@@ -62,8 +62,14 @@ class single_electron:
         Y2=np.fft.fft(time_series_2)
         Y1=Y1[np.where((f>0) & (f<last_harm))]
         Y2=Y2[np.where((f>0) & (f<last_harm))]
-        plt.plot(freqs,abs(Y1), label=label1)
-        plt.plot(freqs, abs(Y2), label=label2, alpha=0.7)
+        plt.subplot(1,3,2)
+        plt.title("Real")
+        plt.plot(freqs,np.real(Y1), label=label1)
+        plt.plot(freqs, np.real(Y2), label=label2, alpha=0.7)
+        plt.subplot(1,3,3)
+        plt.title("Imaginary")
+        plt.plot(freqs,np.imag(Y1), label=label1)
+        plt.plot(freqs, np.imag(Y2), label=label2, alpha=0.7)
         plt.xlabel("frequency")
         plt.legend()
     def kaiser_filter(self, time_series, harmonical=False):
@@ -73,21 +79,25 @@ class single_electron:
         time_series=np.multiply(time_series, window)
         f=np.fft.fftfreq(len(time_series), self.time_vec[1]-self.time_vec[0])
         Y=np.fft.fft(time_series)
-        #plt.plot(f,Y)
         #Y_pow=np.power(copy.deepcopy(Y[0:len(frequencies)]),2)
         top_hat=copy.deepcopy(Y[0:len(frequencies)])
 
-        #for i in range(0, self.num_harmonics):
-        #    true_harm=self.harmonic_range[i]*self.nd_param.omega*self.nd_param.c_T0
-        #    filter_bit=top_hat[np.where((frequencies<(true_harm+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm-(self.nd_param.omega*self.filter_val)))]
-        #    results[np.where((frequencies<(true_harm+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm-(self.nd_param.omega*self.filter_val)))]=filter_bit
         true_harm=self.nd_param.omega*self.nd_param.c_T0
-        first_harm=(self.harmonic_range[0]*true_harm)-(self.nd_param.omega*self.filter_val)
-        last_harm=(self.harmonic_range[-1]*true_harm)+(self.nd_param.omega*self.filter_val)
-        likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
-        results=np.zeros(len(top_hat), dtype=complex)
-        results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
-        return abs(results)
+        if sum(np.diff(self.harmonic_range))!=len(self.harmonic_range)-1:
+            results=np.zeros(len(top_hat), dtype=complex)
+            for i in range(0, self.num_harmonics):
+                true_harm_n=true_harm*self.harmonic_range[i]
+                index=[np.where((frequencies<(true_harm_n+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm_n-(self.nd_param.omega*self.filter_val)))]
+                filter_bit=top_hat[index]
+                results[index]=filter_bit
+        else:
+            first_harm=(self.harmonic_range[0]*true_harm)-(self.nd_param.omega*self.filter_val)
+            last_harm=(self.harmonic_range[-1]*true_harm)+(self.nd_param.omega*self.filter_val)
+            likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
+            results=np.zeros(len(top_hat), dtype=complex)
+            results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
+        comp_results=np.append(np.real(results), np.imag(results))
+        return (comp_results)
     def times(self, num_points):
         self.num_points=num_points
         #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
@@ -99,6 +109,7 @@ class single_electron:
                 normed_params[i]=self.un_normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         elif method=="norm":
             for i in range(0,len(param_list)):
+                print normed_params[i], self.optim_list[i],[self.boundaries[0][i],self.boundaries[1][i]]
                 normed_params[i]=self.normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         return normed_params
     def variable_returner(self):
@@ -107,15 +118,14 @@ class single_electron:
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
                 print key, variables[key], type(variables[key])
     def transient_remover(self, start_time, times, current):
-        time_idx=np.where(times>start_time)
-        times=times[time_idx]
-        current_results=current[time_idx]
-        plt.plot(times, current_results)
-        plt.show()
+        time_end=self.time_vec[-1]-start_time
+        time_idx=np.where((times>start_time) & (times<time_end))
         self.time_idx=time_idx
-        return times, current_results
+        new_array=np.zeros(len(current))
+        new_array[self.time_idx]=current[self.time_idx]
+        return  new_array
 
-    def simulate(self,parameters, frequencies, flag='optimise', flag2='timeseries', test="yes"):
+    def simulate(self,parameters, frequencies, flag='optimise', flag2='fourier', test="no"):
         var_list=vars(self)
         if len(parameters)!= len(self.optim_list):
             raise ValueError('Wrong number of parameters')
@@ -123,6 +133,7 @@ class single_electron:
             normed_params=self.change_norm_group(parameters, "un_norm")
         else:
             normed_params=copy.deepcopy(parameters)
+        #print normed_params
         for i in range(0, len(self.optim_list)):
                 self.nd_param.non_dimensionalise(self.optim_list[i], normed_params[i])
         if "debug_time" in var_list:
@@ -151,7 +162,6 @@ class single_electron:
             plt.show()
         else:
             if "numerical_method" in var_list:
-                print self.numerical_method
                 if self.numerical_method=="Bisect":
                     solver=isolver_martin_bisect.martin_surface_bisect
                 elif self.numerical_method=="Brent minimisation":
@@ -160,21 +170,21 @@ class single_electron:
                     solver=isolver_martin_newton.martin_surface_newton
                 time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
             else:
-                print list(normed_params)
-                time_series=isolver_martin.martin_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                time_series=isolver_martin.martin_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.voltages, -1, self.bounds_val)
         if "no_transient" in var_list:
-
+            new_array=np.zeros(len(time_series))
             time_series=np.array(time_series)
-            time_series=time_series[self.time_idx]
+            new_array[self.time_idx]=time_series[self.time_idx]
+            time_series=new_array
+        #time_series=np.flip(time_series)
         if flag2=='fourier':
             filtered=self.kaiser_filter(time_series)
             if test=="yes":
-                plt.subplot(1,2,1)
+                plt.subplot(1,3,1)
                 plt.title("Likelihood function ("+str(self.harmonic_range[0])+"-"+str(self.harmonic_range[-1])+"harmonics)")
                 plt.plot(self.secret_data_fourier[:len(filtered)/15], label="data")
                 plt.plot(filtered[:len(filtered)/15] , alpha=0.7, label="numerical")
                 plt.legend()
-                plt.subplot(1,2,2)
                 fourier_end=12
                 plt.title("Fourier spectrum up to harmonic " + str(fourier_end))
                 self.fourier_plotter(self.secret_data_time_series, "Data", time_series, "numerical", fourier_end)
@@ -186,4 +196,4 @@ class single_electron:
                 plt.plot(time_series)
                 plt.plot(self.secret_data_time_series, alpha=0.7)
                 plt.show()
-            return time_series
+            return (time_series)

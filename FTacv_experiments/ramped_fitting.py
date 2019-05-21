@@ -79,7 +79,7 @@ param_list={
 }
 
 param_list['E_0']=0.23471918314326964
-harmonic_range=np.arange(3,7,1)
+harmonic_range=np.arange(2,9,1)
 ramp_fit=single_electron(param_list, params_for_opt, harmonic_range, 1.0)
 ramp_fit.label="cmaes"
 ramp_fit.voltages=voltages[0::dec_amount, 1]/ramp_fit.nd_param.c_E0
@@ -102,41 +102,65 @@ ramp_fit.optim_list=[]#['E_0', 'k_0', 'Ru', 'Cdl','gamma', 'omega']
 ramp_fit.pass_extra_data(current_results, False)
 chains=np.load("ramped_results")
 means=[np.mean(chains[:, 5000:, x]) for x in np.arange(0,len(ramp_fit.optim_list))]
-ramp_fit.optim_list=['E_0', 'k_0', 'Ru', 'Cdl','gamma', 'omega']#, 'phase']
-means=[0.233, 120.57601349e+00, 2.83225263e+02, 8.70271625e-04, 3.78984258e-10, 8.94070468e+00]
-#means=[4.53228947e-01, 1.46151169e+02, 5.92813367e+02, 1.21792423e-04,3.10185626e-10, 8.94071394e+00]
-#means=[2.86965303e-01, 1.21262967e+01, 3.62505000e+02, 1.29491311e-04,1.35050241e-10, 8.94070555e+00]
-means=[2.33152423e-01, 45.83534674e+00, 2.04498067e+02, 7.53421861e-04, 1.17532353e-10, 8.94050130e+00]#, 8.07572569e-01]
-#means=[2.85982586e-01, 5.57540878e+00, 3.62827219e+00, 1.86581548e-06, 1.20758344e-10, 8.94056256e+00, 3.64861364e+00]
+ramp_fit.optim_list=['E_0', 'k_0', 'Ru', 'Cdl','gamma', 'omega', 'phase']
 
-#means=[2.86821677e-01, 1.23819142e+02, 3.65239741e+02, 3.30105547e-04, 1.34921412e-10, 8.94069398e+00]
+means=[1.92982653e-01, 3.52336088e+00, 4.99999999e+02, 4.46761269e-15, 1.30400052e-10, 8.89117171e+00]#830.276082338262
+nums=1
+rus=np.linspace(100, 5, nums)
+
+means=[2.41444794e-01, 6.17012486e-01, 1.04871338e+01, 3.51866140e-06, 4.49820672e-10, 8.94073199e+00, 1.39984093e-01]#, 4.56684293e+00]
 
 test=ramp_fit.simulate(means,frequencies, "no", "timeseries", "no" )
+
+plt.plot(current_results)
 plt.plot(test)
 plt.show()
+noise_p=0.02
+noise_level=max(test)*noise_p
+noise=np.random.normal(0, noise_level, len(test))
+synthetic_data=np.add(noise, test)
+fourier_test=ramp_fit.kaiser_filter(synthetic_data)
 test_harmonics=harm_class.generate_harmonics(time_results, test)
 data_harmonics=harm_class.generate_harmonics(time_results, current_results)
 #harm_class.plot_harmonics(time_results, test_harmonics, data_harmonics)
 plt.plot(time_results, test, label="numerical")
+plt.plot(time_results, current_results, alpha=0.7)
 plt.legend()
 plt.show()
 harm_class.plot_harmonics(time_results, test_harmonics, data_harmonics,"abs", "numerical", "data")
 likelihood_func=ramp_fit.kaiser_filter(current_results)
-param_boundaries=[[param_list['E_start'],1, 0, 0, 5.0e-11, 0.99*param_list['omega']], \
-                    [param_list['E_reverse'], 1e4,500, 0.1, 5e-10, 1.01*param_list['omega']]]# #
-ramp_fit.optim_list=['E_0', 'k_0', 'Ru', 'Cdl','gamma', 'omega']
+param_bounds={
+    'E_0':[0.1, 0.4],#[param_list['E_start'],param_list['E_reverse']],
+    'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
+    'Ru': [0, 1e4],  #     (uncompensated resistance ohms)
+    'Cdl': [0,1e-3], #(capacitance parameters)
+    'CdlE1': [0,0.1],#0.000653657774506,
+    'CdlE2': [0,0.1],#0.000245772700637,
+    'CdlE3': [0,0.1],#1.10053945995e-06,
+    'gamma': [1e-11,1e-9],
+    'k_0': [0, 1e4], #(reaction rate s-1)
+    'alpha': [0.4, 0.6],
+    'phase' : [0, 2*math.pi]
+}
+
+ramp_fit.optim_list=['k_0', 'Ru', 'Cdl','gamma', 'omega', 'phase']
+param_boundaries=np.zeros((2, ramp_fit.n_parameters()))
+for i in range(0, ramp_fit.n_parameters()):
+    param_boundaries[0][i]=param_bounds[ramp_fit.optim_list[i]][0]
+    param_boundaries[1][i]=param_bounds[ramp_fit.optim_list[i]][1]
+
 dummy_times=np.linspace(0, 1, len(likelihood_func))
 ramp_fit.define_boundaries(param_boundaries)
 #cmaes_problem=pints.SingleOutputProblem(ramp_fit, time_results, current_results)
 ramp_fit.label="cmaes"
 #ramp_fit.method_label="timeseries"
-cmaes_problem=pints.SingleOutputProblem(ramp_fit, dummy_times, likelihood_func)
+cmaes_problem=pints.SingleOutputProblem(ramp_fit, dummy_times, fourier_test)
 plt.plot(test)
 plt.show()
 score = pints.SumOfSquaresError(cmaes_problem)
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(param_boundaries[0]))], [np.ones(len(param_boundaries[0]))])
-x0=ramp_fit.change_norm_group(means, "norm")
-
+x0=ramp_fit.change_norm_group(means[1:], "norm")#abs(np.random.rand(ramp_fit.n_parameters()))
+ramp_fit.pass_extra_data(current_results, likelihood_func)
 for i in range(0, 1):
     found_parameters, found_value=pints.optimise(
                                                 score,
@@ -146,8 +170,12 @@ for i in range(0, 1):
                                                 )
     x0=found_parameters
     print found_parameters
+
+ramp_fit.simulate(found_parameters, frequencies, "optimise", "fourier", "yes")
+ramp_fit.simulate(found_parameters, frequencies, "optimise", "timeseries", "yes")
 cmaes_results=ramp_fit.change_norm_group(found_parameters, "un_norm")
-print cmaes_results
+print list(cmaes_results)
+"""
 cmaes_time_prediction=ramp_fit.simulate(found_parameters,frequencies, "optimise", "timeseries", "yes" )
 test_harmonics=harm_class.generate_harmonics(time_results, cmaes_time_prediction)
 harm_class.plot_harmonics(time_results, test_harmonics, data_harmonics,"abs", "numerical", "data")
@@ -180,3 +208,4 @@ filename="ramped_results_2"
 f=open(filename, "w")
 np.save(f, chains)
 f.close()
+"""

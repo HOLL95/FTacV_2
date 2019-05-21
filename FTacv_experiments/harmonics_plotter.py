@@ -55,11 +55,11 @@ class harmonics:
         harm_len=2
         for i in range(0,self.num_harmonics):
             harm_axes.append(plt.subplot2grid((self.num_harmonics,harm_len*2), (i,0), colspan=harm_len))
-            harm_axes[i].plot(times, abs(harmonics[i,:]), label=label1)
+            harm_axes[i].plot(times, (harmonics[i,:]), label=label1)
             if label1!="" and i==0:
                 plt.legend()
             if harmonics2.any()!=False:
-                harm_axes[i].plot(times, abs(harmonics2[i,:]),label=label2)
+                harm_axes[i].plot(times, (harmonics2[i,:]),label=label2)
                 if label2!="" and i==0:
                     plt.legend()
                 harm_axes[i].yaxis.set_label_position("right")
