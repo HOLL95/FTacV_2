@@ -52,17 +52,8 @@ class params:
             self.sampling_freq=value/((2*math.pi)/self.nd_omega)
         elif flag == 'non_dim':
             self.sampling_freq=value*((2*math.pi)/self.nd_omega)
-            print "Changing the sampling freq to " + str(self.sampling_freq)
-    def V(self, value, flag):
-        if flag=='re_dim':
-            self.v=value
-        elif flag == 'non_dim':
-            self.v=value
-    def Phase(self, value, flag):
-        if flag=='re_dim':
-            self.phase=value
-        elif flag == 'non_dim':
-            self.phase=value
+            #print "Changing the sampling freq to " + str(self.sampling_freq)
+
     def __init__(self,param_dict):
         self.E_0=param_dict['E_0']
         self.k_0=param_dict['k_0']
@@ -82,6 +73,7 @@ class params:
         self.area=param_dict['area']
         self.phase=param_dict['phase']
         self.num_peaks=param_dict['num_peaks']
+        self.time_end=param_dict['time_end']
         self.T=(273+25)
         self.F=96485.3328959
         self.R=8.314459848
@@ -99,18 +91,20 @@ class params:
                             'd_e' :self.de,
                             'ru':self.ru,
                             'gamma':self.Gamma,
-                            'sampling_freq':self.sf,
-                            'v':self.V,
-                            'phase':self.Phase
+                            'sampling_freq':self.sf
+                            }
+        keys=param_dict.keys()
+        for i in range(0, len(keys)):
+            if keys[i].lower() in self.method_switch:
+                self.non_dimensionalise(keys[i], param_dict[keys[i]])
 
-
-                        }
 
     def non_dimensionalise(self, name,name_value):
-        if name.lower() in self.method_switch:
             function = self.method_switch[name.lower()]
             function(name_value, 'non_dim')
     def re_dimensionalise(self,name, name_value):
         if name.lower() in self.method_switch:
                 function = self.method_switch[name.lower()]
                 function(name_value, 're_dim')
+        else:
+            raise ValueError(name + " not in param list!")

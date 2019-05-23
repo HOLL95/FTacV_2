@@ -2,6 +2,7 @@ import  matplotlib.pyplot as plt
 import pints.plot
 import numpy as np
 import copy
+from error_functions import errors
 class harmonics:
     def __init__(self, harmonics, input_frequency, filter_val):
         self.harmonics=harmonics
@@ -9,7 +10,7 @@ class harmonics:
         self.input_frequency=input_frequency
         self.filter_val=filter_val
         print "initialised!"
-    def generate_harmonics(self, times, data):
+    def generate_harmonics(self, times, data, peaks=False):
         L=len(data)
         window=np.hanning(L)
         time_series=np.multiply(data, window)
@@ -22,12 +23,15 @@ class harmonics:
         last_harm=(self.harmonics[-1]*self.input_frequency)
         frequencies=f[np.where((f>0) & (f<(last_harm+(0.5*self.input_frequency))))]
         top_hat=(copy.deepcopy(Y[0:len(frequencies)]))
+
         harmonics=np.zeros((self.num_harmonics, len(time_series)), dtype="complex")
         for i in range(0, self.num_harmonics):
             true_harm=self.harmonics[i]*self.input_frequency
             filter_bit=top_hat[np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]
             harmonics[i,0:len(filter_bit)]=filter_bit
-            harmonics[i,:]=((np.fft.ifft(harmonics[i,:])))
+            if peaks==False:
+
+                harmonics[i,:]=((np.fft.ifft(harmonics[i,:])))
         return harmonics
 
     def plot_harmonics(self, times, harmonics, harmonics2=[False, False], method="abs", label1="", label2=""):
@@ -77,3 +81,20 @@ class harmonics:
     def comparison_harmonics_plot(self, times, harmonics, harmonics2, axis):
         for i in range(0, self.num_harmonics):
             axis.plot(times, abs(np.subtract(harmonics, harmonics2)))
+    def harmonic_err_plots(self, data_harmonics, predicted_harmonics):
+        error_data=np.zeros((2, self.num_harmonics))
+        for i in range(0, self.num_harmonics):
+            error_measure=errors(data_harmonics[i,:])
+            error_data[0][i]=error_measure.SSE(predicted_harmonics[i,:], absol=True)
+            error_data[1][i]=error_measure.RE(predicted_harmonics[i,:])
+        ind=np.arange(self.num_harmonics)
+        labels=[str(x) for x in self.harmonics]
+        plt.subplot(1,2,1)
+        plt.title("Absolute error")
+        plt.xticks(ind, labels)
+        plt.bar(ind, error_data[0])
+        plt.subplot(1,2,2)
+        plt.title("Relative error")
+        plt.xticks(ind, labels)
+        plt.bar(ind, error_data[1], color="orange")
+        plt.show()
