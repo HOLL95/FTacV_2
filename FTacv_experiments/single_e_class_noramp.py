@@ -96,8 +96,8 @@ class single_electron:
             likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
             results=np.zeros(len(top_hat), dtype=complex)
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
-        comp_results=np.append(np.real(results), np.imag(results))
-        return (comp_results)
+        #comp_results=np.append(np.real(results), np.imag(results))
+        return (results)
     def times(self, num_points):
         self.num_points=num_points
         #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
@@ -125,7 +125,7 @@ class single_electron:
         new_array[self.time_idx]=current[self.time_idx]
         return  new_array
 
-    def simulate(self,parameters, frequencies, flag='optimise', flag2='fourier', test="no"):
+    def simulate(self,parameters, frequencies, flag='optimise', flag2='timeseries', test="no"):
         var_list=vars(self)
         if len(parameters)!= len(self.optim_list):
             raise ValueError('Wrong number of parameters')
@@ -176,7 +176,7 @@ class single_electron:
             time_series=np.array(time_series)
             new_array[self.time_idx]=time_series[self.time_idx]
             time_series=new_array
-        #time_series=np.flip(time_series)
+        time_series=np.flip(time_series)
         if flag2=='fourier':
             filtered=self.kaiser_filter(time_series)
             if test=="yes":

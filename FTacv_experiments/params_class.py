@@ -63,6 +63,11 @@ class params:
             self.phase=value
         elif flag == 'non_dim':
             self.phase=value
+    def Alpha(self, value, flag):
+        if flag=='re_dim':
+            self.alpha=value
+        elif flag == 'non_dim':
+            self.alpha=value
     def __init__(self,param_dict):
         self.E_0=param_dict['E_0']
         self.k_0=param_dict['k_0']
@@ -101,7 +106,8 @@ class params:
                             'gamma':self.Gamma,
                             'sampling_freq':self.sf,
                             'v':self.V,
-                            'phase':self.Phase
+                            'phase':self.Phase,
+                            'alpha':self.Alpha
 
 
                         }

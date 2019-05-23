@@ -136,7 +136,7 @@ struct TerminationCondition  {
 py::object martin_surface_bisect(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
     const double R = 0;
     const int Ntim = 200.0;
-
+    cout<<alpha<<"\n";
     const int digits_accuracy = std::numeric_limits<double>::digits;
     const double max_iterations = 100;
     const double dt = (1.0/Ntim)*2*pi/omega;

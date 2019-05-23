@@ -128,10 +128,9 @@ std::vector<vector<double>> NR_function_surface(e_surface_fun &bc, double I_0, d
 }
 
 
-py::object martin_surface_brent(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double Estart, double Ereverse, double delta_E, double Ru, double gamma,double E0, double k0, double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
+py::object martin_surface_brent(const double Cdl, const double CdlE, const double CdlE2, const double CdlE3, const double omega,const  double phase, const double pi, const double alpha, const double Estart,const  double Ereverse, const double delta_E, const double Ru, const double gamma,const double E0, const double k0, const double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
     const double R = 0;
     const int Ntim = 200.0;
-
     const int digits_accuracy = std::numeric_limits<double>::digits;
     const double max_iterations = 100;
     const double dt = (1.0/Ntim)*2*pi/omega;
@@ -160,7 +159,6 @@ py::object martin_surface_brent(double Cdl, double CdlE, double CdlE2, double Cd
     const double Cdlp = Cdl*(1.0 + CdlE*E + CdlE2*pow(E,2)+ CdlE3*pow(E,2));
     double Itot_bound =bounds_val;//std::max(10*Cdlp*delta_E*omega/Nt,1.0);
     //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
-
     Itot0 =Cdlp*dE;
     Itot1 = Itot0;
     for (int n_out = 0; n_out < t.size(); n_out++) {
@@ -169,6 +167,7 @@ py::object martin_surface_brent(double Cdl, double CdlE, double CdlE2, double Cd
             const double E = et(Estart, omega, phase,delta_E ,t1+dt);
             const double dE = dEdt(omega, phase,delta_E , t1+0.5*dt);
             const double Edc = 0.0;
+
             e_surface_fun bc(E,Edc,dE,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,R,k0,alpha,Itot0,u1n0,dt,gamma);
             boost::uintmax_t max_it = max_iterations;
             //Itot1 = boost::math::tools::newton_raphson_iterate(bc, Itot0,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy, max_it);

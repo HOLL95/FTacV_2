@@ -70,7 +70,7 @@ for i in range(1,8):
             time_results=time_results[:desired_length]/noramp_fit.nd_param.c_T0
             noramp_fit.time_vec=time_results
             current_results=current_results[:desired_length]/noramp_fit.nd_param.c_I0
-            current_results=np.multiply(current_results, -1)
+            #current_results=np.multiply(current_results, -1)
             #current_results=np.flip(current_results)
             voltage_results=voltage_results[:desired_length]/noramp_fit.nd_param.c_E0
             noramp_fit.voltages=voltage_results
@@ -101,7 +101,7 @@ for i in range(1,8):
                 'CdlE3': [0,0.1],#1.10053945995e-06,
                 'gamma': [1e-11,1e-9],
                 'k_0': [0, 1e4], #(reaction rate s-1)
-                'alpha': [0.4, 0.6],
+                'alpha': [0, 1.0],
                 'phase' : [0, 2*math.pi]
             }
             noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'gamma','omega', 'phase']
@@ -136,24 +136,24 @@ for i in range(1,8):
             plt.legend()
             plt.show()
             #noramp_fit.simulate(means,frequencies, "no", "fourier", "yes" )
-            exp_harmonics=harm_class.generate_harmonics(time_results, test)
+            #exp_harmonics=harm_class.generate_harmonics(time_results, test)
 
             #harm_class.plot_harmonics(time_results, exp_harmonics,data_harmonics, "abs")
             #harm_class.harmonics_and_time(time_results, exp_harmonics, test, current_results, data_harmonics, "numerical", "data")
 
             dummy_times=np.linspace(0, 1, len(likelihood_func))
             #noramp_fit.optim_list=['Ru', 'omega']
-            noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl', 'gamma', 'omega', 'phase']#, 'alpha']
+            noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl', 'gamma', 'omega', 'phase', 'alpha']
             param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
             for i in range(0, noramp_fit.n_parameters()):
                 param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]
                 param_boundaries[1][i]=param_bounds[noramp_fit.optim_list[i]][1]
             noramp_fit.define_boundaries(param_boundaries)
-            fourier_arg=fourier_test1
+            fourier_arg=likelihood_func
             true_data=current_results
             noramp_fit.pass_extra_data(true_data, fourier_arg)
-            #cmaes_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
-            cmaes_problem=pints.SingleOutputProblem(noramp_fit, dummy_times, fourier_arg)
+            cmaes_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
+            #cmaes_problem=pints.SingleOutputProblem(noramp_fit, dummy_times, fourier_arg)
             plt.plot(likelihood_func)
             plt.show()
             score = pints.SumOfSquaresError(cmaes_problem)
