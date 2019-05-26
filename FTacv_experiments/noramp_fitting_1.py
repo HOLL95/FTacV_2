@@ -72,6 +72,9 @@ for i in range(1,8):
             current_results=current_results[:desired_length]/noramp_fit.nd_param.c_I0
             #current_results=np.multiply(current_results, -1)
             #current_results=np.flip(current_results)
+            plt.plot(time_results, current_results)
+            plt.show()
+
             voltage_results=voltage_results[:desired_length]/noramp_fit.nd_param.c_E0
             noramp_fit.voltages=voltage_results
             if no_transient==True:
@@ -122,6 +125,8 @@ for i in range(1,8):
             noise_max=max(test)*noise_val
             noise=np.random.normal(0,noise_max, len(test))
             synthetic_data=np.add(test, noise)
+            plt.plot(likelihood_func)
+            plt.show()
             #fourier_test1=noramp_fit.simulate(means,frequencies, "no", "fourier", "no" )
             fourier_test1=noramp_fit.kaiser_filter(synthetic_data)
             test_data=np.fft.ifft(likelihood_func)

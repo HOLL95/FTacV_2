@@ -134,6 +134,7 @@ class single_electron:
         else:
             normed_params=copy.deepcopy(parameters)
         #print normed_params
+        print self.optim_list[0], normed_params[0]
         for i in range(0, len(self.optim_list)):
                 self.nd_param.non_dimensionalise(self.optim_list[i], normed_params[i])
         if "debug_time" in var_list:
@@ -161,6 +162,7 @@ class single_electron:
             plt.plot(current, ((residual_gradient)))
             plt.show()
         else:
+            print self.nd_param.CdlE1, self.nd_param.CdlE3
             if "numerical_method" in var_list:
                 if self.numerical_method=="Bisect":
                     solver=isolver_martin_bisect.martin_surface_bisect
@@ -176,7 +178,7 @@ class single_electron:
             time_series=np.array(time_series)
             new_array[self.time_idx]=time_series[self.time_idx]
             time_series=new_array
-        time_series=np.flip(time_series)
+        #time_series=np.flip(time_series)
         if flag2=='fourier':
             filtered=self.kaiser_filter(time_series)
             if test=="yes":
