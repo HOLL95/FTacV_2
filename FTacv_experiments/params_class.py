@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import math
+import copy
 class params:
     def e0(self, value, flag):
         if flag=='re_dim':

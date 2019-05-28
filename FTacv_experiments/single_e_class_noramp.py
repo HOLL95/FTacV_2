@@ -10,15 +10,34 @@ from params_class import params
 import copy
 import time
 class single_electron:
-    def __init__(self, dim_paramater_dictionary, optim_list, harmonic_range, filter_val):
+    def __init__(self, dim_paramater_dictionary, simulation_options, other_values):
         key_list=dim_paramater_dictionary.keys()
-        self.dim_dict=dim_paramater_dictionary
+        self.dim_dict=copy.deepcopy(dim_paramater_dictionary)
         self.nd_param=params(dim_paramater_dictionary)
         self.nd_dict=self.nd_param.__dict__
-        self.optim_list=optim_list
-        self.harmonic_range=harmonic_range
-        self.num_harmonics=len(harmonic_range)
-        self.filter_val=filter_val
+        self.simulation_options=simulation_options
+        self.optim_list=self.simulation_options["optim_list"]
+        self.harmonic_range=other_values["harmonic_range"]
+        self.num_harmonics=len(self.harmonic_range)
+        self.filter_val=other_values["filter_val"]
+        self.bounds_val=other_values["bounds_val"]
+        if simulation_options["no_transient"]!=False:
+            self.no_transient=simulation_options["no_transient"]
+        if self.simulation_options["experimental_fitting"]==True:
+            other_values["experiment_time"]=other_values["experiment_time"][:other_values["signal_length"]]/self.nd_param.c_T0
+            other_values["experiment_current"]=other_values["experiment_current"][:other_values["signal_length"]]/self.nd_param.c_I0
+            other_values["experiment_voltage"]=other_values["experiment_voltage"][:other_values["signal_length"]]/self.nd_param.c_E0
+            self.time_vec=other_values["experiment_time"]
+            if self.simulation_options["no_transient"]!=False:
+                other_values["experiment_current"]=self.transient_remover(self.no_transient, other_values["experiment_time"], other_values["experiment_current"])
+        else:
+            self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.nd_omega)*2*math.pi
+            self.times(other_values["signal_length"])
+        frequencies=np.fft.fftfreq(len(self.time_vec), self.time_vec[1]-self.time_vec[0])
+        self.frequencies=frequencies[np.where(frequencies>0)]
+        last_point= (self.harmonic_range[-1]*self.nd_param.omega)+(self.nd_param.omega*self.filter_val)
+        self.test_frequencies=frequencies[np.where(self.frequencies<last_point)]
+        self.other_values=other_values
     def define_boundaries(self, boundaries):
         self.boundaries=boundaries
     def normalise(self, norm, boundaries):
@@ -134,16 +153,14 @@ class single_electron:
         var_list=vars(self)
         if len(parameters)!= len(self.optim_list):
             raise ValueError('Wrong number of parameters')
-        if flag=='optimise' and self.label=="cmaes":
+        if flag=='optimise' and self.simulation_options["label"]=="cmaes":
             normed_params=self.change_norm_group(parameters, "un_norm")
         else:
             normed_params=copy.deepcopy(parameters)
         self.define_parameters(normed_params)
         #print self.nd_param.phase, self.nd_param.alpha, self.nd_param.Ru
-        if "debug_time" in self.nd_dict:
-            print self.debug_time
-            time_series=isolver_martin.martin_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.debug_time, self.bounds_val)
-
+        if self.simulation_options["numerical_debugging"] !=False:
+            time_series=isolver_martin.martin_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.simulation_options["numerical_debugging"], self.bounds_val)
             current=time_series[0]
             residual=time_series[1]
             residual_gradient=time_series[2]
@@ -164,22 +181,22 @@ class single_electron:
             plt.plot(current, ((residual_gradient)))
             plt.show()
         else:
-            if "numerical_method" in var_list:
-                if self.numerical_method=="Bisect":
+
+                if self.simulation_options["numerical_method"]=="Bisect":
                     solver=isolver_martin_bisect.martin_surface_bisect
-                elif self.numerical_method=="Brent minimisation":
+                elif self.simulation_options["numerical_method"]=="Brent minimisation":
                     solver=isolver_martin_brent.martin_surface_brent
-                elif self.numerical_method=="Newton-Raphson":
+                elif self.simulation_options["numerical_method"]=="Newton-Raphson":
                     solver=isolver_martin_newton.martin_surface_newton
                 time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
         #else:
         #    time_series=isolver_martin.martin_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.voltages, -1, self.bounds_val)
-        if "no_transient" in var_list:
+        if self.simulation_options["no_transient"]!=False:
             new_array=np.zeros(len(time_series))
             time_series=np.array(time_series)
             new_array[self.time_idx]=time_series[self.time_idx]
             time_series=new_array
-        time_series=np.flip(np.multiply(time_series, -1))##np.multiply(time_series,-1)
+        #time_series=np.flip(np.multiply(time_series, -1))##np.multiply(time_series,-1)
 
 
         if flag2=='fourier':
