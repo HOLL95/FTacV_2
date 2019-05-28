@@ -68,6 +68,21 @@ class params:
             self.alpha=value
         elif flag == 'non_dim':
             self.alpha=value
+    def ce1(self, value, flag):
+        if flag=='re_dim':
+            self.CdlE1=value
+        elif flag == 'non_dim':
+            self.CdlE1=value
+    def ce2(self, value, flag):
+        if flag=='re_dim':
+            self.CdlE2=value
+        elif flag == 'non_dim':
+            self.CdlE2=value
+    def ce3(self, value, flag):
+        if flag=='re_dim':
+            self.CdlE3=value
+        elif flag == 'non_dim':
+            self.CdlE3=value
     def __init__(self,param_dict):
         self.E_0=param_dict['E_0']
         self.k_0=param_dict['k_0']
@@ -107,8 +122,10 @@ class params:
                             'sampling_freq':self.sf,
                             'v':self.V,
                             'phase':self.Phase,
-                            'alpha':self.Alpha
-
+                            'alpha':self.Alpha,
+                            "cdle1":self.ce1,
+                            "cdle2":self.ce2,
+                            "cdle3":self.ce3,
 
                         }
 

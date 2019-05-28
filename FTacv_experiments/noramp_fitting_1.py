@@ -99,9 +99,9 @@ for i in range(1,8):
                 'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
                 'Ru': [0, 1e3],  #     (uncompensated resistance ohms)
                 'Cdl': [0,1e-4], #(capacitance parameters)
-                'CdlE1': [0,0.1],#0.000653657774506,
-                'CdlE2': [0,0.1],#0.000245772700637,
-                'CdlE3': [0,0.1],#1.10053945995e-06,
+                'CdlE1': [-10,10],#0.000653657774506,
+                'CdlE2': [-1,1],#0.000245772700637,
+                'CdlE3': [-0.1,0.1],#1.10053945995e-06,
                 'gamma': [1e-11,1e-9],
                 'k_0': [0, 1e4], #(reaction rate s-1)
                 'alpha': [0, 1.0],
@@ -148,7 +148,7 @@ for i in range(1,8):
 
             dummy_times=np.linspace(0, 1, len(likelihood_func))
             #noramp_fit.optim_list=['Ru', 'omega']
-            noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl', 'gamma', 'omega', 'phase', 'alpha']
+            noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl', 'CdlE1','CdlE2','CdlE3', 'gamma', 'omega', 'phase', 'alpha']
             param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
             for i in range(0, noramp_fit.n_parameters()):
                 param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]

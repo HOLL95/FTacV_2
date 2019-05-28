@@ -133,8 +133,6 @@ class single_electron:
             normed_params=self.change_norm_group(parameters, "un_norm")
         else:
             normed_params=copy.deepcopy(parameters)
-        #print normed_params
-        print self.optim_list[0], normed_params[0]
         for i in range(0, len(self.optim_list)):
                 self.nd_param.non_dimensionalise(self.optim_list[i], normed_params[i])
         if "debug_time" in var_list:
@@ -162,7 +160,7 @@ class single_electron:
             plt.plot(current, ((residual_gradient)))
             plt.show()
         else:
-            print self.nd_param.CdlE1, self.nd_param.CdlE3
+            #print self.nd_param.CdlE1, self.nd_param.CdlE3
             if "numerical_method" in var_list:
                 if self.numerical_method=="Bisect":
                     solver=isolver_martin_bisect.martin_surface_bisect
@@ -173,6 +171,7 @@ class single_electron:
                 time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
             else:
                 time_series=isolver_martin.martin_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.voltages, -1, self.bounds_val)
+
         if "no_transient" in var_list:
             new_array=np.zeros(len(time_series))
             time_series=np.array(time_series)
