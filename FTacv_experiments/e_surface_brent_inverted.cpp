@@ -161,7 +161,6 @@ py::object martin_surface_brent(const double Cdl, const double CdlE, const doubl
     double Itot_bound =bounds_val;//std::max(10*Cdlp*delta_E*omega/Nt,1.0);
     //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
     Itot0 =Cdlp*dE;
-    cout<<"c++"<<Itot0<<"\n";
     Itot1 = Itot0;
     for (int n_out = 0; n_out < t.size(); n_out++) {
         while (t1 < t[n_out]) {

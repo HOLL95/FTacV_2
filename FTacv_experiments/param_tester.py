@@ -27,11 +27,11 @@ param_list={
     'v': 10.36e-3,   #       (scan rate s^-1)
     'area': 0.03, #(electrode surface area cm^2)
     'Ru': 0.1,  #     (uncompensated resistance ohms)
-    'Cdl': 1e-5, #(capacitance parameters)
+    'Cdl': 1e-6, #(capacitance parameters)
     'CdlE1': 0,#0.000653657774506,
     'CdlE2': 0,#0.000245772700637,
     'CdlE3': 0,#1.10053945995e-06,
-    'gamma': 2e-11,          # (surface coverage per unit area)
+    'gamma': 1e-10,          # (surface coverage per unit area)
     'k_0': 10, #(reaction rate s-1)
     'alpha': 0.4,
     'sampling_freq' : (1.0/100),
@@ -42,7 +42,7 @@ param_list={
 length=int(1e4)
 solver="inverted"
 bounds=4000
-param_list['E_0']=(param_list['E_reverse']-param_list['E_start'])/2
+param_list['E_0']=0.3#(param_list['E_reverse']-param_list['E_start'])/2
 harmonic_range=range(1,12,1)
 noramp_params=single_electron(param_list, params_for_opt, harmonic_range, 0.5)
 noramp_params.initial_val=0
@@ -65,7 +65,7 @@ num_params=5
 param_ranges={
 "E_0_range":[0.2, 0.3, 0.4, 0.5, 0.6],#np.linspace(estart+(de/2), ereverse-(de/2), num_params),
 "k_0_range":[0.2,2, 20, 200, 2000],
-"Ru_range":[1, 10, 100, 1000, 5000],#[10,100,500,1000,1500,2000,2500,3000],
+"Ru_range":[1, 10, 100, 1000, 2000],#[10,100,500,1000,1500,2000,2500,3000],
 "Cdl_range":[0,1e-7, 1e-6, 1e-5, 1e-4],
 "CdlE1_range":[-2, -0.5,0, 0.5, 2],
 "CdlE2_range":[-0.05, -0.01,0, 0.01, 0.05],
@@ -152,6 +152,7 @@ for i in range(0, 8): #len(param_keys)
             parameter_val=param_ranges[param_keys[i]][k]
             time_series=noramp_params.simulate([parameter_val, 8.94], noramp_params.time_vec, "no", "timeseries", "no")
             time_series=time_series[end]
+            time_series=np.multiply(time_series, noramp_params.nd_param.c_I0)
             plt.plot(voltages,time_series, label=parameter_val)
 
 
