@@ -57,7 +57,7 @@ struct e_surface_fun {
     //}
 
     double residual(const double In1) const {
-        return Cdlp*(dt*dE-Ru*(In1-In0)) + dt*R*(E-Ru*In1) - dt*In1 + gamma*(u1n1-u1n0);
+        return Cdlp*(dt*dE-Ru*(In1-In0)) + dt*R*(E-Ru*In1) - dt*In1 - gamma*(u1n1-u1n0);
         //return Cdlp*(dt*dE) - dt*In1 + (u1n1-u1n0) + Ru*E*dt;
     }
     double residual_gradient(const double In1) const {

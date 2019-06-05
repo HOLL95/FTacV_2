@@ -3,6 +3,7 @@ import isolver_martin
 import isolver_martin_newton
 import isolver_martin_bisect
 import isolver_martin_brent
+import isolver_inverted
 import math
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,6 +39,11 @@ class single_electron:
         return 1
     def n_parameters(self):
         return len(self.optim_list)
+    def define_voltages(self):
+        voltages=np.zeros(len(self.time_vec))
+        for i in range(0, len(self.time_vec)):
+            voltages[i]=isolver_noramp.et(self.nd_param.E_start, self.nd_param.E_reverse,self.nd_param.nd_omega, self.nd_param.phase, (self.time_vec[i]))
+        return voltages
     def pass_extra_data(self, time_series, fourier):
         self.secret_data_time_series=time_series
         self.secret_data_fourier=fourier
@@ -96,8 +102,8 @@ class single_electron:
             likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
             results=np.zeros(len(top_hat), dtype=complex)
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
-        #comp_results=np.append(np.real(results), np.imag(results))
-        return (results)
+        comp_results=np.append(np.real(results), np.imag(results))
+        return (comp_results)
     def times(self, num_points):
         self.num_points=num_points
         #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
@@ -135,10 +141,18 @@ class single_electron:
             normed_params=copy.deepcopy(parameters)
         for i in range(0, len(self.optim_list)):
                 self.nd_param.non_dimensionalise(self.optim_list[i], normed_params[i])
+        if self.numerical_method=="Bisect":
+            solver=isolver_martin_bisect.martin_surface_bisect
+        elif self.numerical_method=="Brent minimisation":
+            solver=isolver_martin_brent.martin_surface_brent
+        elif self.numerical_method=="Newton-Raphson":
+            solver=isolver_martin_newton.martin_surface_newton
+        elif self.numerical_method=="inverted":
+            solver=isolver_inverted.martin_surface_brent
         if "debug_time" in var_list:
-            print self.debug_time
+            print "the debug time is", self.debug_time
 
-            time_series=isolver_martin.martin_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.debug_time, self.bounds_val)
+            time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.initial_val, self.time_vec, self.debug_time, self.bounds_val, (self.time_vec[1]-self.time_vec[0]))
 
             current=time_series[0]
             residual=time_series[1]
@@ -149,46 +163,56 @@ class single_electron:
             bounds_val=max(10*self.nd_param.Cdl*self.nd_param.d_E*self.nd_param.nd_omega/Nt,1.0)
             middle_index=(len(time_series[0])-1)/2 + 1
             I0=residual[middle_index]
-            plt.subplot(1,2,1)
-            plt.title("Residual, t="+str(self.debug_time))
-            plt.plot(current, residual)
-            plt.axvline(time_series[3][1], color="red",linestyle="--")
-            plt.axvline(time_series[3][0]+time_series[3][2], color="black", linestyle="--")
-            plt.axvline(time_series[3][0]-time_series[3][2], color="black",linestyle="--")
-            plt.subplot(1,2,2)
-            plt.title("Residual gradient")
-            plt.plot(current, ((residual_gradient)))
-            plt.show()
-        else:
-            #print self.nd_param.CdlE1, self.nd_param.CdlE3
-            if "numerical_method" in var_list:
-                if self.numerical_method=="Bisect":
-                    solver=isolver_martin_bisect.martin_surface_bisect
-                elif self.numerical_method=="Brent minimisation":
-                    solver=isolver_martin_brent.martin_surface_brent
-                elif self.numerical_method=="Newton-Raphson":
-                    solver=isolver_martin_newton.martin_surface_newton
-                time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+            if self.numerical_method=="Newton-Raphson":
+                plt.subplot(1,2,1)
+                plt.title("Residual, t="+str(self.debug_time))
+                plt.plot(current, residual)
+                plt.axvline(time_series[3][1], color="red",linestyle="--")
+                plt.axvline(time_series[3][0]+time_series[3][2], color="black", linestyle="--")
+                plt.axvline(time_series[3][0]-time_series[3][2], color="black",linestyle="--")
+                plt.subplot(1,2,2)
+                plt.title("Residual gradient")
+                plt.plot(current, ((residual_gradient)))
+                plt.show()
             else:
-                time_series=isolver_martin.martin_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.voltages, -1, self.bounds_val)
+                plt.plot(current, residual, label=round(self.debug_time, 4))
+                #plt.axvline(time_series[3][0]+time_series[3][2], color="black",linestyle="--")
+                #plt.axvline(time_series[3][0]-time_series[3][2],color="black",linestyle="--")
 
+        else:
+            #print self.nd_param.alpha#print self.nd_param.CdlE1, self.nd_param.CdlE3
+
+            time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.initial_val, self.time_vec, -1, self.bounds_val,(self.time_vec[1]-self.time_vec[0]))
+            #time_series2=isolver_brent_inverted.martin_surface_brent(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+            #plt.subplot(1,2,1)
+            #plt.plot(self.time_vec, time_series, label="positive faradaic current")
+            #plt.plot(self.time_vec, time_series2, label= "negative faradaic current")
+            #plt.legend()
+            #plt.subplot(1,2,2)
+            #plt.plot(self.time_vec, time_series, label="non-flipped")
+            #plt.plot(self.time_vec, np.flip(time_series), label="flipped")
+            #plt.legend()
+            #plt.show()
         if "no_transient" in var_list:
             new_array=np.zeros(len(time_series))
             time_series=np.array(time_series)
             new_array[self.time_idx]=time_series[self.time_idx]
             time_series=new_array
-        #time_series=np.flip(time_series)
+        time_series=np.array(time_series)
+        time_series=time_series*-1
+        #time_series=np.flip(time_series*-1)
+        #time_series=(time_series*-1)
         if flag2=='fourier':
             filtered=self.kaiser_filter(time_series)
             if test=="yes":
-                plt.subplot(1,3,1)
-                plt.title("Likelihood function ("+str(self.harmonic_range[0])+"-"+str(self.harmonic_range[-1])+"harmonics)")
-                plt.plot(self.secret_data_fourier[:len(filtered)/15], label="data")
-                plt.plot(filtered[:len(filtered)/15] , alpha=0.7, label="numerical")
-                plt.legend()
-                fourier_end=12
-                plt.title("Fourier spectrum up to harmonic " + str(fourier_end))
-                self.fourier_plotter(self.secret_data_time_series, "Data", time_series, "numerical", fourier_end)
+                #plt.subplot(1,3,1)
+                #plt.title("Likelihood function ("+str(self.harmonic_range[0])+"-"+str(self.harmonic_range[-1])+"harmonics)")
+                plt.plot(self.secret_data_fourier, label="data")
+                plt.plot(filtered , alpha=0.7, label="numerical")
+                #plt.legend()
+                #fourier_end=12
+                #plt.title("Fourier spectrum up to harmonic " + str(fourier_end))
+                #self.fourier_plotter(self.secret_data_time_series, "Data", time_series, "numerical", fourier_end)
                 plt.show()
 
             return filtered

@@ -57,7 +57,7 @@ struct e_surface_fun {
     }
 
     double residual(const double In1) const {
-        return Cdlp*(dt*dE-Ru*(In1-In0)) + dt*R*(E-Ru*In1) - dt*In1 + gamma*(u1n1-u1n0);
+        return Cdlp*(dt*dE-Ru*(In1-In0)) + dt*R*(E-Ru*In1) - dt*In1 - gamma*(u1n1-u1n0);
         //return Cdlp*(dt*dE) - dt*In1 + (u1n1-u1n0) + Ru*E*dt;
     }
     double residual_gradient(const double In1) const {
@@ -103,7 +103,7 @@ double dEdt(double omega, double phase, double delta_E, double t){
 std::vector<vector<double>> NR_function_surface(e_surface_fun &bc, double I_0, double I_minus, double I_bounds){
   cout<<"called"<<"\n";
   double interval=0.01;
-  int width=(1/interval)*10;
+  int width=I_bounds/interval;
   double start=I_0-(width*interval);
   std::vector<vector<double>> diagnostic;
   diagnostic.resize(4, std::vector<double> ((width*2)+1));

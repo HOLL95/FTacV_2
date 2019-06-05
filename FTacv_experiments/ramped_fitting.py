@@ -102,18 +102,21 @@ ramp_fit.optim_list=[]#['E_0', 'k_0', 'Ru', 'Cdl','gamma', 'omega']
 ramp_fit.pass_extra_data(current_results, False)
 chains=np.load("ramped_results")
 means=[np.mean(chains[:, 5000:, x]) for x in np.arange(0,len(ramp_fit.optim_list))]
-ramp_fit.optim_list=['E_0', 'k_0', 'Ru', 'Cdl','gamma', 'omega', 'phase']
+ramp_fit.optim_list=['E_0', 'k_0', 'Ru', 'Cdl','gamma', 'omega', 'phase','alpha']
 
 means=[1.92982653e-01, 3.52336088e+00, 4.99999999e+02, 4.46761269e-15, 1.30400052e-10, 8.89117171e+00]#830.276082338262
 nums=1
 rus=np.linspace(100, 5, nums)
 
-means=[2.41444794e-01, 6.17012486e-01, 1.04871338e+01, 3.51866140e-06, 4.49820672e-10, 8.94073199e+00, 1.39984093e-01]#, 4.56684293e+00]
-
+#means=[2.41444794e-01, 6.17012486e-01, 1.04871338e+01, 3.51866140e-06, 4.49820672e-10, 8.94073199e+00, 1.39984093e-01]#, 4.56684293e+00]
+means=[0.23625846615525375, 282.2528765716474, 150.32008743633, 7.233724535557822e-06, 6.1720248951887567e-11, 8.940733606629868, 1.4114762214007537, 0.4]
+#means=[0.2724040125447893, 121.81748721519133, 1207.1166997969588, 5.295143515633727e-06, 1.1895825195613567e-10, 8.940848161584075, 1.8671427717422973, 0.10000000005872724]
 test=ramp_fit.simulate(means,frequencies, "no", "timeseries", "no" )
 
+plt.show()
+
 plt.plot(current_results)
-plt.plot(test)
+plt.plot(np.array(test)*-1)
 plt.show()
 noise_p=0.02
 noise_level=max(test)*noise_p
@@ -143,7 +146,7 @@ param_bounds={
     'phase' : [0, 2*math.pi]
 }
 
-ramp_fit.optim_list=['k_0', 'Ru', 'Cdl','gamma', 'omega', 'phase']
+ramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl',"CdlE1",'gamma', 'omega', 'phase', 'alpha']
 param_boundaries=np.zeros((2, ramp_fit.n_parameters()))
 for i in range(0, ramp_fit.n_parameters()):
     param_boundaries[0][i]=param_bounds[ramp_fit.optim_list[i]][0]
@@ -151,15 +154,15 @@ for i in range(0, ramp_fit.n_parameters()):
 
 dummy_times=np.linspace(0, 1, len(likelihood_func))
 ramp_fit.define_boundaries(param_boundaries)
-#cmaes_problem=pints.SingleOutputProblem(ramp_fit, time_results, current_results)
+cmaes_problem=pints.SingleOutputProblem(ramp_fit, time_results, current_results)
 ramp_fit.label="cmaes"
 #ramp_fit.method_label="timeseries"
-cmaes_problem=pints.SingleOutputProblem(ramp_fit, dummy_times, fourier_test)
+#cmaes_problem=pints.SingleOutputProblem(ramp_fit, dummy_times, fourier_test)
 plt.plot(test)
 plt.show()
 score = pints.SumOfSquaresError(cmaes_problem)
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(param_boundaries[0]))], [np.ones(len(param_boundaries[0]))])
-x0=ramp_fit.change_norm_group(means[1:], "norm")#abs(np.random.rand(ramp_fit.n_parameters()))
+x0=abs(np.random.rand(ramp_fit.n_parameters()))#ramp_fit.change_norm_group(means[1:], "norm")#abs(np.random.rand(ramp_fit.n_parameters()))
 ramp_fit.pass_extra_data(current_results, likelihood_func)
 for i in range(0, 1):
     found_parameters, found_value=pints.optimise(

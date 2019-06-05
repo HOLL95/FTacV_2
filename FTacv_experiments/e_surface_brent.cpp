@@ -78,13 +78,13 @@ struct e_surface_fun {
         dexp12 = Ru*alpha*exp11;
 
         const double u1n1_top = dt*k0*exp11 + u1n0;
-        const double du1n1_top = dt*k0*dexp11;
-        const double denom = (dt*k0*exp11 + dt*k0*exp12 + 1);
-        const double ddenom = dt*k0*(dexp11 + dexp12);
+        //const double du1n1_top = dt*k0*dexp11;
+        const double denom = (dt*k0*exp11 +dt*k0*exp12 + 1);
+        //const double ddenom = dt*k0*(dexp11 + dexp12);
         const double tmp = 1.0/denom;
-        const double tmp2 = pow(tmp,2);
+        //const double tmp2 = pow(tmp,2);
         u1n1 = u1n1_top*tmp;
-        du1n1 = -(u1n1_top*ddenom + du1n1_top*denom)*tmp2;
+        //du1n1 = -(u1n1_top*ddenom + du1n1_top*denom)*tmp2;
 
         Cdlp = Cdl*(1.0 + CdlE*Ereduced + CdlE2*Ereduced2 + CdlE3*Ereduced3);
         //Cdlp = Cdl*(1.0 + CdlE*Edc+ CdlE2*pow(Edc,2)+ CdlE3*pow(Edc,3));
@@ -176,7 +176,7 @@ py::object martin_surface_brent(const double Cdl, const double CdlE, const doubl
             ///if (max_it == max_iterations) throw std::runtime_error("non-linear solve for Itot[n+1] failed, max number of iterations reached");
             Itot1=sol.first;
             bc.update_temporaries(Itot1);
-            //cout<<" "<<bc.residual(sol.first)<<" "<<bc.residual(sol.second)<<" "<<sol.first<<" "<<sol.second<<"\n";
+          //  cout<<bc.residual(sol.first)<<"\n";
             if (debug!=-1 && debug<t[n_out]){
               std::vector<vector<double>> diagnostic=NR_function_surface(bc, Itot1, Itot0, Itot_bound);
               cout<<Cdlp*(dt*dE-Ru*(Itot1-Itot0))<<" "<<gamma*(bc.u1n1-bc.u1n0)<<"\n";

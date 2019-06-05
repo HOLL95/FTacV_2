@@ -60,7 +60,7 @@ for i in range(1,8):
                 'num_peaks': 50
             }
             de_novo=True
-            no_transient=True
+            no_transient=False
             param_list['E_0']=2.36504746e-01#(param_list['E_reverse']-param_list['E_start'])/2
             harmonic_range=np.arange(1,9,1)
             noramp_fit=single_electron(param_list, params_for_opt, harmonic_range, 1.0)
@@ -72,8 +72,8 @@ for i in range(1,8):
             current_results=current_results[:desired_length]/noramp_fit.nd_param.c_I0
             #current_results=np.multiply(current_results, -1)
             #current_results=np.flip(current_results)
-            plt.plot(time_results, current_results)
-            plt.show()
+            #plt.plot(time_results, current_results)
+            #plt.show()
 
             voltage_results=voltage_results[:desired_length]/noramp_fit.nd_param.c_E0
             noramp_fit.voltages=voltage_results
@@ -91,23 +91,23 @@ for i in range(1,8):
             noramp_fit.test_frequencies=plot_frequencies
             likelihood_func=noramp_fit.kaiser_filter(current_results)
             noramp_fit.optim_list=[]
-            noramp_fit.bounds_val=10000
+            noramp_fit.bounds_val=max(current_results)/10
             test1=noramp_fit.simulate([],frequencies, "no", "timeseries", "y" )#
             noramp_fit.pass_extra_data(current_results, likelihood_func)
             param_bounds={
                 'E_0':[0.1, 0.4],#[param_list['E_start'],param_list['E_reverse']],
                 'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
-                'Ru': [0, 1e3],  #     (uncompensated resistance ohms)
+                'Ru': [0, 3e3],  #     (uncompensated resistance ohms)
                 'Cdl': [0,1e-4], #(capacitance parameters)
-                'CdlE1': [-10,10],#0.000653657774506,
-                'CdlE2': [-1,1],#0.000245772700637,
-                'CdlE3': [-0.1,0.1],#1.10053945995e-06,
+                'CdlE1': [-2,2],#0.000653657774506,
+                'CdlE2': [-0.1,0.1],#0.000245772700637,
+                'CdlE3': [-0.05,0.05],#1.10053945995e-06,
                 'gamma': [1e-11,1e-9],
                 'k_0': [0, 1e4], #(reaction rate s-1)
-                'alpha': [0, 1.0],
+                'alpha': [0.1, 0.9],
                 'phase' : [0, 2*math.pi]
             }
-            noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'gamma','omega', 'phase']
+            noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'CdlE1','CdlE2','gamma','omega', 'phase']
             #'E_0', 'k_0' 'Ru', 'Cdl','gamma'
             harm_class=harmonics(harmonic_range, noramp_fit.nd_param.omega*noramp_fit.nd_param.c_T0, 0.1)
             data_harmonics=harm_class.generate_harmonics(time_results, current_results)
@@ -117,10 +117,30 @@ for i in range(1,8):
             means=[param_list[key] for key in noramp_fit.optim_list]
             means=[2.36958426e-01, 9.99999958e+03, 1.58653602e+02, 1.50881707e-05, 6.37371838e-11, 8.94639042e+00,4.71238898038469+math.pi]#9.58653602e+02#8.56987286e+02#1.62644682e+02
             means2=[2.36958426e-01, 9.99999958e+03, 1.58653602e+02, 1.50881707e-05, 6.37371838e-11, 8.94639042e+00,4.71238898038469]
+            inv_cdl_means_black=[0.022625846615525375, 282.2528765716474, 1565.32008743633, 7.233724535557822e-06, 0.0432328629721388, 0.00039664847059295294, 1.1720248951887567e-10, 8.940733606629868, 1.4114762214007537, 1.6792883395043496e-06]
+            inv_cdl_means_red=[0.22575364212262392, 197.9059067794697, 1939.9502453947625, 1.289377946400102e-05, 0.03672445932151236, -0.0003299037569737262, -1.1304027040442977e-05, 8.677149187960197e-11, 8.940937039777493, 1.5224066122900832, 1.3243217094538047e-08]
+            inv_cdl_means_plain=[0.22344327433678945, 254.09569103628488, 2984.336479477873, 5.488953773286254e-06, 0.030523464663436695, 0.0002271156823834275, 5.924975465640491e-11, 8.940811663124784, 1.4491256345114145, 4.729976917695294e-09]
+            ninv_cdl_means_red=[0.246621930911074, 78.45894300594209, 2818.6004999485217, 7.053324170917987e-07, -0.673031618742151, 0.09868327578110173, 1.4176466564885793e-10, 8.941170291777855, 2.034070948215475, 0.10000000056123999]
+            ninv_cdl_means_black=[0.3377987278522049, 0.6859606100145135, 1.8875103483928486e-07, 3.014005878620766e-17, -0.46299465435793596, 0.09248778871530525, 1.9193462079072354e-10, 8.940774114010635, 2.6487798785179644, 0.3622924808900895]
+            ninv_cdl_means_plain=[0.2660521816274963, 92.25120877213567, 2565.953228350421, 2.0728666764722445e-06, 0.09437714769471839, 0.0029509862465845887, 6.681522712570585e-11, 8.940948180628803, 1.8838080498194736, 0.10000000581935341]
+
             #means=[3.47301042e-01, 2.24569221e+03, 4.50000000e+05, 1.00000000e-06, 7.70422832e-10, 8.92022169e+00]
             #means=means4_8
-            test=noramp_fit.simulate(means,frequencies, "no", "timeseries", "no" )
-            test2=noramp_fit.simulate(means2,frequencies, "no", "timeseries", "no" )
+            alpha_range=[0.05, 0.2,0.5, 0.7, 0.95]
+            noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'CdlE1','CdlE2','gamma','omega', 'phase','alpha']
+            test2=noramp_fit.simulate(inv_cdl_means_black,frequencies, "no", "timeseries", "no" )
+            noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'CdlE1','CdlE2','gamma','omega', 'phase','alpha']
+            test=noramp_fit.simulate(ninv_cdl_means_black,frequencies, "no", "timeseries", "no" )
+            plt.subplot(1,2,1)
+            plt.plot(test2)
+            #plt.plot(np.flip(test2))
+            plt.plot(current_results)
+            plt.subplot(1,2,2)
+            plt.plot(np.flip(test))
+            plt.plot(current_results)
+            plt.show()
+            #test=np.flip(np.array(test)*-1)
+            #test2=noramp_fit.simulate(means2,frequencies, "no", "timeseries", "no" )
             noise_val=0.05
             noise_max=max(test)*noise_val
             noise=np.random.normal(0,noise_max, len(test))
@@ -141,14 +161,16 @@ for i in range(1,8):
             plt.legend()
             plt.show()
             #noramp_fit.simulate(means,frequencies, "no", "fourier", "yes" )
-            #exp_harmonics=harm_class.generate_harmonics(time_results, test)
+            exp_harmonics=harm_class.generate_harmonics(time_results, np.flip(test))
 
-            #harm_class.plot_harmonics(time_results, exp_harmonics,data_harmonics, "abs")
-            #harm_class.harmonics_and_time(time_results, exp_harmonics, test, current_results, data_harmonics, "numerical", "data")
+            harm_class.plot_harmonics(time_results, exp_harmonics,data_harmonics, "phased")
+            harm_class.harmonics_and_time(time_results, exp_harmonics, np.flip(test), current_results, data_harmonics, "numerical", "data")
+            exp_harmonics=harm_class.generate_harmonics(time_results, test2)
+            harm_class.harmonics_and_time(time_results, exp_harmonics, test2, current_results, data_harmonics, "numerical", "data")
 
             dummy_times=np.linspace(0, 1, len(likelihood_func))
             #noramp_fit.optim_list=['Ru', 'omega']
-            noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl', 'CdlE1','CdlE2','CdlE3', 'gamma', 'omega', 'phase', 'alpha']
+            noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl','CdlE1','CdlE2','gamma', 'omega', 'phase', "alpha"]
             param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
             for i in range(0, noramp_fit.n_parameters()):
                 param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]
@@ -176,9 +198,9 @@ for i in range(1,8):
                                                                 method=pints.CMAES
                                                                 )
                 cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
-                print cmaes_results
-                print [param_list[key] for key in noramp_fit.optim_list]
+                print list(cmaes_results)
                 cmaes_time=noramp_fit.simulate(found_parameters,time_results, "optimise", "timeseries", "no" )
+                print folder
                 plt.plot(time_results, true_data)
                 plt.plot(time_results, cmaes_time)
                 plt.show()

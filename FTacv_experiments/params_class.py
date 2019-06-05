@@ -52,7 +52,6 @@ class params:
             self.sampling_freq=value/((2*math.pi)/self.nd_omega)
         elif flag == 'non_dim':
             self.sampling_freq=value*((2*math.pi)/self.nd_omega)
-            print "Changing the sampling freq to " + str(self.sampling_freq)
     def V(self, value, flag):
         if flag=='re_dim':
             self.v=value

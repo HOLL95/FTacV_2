@@ -113,7 +113,7 @@ class single_electron:
         new_array[self.time_idx]=current[self.time_idx]
         return  new_array
 
-    def simulate(self,parameters, frequencies, flag='optimise', flag2='fourier', test="no"):
+    def simulate(self,parameters, frequencies, flag='optimise', flag2='timeseries', test="no"):
         var_list=vars(self)
         if len(parameters)!= len(self.optim_list):
             raise ValueError('Wrong number of parameters')
