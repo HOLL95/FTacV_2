@@ -101,6 +101,7 @@ class params:
         self.area=param_dict['area']
         self.phase=param_dict['phase']
         self.num_peaks=param_dict['num_peaks']
+        self.time_end=param_dict['time_end']
         self.T=(273+25)
         self.F=96485.3328959
         self.R=8.314459848
@@ -118,21 +119,20 @@ class params:
                             'd_e' :self.de,
                             'ru':self.ru,
                             'gamma':self.Gamma,
-                            'sampling_freq':self.sf,
-                            'v':self.V,
-                            'phase':self.Phase,
-                            'alpha':self.Alpha,
-                            "cdle1":self.ce1,
-                            "cdle2":self.ce2,
-                            "cdle3":self.ce3,
+                            'sampling_freq':self.sf
+                            }
+        keys=param_dict.keys()
+        for i in range(0, len(keys)):
+            if keys[i].lower() in self.method_switch:
+                self.non_dimensionalise(keys[i], param_dict[keys[i]])
 
-                        }
 
     def non_dimensionalise(self, name,name_value):
-        if name.lower() in self.method_switch:
-            function = self.method_switch[name.lower()]
-            function(name_value, 'non_dim')
+        function = self.method_switch[name.lower()]
+        function(name_value, 'non_dim')
     def re_dimensionalise(self,name, name_value):
         if name.lower() in self.method_switch:
                 function = self.method_switch[name.lower()]
                 function(name_value, 're_dim')
+        else:
+            raise ValueError(name + " not in param list!")

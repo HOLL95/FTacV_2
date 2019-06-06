@@ -14,8 +14,9 @@ class single_electron:
     def __init__(self, dim_paramater_dictionary, simulation_options, other_values):
         key_list=dim_paramater_dictionary.keys()
         self.nd_param=params(dim_paramater_dictionary)
-        for i in range(0, len(key_list)):
-            self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
+        #for i in range(0, len(key_list)):
+        #    self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
+        self.nd_param=params(dim_paramater_dictionary)
         self.dim_dict=copy.deepcopy(dim_paramater_dictionary)
         self.nd_dict=self.nd_param.__dict__
         self.simulation_options=simulation_options
@@ -80,7 +81,7 @@ class single_electron:
         L=len(time_series_1)
         window=np.hanning(L)
         time_series_1=np.multiply(time_series_1, window)
-        time_series_2=np.multiply(time_series_2, window)
+        time_series_2=np.multiply(time,e_series_2, window)
         f=np.fft.fftfreq(len(time_series_1), self.time_vec[1]-self.time_vec[0])
         true_harm=self.nd_param.omega*self.nd_param.c_T0
         last_harm=(fourier_end*true_harm)+(self.nd_param.omega*self.filter_val)
@@ -123,8 +124,8 @@ class single_electron:
             likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
             results=np.zeros(len(top_hat), dtype=complex)
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
-        comp_results=np.append(np.real(results), np.imag(results))
-        return (comp_results)
+        #comp_results=np.append(np.real(results), np.imag(results))
+        return (results)
     def times(self, num_points):
         self.num_points=num_points
         #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
@@ -160,7 +161,8 @@ class single_electron:
         else:
             normed_params=copy.deepcopy(parameters)
         for i in range(0, len(self.optim_list)):
-                self.nd_param.non_dimensionalise(self.optim_list[i], normed_params[i])
+            self.dim_dict[self.optim_list[i]]=normed_params[i]
+        self.nd_param=params(self.dim_dict)
         if self.simulation_options["numerical_method"]=="Bisect":
             solver=isolver_martin_bisect.martin_surface_bisect
         elif self.simulation_options["numerical_method"]=="Brent minimisation":
@@ -207,14 +209,13 @@ class single_electron:
             new_array[self.time_idx]=time_series[self.time_idx]
             time_series=new_array
         time_series=np.array(time_series)
-        #time_series=np.flip(time_series)
+        time_series=np.flip(time_series)
         #time_series=time_series*-1
         #time_series=np.flip(time_series*-1)
         #time_series=(time_series*-1)
-
-        if self.simulation_options["likelihood"]=='fourier' or likelihood=="fourier":
+        if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)
-            if self.simulation_options["test"]==True or test==True:
+            if (self.simulation_options["test"]==True or test==True):
                 #plt.subplot(1,3,1)
                 #plt.title("Likelihood function ("+str(self.harmonic_range[0])+"-"+str(self.harmonic_range[-1])+"harmonics)")
                 plt.plot(self.secret_data_fourier, label="data")
@@ -226,8 +227,8 @@ class single_electron:
                 plt.show()
 
             return filtered
-        elif self.simulation_options["likelihood"]=='timeseries'or likelihood=="timeseries":
-            if self.simulation_options["test"]==True or test==True:
+        elif self.simulation_options["likelihood"]=='timeseries':
+            if self.simulation_options["test"]==True:
                 plt.plot(time_series)
                 plt.plot(self.secret_data_time_series, alpha=0.7)
                 plt.show()
