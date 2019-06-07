@@ -124,8 +124,8 @@ class single_electron:
             likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
             results=np.zeros(len(top_hat), dtype=complex)
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
-        #comp_results=np.append(np.real(results), np.imag(results))
-        return (results)
+        comp_results=np.append(np.real(results), np.imag(results))
+        return (comp_results)
     def times(self, num_points):
         self.num_points=num_points
         #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
@@ -209,7 +209,7 @@ class single_electron:
             new_array[self.time_idx]=time_series[self.time_idx]
             time_series=new_array
         time_series=np.array(time_series)
-        time_series=np.flip(time_series)
+        #time_series=np.flip(time_series)
         #time_series=time_series*-1
         #time_series=np.flip(time_series*-1)
         #time_series=(time_series*-1)

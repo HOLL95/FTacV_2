@@ -15,12 +15,13 @@ params_for_opt=[]
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 data_path="/Experiment_data"
-folder="/Carbon"
-Method ="GC4_3"
+folder="/Carbon"#"/Gold/Large"
+Method ="GC4_1"#GoldLarge_1"
 type="current"
 type2="voltage"
 path=dir_path+data_path+folder
 files= os.listdir(path)
+print files
 for data in files:
     if (Method in data)  and (type in data):
         results=np.loadtxt(path+"/"+data)
@@ -41,7 +42,7 @@ param_list={
     'omega':8.94,#8.88480830076,  #    (frequency Hz)
     'd_E': 300e-3,   #(ac voltage amplitude - V) freq_range[j],#
     'v': 10.36e-3,   #       (scan rate s^-1)
-    'area': 0.1, #(electrode surface area cm^2)
+    'area': 0.09, #(electrode surface area cm^2)
     'Ru': 1.0,  #     (uncompensated resistance ohms)
     'Cdl': 1e-5, #(capacitance parameters)
     'CdlE1': 0,#0.000653657774506,
@@ -62,7 +63,7 @@ simulation_options={
     "numerical_debugging": False,
     "experimental_fitting":True,
     "test":False,
-    "likelihood":likelihood_options[0],
+    "likelihood":likelihood_options[1],
     "numerical_method": solver_list[1],
     "label": "MCMC",
     "optim_list":[]
@@ -74,7 +75,7 @@ other_values={
     "experiment_current": current_results,
     "experiment_voltage":voltage_results,
     "bounds_val":2000,
-    "signal_length":int(2e4),
+    "signal_length":int(1e4),
 }
 param_list['E_0']=2.36504746e-01#(param_list['E_reverse']-param_list['E_start'])/2
 noramp_fit=single_electron(param_list, simulation_options, other_values)
@@ -128,6 +129,7 @@ noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'CdlE1','CdlE2','gamma','omega'
 test2=noramp_fit.simulate(inv_cdl_means_black,frequencies, normalise=False, likelihood="timeseries", test=False )
 noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'CdlE1','CdlE2','gamma','omega', 'phase','alpha']
 test=noramp_fit.simulate(means,frequencies, normalise=False, likelihood="timeseries", test=False )
+noramp_fit.simulation_options["likelihood"]="fourier"
 #test=np.flip(np.array(test)*-1)
 #test2=noramp_fit.simulate(means2,frequencies, "no", "timeseries", "no" )
 noise_val=0.00
@@ -168,13 +170,15 @@ for i in range(0, noramp_fit.n_parameters()):
     param_boundaries[1][i]=param_bounds[noramp_fit.optim_list[i]][1]
 noramp_fit.define_boundaries(param_boundaries)
 
-fourier_arg=likelihood_func
+fourier_arg=fourier_test1
+plt.plot(fourier_test1)
+plt.show()
 true_data=current_results
 #if simulation_options["experimental_fitting"]==False:
 #elif simulation_options["experimental_fitting"]==True:
     #fourier_arg=likelihood_func
     #true_data=current_results
-noramp_fit.pass_extra_data(true_data, fourier_arg)
+noramp_fit.pass_extra_data(synthetic_data, fourier_arg)
 if simulation_options["likelihood"]=="timeseries":
     cmaes_problem=pints.SingleOutputProblem(noramp_fit, time_results, true_data)
 elif simulation_options["likelihood"]=="fourier":
@@ -195,17 +199,17 @@ for i in range(0, 1):
 cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
 print list(cmaes_results)
 noramp_fit.simulation_options["likelihood"]="timeseries"
-cmaes_time=noramp_fit.simulate(found_parameters,time_results, normalise=True, likelihood="timeseries", test=False )
+cmaes_time=noramp_fit.simulate(found_parameters,time_results, normalise=True, likelihood="timeseries", test=True )
 print folder
-plt.plot(time_results, true_data)
+plt.plot(time_results, synthetic_data)
 plt.plot(time_results, cmaes_time)
-plt.show()
-plt.plot(voltage_results, true_data)
-plt.plot(voltage_results, cmaes_time)
-plt.show()
-plt.plot(voltage_results, true_data)
-plt.plot(voltage_results, np.flip(cmaes_time))
-plt.show()
+#plt.show()
+#plt.plot(voltage_results, true_data)
+#plt.plot(voltage_results, cmaes_time)
+#plt.show()
+#plt.plot(voltage_results, true_data)
+#plt.plot(voltage_results, np.flip(cmaes_time))
+#plt.show()
 #hann=np.hanning(len(cmaes_time))
 #f=np.fft.fftfreq(len(time_results), time_results[1]-time_results[0])
 #Y1=np.multiply(hann, cmaes_time)
@@ -218,7 +222,7 @@ plt.show()
 #plt.plot(f,abs(y2))
 #plt.show()
 cmaes_harmonics=harm_class.generate_harmonics(time_results, cmaes_time)
-harm_class.plot_harmonics(time_results, cmaes_harmonics, data_harmonics,"phased", "numerical", "data")
+harm_class.plot_harmonics(time_results, cmaes_harmonics, data_harmonics,"abs", "numerical", "data")
 cmaes_prediction=noramp_fit.simulate(found_parameters,frequencies, normalise=True, likelihood="timeseries", test=True )
 
 print cmaes_results

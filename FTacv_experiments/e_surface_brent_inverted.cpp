@@ -127,14 +127,13 @@ std::vector<vector<double>> NR_function_surface(e_surface_fun &bc, double I_0, d
 }
 
 
-py::object martin_surface_brent(const double Cdl, const double CdlE, const double CdlE2, const double CdlE3, const double omega,const  double phase, const double pi, const double alpha, const double Estart,const  double Ereverse, const double delta_E, const double Ru, const double gamma,const double E0, const double k0, const double final_val, std::vector<double> t, double debug=-1, double bounds_val=10, double dt = -1) {
+py::object martin_surface_brent(const double Cdl, const double CdlE, const double CdlE2, const double CdlE3, const double omega,const  double phase, const double pi, const double alpha, const double Estart,const  double Ereverse, const double delta_E, const double Ru, const double gamma,const double E0, const double k0, const double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
     const double R = 0;
     const int Ntim = 200.0;
     const int digits_accuracy = std::numeric_limits<double>::digits;
     const double max_iterations = 100;
-    if (dt<0){
-      dt = (1.0/Ntim)*2*pi/omega;
-    }
+    const double dt = (1.0/Ntim)*2*pi/omega;
+
     const double Tmax = final_val;
     const int Nt = Tmax/dt;
     std::vector<double> Itot;
@@ -161,7 +160,6 @@ py::object martin_surface_brent(const double Cdl, const double CdlE, const doubl
     double Itot_bound =bounds_val;//std::max(10*Cdlp*delta_E*omega/Nt,1.0);
     //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
     Itot0 =Cdlp*dE;
-    cout<<"c++"<<Itot0<<"\n";
     Itot1 = Itot0;
     for (int n_out = 0; n_out < t.size(); n_out++) {
         while (t1 < t[n_out]) {
