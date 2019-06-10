@@ -209,7 +209,8 @@ class single_electron:
             new_array[self.time_idx]=time_series[self.time_idx]
             time_series=new_array
         time_series=np.array(time_series)
-        #time_series=np.flip(time_series)
+        time_series=np.flip(time_series)
+        #time_series=np.flip(time_series, axis=0)
         #time_series=time_series*-1
         #time_series=np.flip(time_series*-1)
         #time_series=(time_series*-1)
