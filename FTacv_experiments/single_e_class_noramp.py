@@ -28,6 +28,7 @@ class single_electron:
         if simulation_options["no_transient"]!=False:
             self.no_transient=simulation_options["no_transient"]
         if self.simulation_options["experimental_fitting"]==True:
+            print "changing this"
             other_values["experiment_time"]=other_values["experiment_time"][:other_values["signal_length"]]/self.nd_param.c_T0
             other_values["experiment_current"]=other_values["experiment_current"][:other_values["signal_length"]]/self.nd_param.c_I0
             other_values["experiment_voltage"]=other_values["experiment_voltage"][:other_values["signal_length"]]/self.nd_param.c_E0
@@ -124,7 +125,7 @@ class single_electron:
             likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
             results=np.zeros(len(top_hat), dtype=complex)
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
-        comp_results=np.append(np.real(results), np.imag(results))
+        comp_results=np.append((np.real(results)), np.imag(results))
         return (comp_results)
     def times(self, num_points):
         self.num_points=num_points
@@ -144,7 +145,7 @@ class single_electron:
         variables=vars(self.nd_param)
         for key in variables.keys():
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
-                print key, variables[key], type(variables[key])
+                print key, variables[key]
     def transient_remover(self, start_time, times, current):
         time_end=self.time_vec[-1]-start_time
         time_idx=np.where((times>start_time) & (times<time_end))
@@ -152,11 +153,19 @@ class single_electron:
         new_array=np.zeros(len(current))
         new_array[self.time_idx]=current[self.time_idx]
         return  new_array
-
-    def simulate(self,parameters, frequencies, normalise =False, likelihood=None, test=False):
+    def test_vals(self, parameters, likelihood, test=False):
+        orig_likelihood=self.simulation_options["likelihood"]
+        orig_label=self.simulation_options["label"]
+        self.simulation_options["likelihood"]=likelihood
+        self.simulation_options["label"]="MCMC"
+        results=self.simulate(parameters, self.frequencies, test)
+        self.simulation_options["likelihood"]=orig_likelihood
+        self.simulation_options["label"]=orig_label
+        return results
+    def simulate(self,parameters, frequencies, test=False):
         if len(parameters)!= len(self.optim_list):
             raise ValueError('Wrong number of parameters')
-        if self.simulation_options["label"]=="cmaes" or normalise==True:
+        if self.simulation_options["label"]=="cmaes":
             normed_params=self.change_norm_group(parameters, "un_norm")
         else:
             normed_params=copy.deepcopy(parameters)
@@ -209,10 +218,10 @@ class single_electron:
             new_array[self.time_idx]=time_series[self.time_idx]
             time_series=new_array
         time_series=np.array(time_series)
-        time_series=np.flip(time_series)
+        #time_series=np.flip(time_series)
         #time_series=np.flip(time_series, axis=0)
         #time_series=time_series*-1
-        #time_series=np.flip(time_series*-1)
+        time_series=np.flip(time_series*-1)
         #time_series=(time_series*-1)
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)
@@ -230,7 +239,12 @@ class single_electron:
             return filtered
         elif self.simulation_options["likelihood"]=='timeseries':
             if self.simulation_options["test"]==True:
-                plt.plot(time_series)
-                plt.plot(self.secret_data_time_series, alpha=0.7)
+
+                plt.subplot(1,2,1)
+                plt.plot(self.other_values["experiment_voltage"],time_series)
+                plt.plot(self.other_values["experiment_voltage"],self.secret_data_time_series, alpha=0.7)
+                plt.subplot(1,2,2)
+                plt.plot(self.other_values["experiment_time"],time_series)
+                plt.plot(self.other_values["experiment_time"],self.secret_data_time_series, alpha=0.7)
                 plt.show()
             return (time_series)

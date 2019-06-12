@@ -15,8 +15,8 @@ params_for_opt=[]
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 data_path="/Experiment_data"
-folder="/Black"
-Method ="O_"
+folder="/Gold/Large"
+Method ="ramp"
 type="current"
 type2="voltage"
 path=dir_path+data_path+folder
@@ -79,7 +79,7 @@ param_list={
 }
 
 param_list['E_0']=0.23471918314326964
-harmonic_range=np.arange(2,9,1)
+harmonic_range=np.arange(1,7,1)
 ramp_fit=single_electron(param_list, params_for_opt, harmonic_range, 1.0)
 ramp_fit.label="cmaes"
 ramp_fit.voltages=voltages[0::dec_amount, 1]/ramp_fit.nd_param.c_E0
@@ -102,16 +102,41 @@ ramp_fit.optim_list=[]#['E_0', 'k_0', 'Ru', 'Cdl','gamma', 'omega']
 ramp_fit.pass_extra_data(current_results, False)
 chains=np.load("ramped_results")
 means=[np.mean(chains[:, 5000:, x]) for x in np.arange(0,len(ramp_fit.optim_list))]
-ramp_fit.optim_list=['E_0', 'k_0', 'Ru', 'Cdl','gamma', 'omega', 'phase','alpha']
+ramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl','gamma', 'omega', 'phase', 'alpha']
+param_bounds={
+    'E_0':[0.1, 0.4],#[param_list['E_start'],param_list['E_reverse']],
+    'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
+    'Ru': [0, 3e3],  #     (uncompensated resistance ohms)
+    'Cdl': [0,1e-3], #(capacitance parameters)
+    'CdlE1': [0,0.1],#0.000653657774506,
+    'CdlE2': [0,0.1],#0.000245772700637,
+    'CdlE3': [0,0.1],#1.10053945995e-06,
+    'gamma': [1e-11,3e-10],
+    'k_0': [0, 1e4], #(reaction rate s-1)
+    'alpha': [0.4, 0.6],
+    'phase' : [0, 2*math.pi]
+}
 
+ramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl',"CdlE1",'gamma', 'omega', 'phase', 'alpha']
+param_boundaries=np.zeros((2, ramp_fit.n_parameters()))
+for i in range(0, ramp_fit.n_parameters()):
+    param_boundaries[0][i]=param_bounds[ramp_fit.optim_list[i]][0]
+    param_boundaries[1][i]=param_bounds[ramp_fit.optim_list[i]][1]
+
+ramp_fit.define_boundaries(param_boundaries)
 means=[1.92982653e-01, 3.52336088e+00, 4.99999999e+02, 4.46761269e-15, 1.30400052e-10, 8.89117171e+00]#830.276082338262
 nums=1
 rus=np.linspace(100, 5, nums)
-
+#means=[0.22208976591097446, 201.6807767106978, 483.1316790794867, 3.5015499185518753e-06, 0.2156766062320017, -0.009049085046592256, 5.492949141433732e-11, 8.94049922393891, 1.351767218967106, 0.10000000523828821]
+means=[0.2501936847262157, 22.64822551278051, 2461.4602089893583, 6.059030551308567e-06, 1.8583709981749646e-10, 8.962676747582703, 6.2831853071777255, 0.5999999999991238]
+#red_means=[0.22295062642899205, 121.04541335168555, 1-.6674204005187, 1.6670692490719283e-05, 0.24476583564685983, -0.008301112241595243, 2.6976028493476134e-10, 8.940804545547282, 1.6190153660042008, 0.10000000000128142]
+#black_means=[0.2418526066207318, 79.49497809429795, 282.4172511616141, 3.209734359933155e-05, 0.0004973930724098776, 4.966911579984472e-10, 8.959303985045931, 0.36653570687316744, 0.5999999999555181]
+gold_means=[0.2634471594256482, 182.46968143921333, 251.52483060070875, 9.948258528983337e-05, 0.021593193177659842, 6.486044409236416e-10, 8.941736782729983, 1.6346028726977888, 0.10000000000199746]
+carbon_means=[0.257740555023939, 357.3609131669447, 382.2055036116924, 5.440677575193328e-05, 0.026386317796860403, 1.9319598326712751e-10, 8.94098189688349, 1.406746302896052, 0.1000000005558953]
 #means=[2.41444794e-01, 6.17012486e-01, 1.04871338e+01, 3.51866140e-06, 4.49820672e-10, 8.94073199e+00, 1.39984093e-01]#, 4.56684293e+00]
-means=[0.23625846615525375, 282.2528765716474, 150.32008743633, 7.233724535557822e-06, 6.1720248951887567e-11, 8.940733606629868, 1.4114762214007537, 0.4]
+#means=[0.23625846615525375, 282.2528765716474, 150.32008743633, 7.233724535557822e-06, 6.1720248951887567e-11, 8.940733606629868, 1.4114762214007537, 0.4]
 #means=[0.2724040125447893, 121.81748721519133, 1207.1166997969588, 5.295143515633727e-06, 1.1895825195613567e-10, 8.940848161584075, 1.8671427717422973, 0.10000000005872724]
-test=ramp_fit.simulate(means,frequencies, "no", "timeseries", "no" )
+test=ramp_fit.simulate(gold_means,frequencies, "yes", "timeseries", "no" )
 
 plt.show()
 
@@ -131,29 +156,9 @@ plt.plot(time_results, current_results, alpha=0.7)
 plt.legend()
 plt.show()
 harm_class.plot_harmonics(time_results, test_harmonics, data_harmonics,"abs", "numerical", "data")
+harm_class.harmonics_and_time(time_results, test_harmonics, test, data_time=current_results, harmonics2=data_harmonics,label1="numerical", label2="data", title="Black")
 likelihood_func=ramp_fit.kaiser_filter(current_results)
-param_bounds={
-    'E_0':[0.1, 0.4],#[param_list['E_start'],param_list['E_reverse']],
-    'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
-    'Ru': [0, 1e4],  #     (uncompensated resistance ohms)
-    'Cdl': [0,1e-3], #(capacitance parameters)
-    'CdlE1': [0,0.1],#0.000653657774506,
-    'CdlE2': [0,0.1],#0.000245772700637,
-    'CdlE3': [0,0.1],#1.10053945995e-06,
-    'gamma': [1e-11,1e-9],
-    'k_0': [0, 1e4], #(reaction rate s-1)
-    'alpha': [0.4, 0.6],
-    'phase' : [0, 2*math.pi]
-}
 
-ramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl',"CdlE1",'gamma', 'omega', 'phase', 'alpha']
-param_boundaries=np.zeros((2, ramp_fit.n_parameters()))
-for i in range(0, ramp_fit.n_parameters()):
-    param_boundaries[0][i]=param_bounds[ramp_fit.optim_list[i]][0]
-    param_boundaries[1][i]=param_bounds[ramp_fit.optim_list[i]][1]
-
-dummy_times=np.linspace(0, 1, len(likelihood_func))
-ramp_fit.define_boundaries(param_boundaries)
 cmaes_problem=pints.SingleOutputProblem(ramp_fit, time_results, current_results)
 ramp_fit.label="cmaes"
 #ramp_fit.method_label="timeseries"
@@ -173,7 +178,7 @@ for i in range(0, 1):
                                                 )
     x0=found_parameters
     print found_parameters
-
+print folder
 ramp_fit.simulate(found_parameters, frequencies, "optimise", "fourier", "yes")
 ramp_fit.simulate(found_parameters, frequencies, "optimise", "timeseries", "yes")
 cmaes_results=ramp_fit.change_norm_group(found_parameters, "un_norm")

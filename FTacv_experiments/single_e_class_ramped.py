@@ -8,10 +8,8 @@ import time
 class single_electron:
     def __init__(self, dim_paramater_dictionary, optim_list, harmonic_range, filter_val):
         key_list=dim_paramater_dictionary.keys()
-        self.nd_param=params(dim_paramater_dictionary)
-        for i in range(0, len(key_list)):
-            self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
-        nd_dict=self.nd_param.__dict__
+        self.dim_dict=dim_paramater_dictionary
+        self.nd_param=params(self.dim_dict)
         self.optim_list=optim_list
         self.harmonic_range=harmonic_range
         self.num_harmonics=len(harmonic_range)
@@ -123,14 +121,17 @@ class single_electron:
             normed_params=copy.deepcopy(parameters)
         #print normed_params
         for i in range(0, len(self.optim_list)):
-                self.nd_param.non_dimensionalise(self.optim_list[i], normed_params[i])
+            self.dim_dict[self.optim_list[i]]=normed_params[i]
+            #print self.optim_list[i]
+        self.nd_param=params(self.dim_dict)
         time_series=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec)
         if "no_transient" in var_list:
             new_array=np.zeros(len(time_series))
             time_series=np.array(time_series)
             new_array[self.time_idx]=time_series[self.time_idx]
             time_series=new_array
-        time_series=np.flip(time_series)
+        time_series=np.array(time_series)
+        #time_series=np.flip(time_series)
         if flag2=='fourier':
             filtered=self.kaiser_filter(time_series)
             if test=="yes":

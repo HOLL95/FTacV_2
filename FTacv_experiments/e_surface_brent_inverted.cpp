@@ -78,18 +78,18 @@ struct e_surface_fun {
         dexp12 = Ru*alpha*exp11;
 
         const double u1n1_top = dt*k0*exp11 + u1n0;
-        //const double du1n1_top = dt*k0*dexp11;
-        const double denom = (dt*k0*exp11 +dt*k0*exp12 + 1);
-        //const double ddenom = dt*k0*(dexp11 + dexp12);
+        const double du1n1_top = dt*k0*dexp11;
+        const double denom = (dt*k0*exp11 - dt*k0*exp12 + 1);
+        const double ddenom = dt*k0*(dexp11 + dexp12);
         const double tmp = 1.0/denom;
-        //const double tmp2 = pow(tmp,2);
+        const double tmp2 = pow(tmp,2);
         u1n1 = u1n1_top*tmp;
-        //du1n1 = -(u1n1_top*ddenom + du1n1_top*denom)*tmp2;
+        du1n1 = -(u1n1_top*ddenom + du1n1_top*denom)*tmp2;
 
         Cdlp = Cdl*(1.0 + CdlE*Ereduced + CdlE2*Ereduced2 + CdlE3*Ereduced3);
         //Cdlp = Cdl*(1.0 + CdlE*Edc+ CdlE2*pow(Edc,2)+ CdlE3*pow(Edc,3));
     }
-};
+    };
 double et(double E_start, double omega, double phase, double delta_E,double t){
 	double E_t=(E_start+delta_E)+delta_E*(std::sin((omega*t)+phase));
 
