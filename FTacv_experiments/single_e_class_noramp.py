@@ -221,7 +221,7 @@ class single_electron:
         #time_series=np.flip(time_series)
         #time_series=np.flip(time_series, axis=0)
         #time_series=time_series*-1
-        time_series=np.flip(time_series*-1)
+        time_series=np.flip(time_series*-1, axis=0)
         #time_series=(time_series*-1)
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)

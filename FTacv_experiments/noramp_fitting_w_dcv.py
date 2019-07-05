@@ -31,35 +31,51 @@ dec_amount=8
 current_results=results[0::dec_amount, 1]
 time_results=results[0::dec_amount, 0]
 voltage_results=results2[0::dec_amount, 1]
-#plt.plot(time_results, current_results)
-#plt.show()
+folder="/DcV/Black"
+Method ="PostScan"
+type="asA_3"
+path=dir_path+data_path+folder
+files= os.listdir(path)
+print files
+for data in files:
+    print data
+    if (Method in data)  and (type in data):
+        print Method
+        file=open(path+"/"+data)
+        results=np.loadtxt(file, skiprows=1)
 
-current_results=results[0::dec_amount, 1]
-time_results=results[0::dec_amount, 0]
-voltage_results=results2[0::dec_amount, 1]
+dcv_time=results[:,0]
+dcv_voltage=results[:,1]
+dcv_current=results[:,2]
+
 de=300e-3
 estart=260e-3-de
 ereverse=estart+2*de
 param_list={
-    'E_start': estart, #(starting dc voltage - V)
-    'E_reverse': ereverse,
+    "E_0":0.2,
+    'E_start': min(dcv_voltage), #(starting dc voltage - V)
+    'E_reverse': max(dcv_voltage),
     'omega':8.94,#8.88480830076,  #    (frequency Hz)
-    'd_E': 300e-3,   #(ac voltage amplitude - V) freq_range[j],#
-    'v': 10.36e-3,   #       (scan rate s^-1)
+    'd_E': (max(dcv_voltage)-min(dcv_voltage))/2,#0.29986318517473376,   #(ac voltage amplitude - V) freq_range[j],#
+    'v': 29.8e-3,   #       (scan rate s^-1)
     'area': 0.07, #(electrode surface area cm^2)
-    'Ru': 1.0,  #     (uncompensated resistance ohms)
+    'Ru': 0.0,  #     (uncompensated resistance ohms)
     'Cdl': 1e-5, #(capacitance parameters)
-    'CdlE1': 0,#0.000653657774506,
-    'CdlE2': 0,#0.000245772700637,
+    'CdlE1': 0.12039117654624398,#0.000653657774506,
+    'CdlE2': -0.004548957421349489,#0.000245772700637,
     'CdlE3': 0,#1.10053945995e-06,
-    'gamma': 1e-10,          # (surface coverage per unit area)
-    'k_0': 10, #(reaction rate s-1)
+    'gamma': 1e-10,
+    'R1':0,
+    "original_gamma":1e-10,       # (surface coverage per unit area)
+    'k_0': 10000.0, #(reaction rate s-1)
     'alpha': 0.5,
     'sampling_freq' : (1.0/200),
-    'phase' : 3*(math.pi/2),
+    'phase' : 3*math.pi/2,
+    "cap_phase":3*math.pi/2,
     "time_end": None,
     'num_peaks': 50
 }
+
 solver_list=["Bisect", "Brent minimisation", "Newton-Raphson", "inverted"]
 likelihood_options=["timeseries", "fourier"]
 simulation_options={
@@ -67,10 +83,13 @@ simulation_options={
     "numerical_debugging": False,
     "experimental_fitting":True,
     "test": False,
+    "dcv":False,
     "likelihood":likelihood_options[0],
     "numerical_method": solver_list[1],
+    "potential_flip":False,
     "label": "MCMC",
-    "optim_list":[]
+    "optim_list":[],
+    "nondim_options":"martin"
 }
 other_values={
     "filter_val": 0.5,
@@ -78,14 +97,88 @@ other_values={
     "experiment_time": time_results,
     "experiment_current": current_results,
     "experiment_voltage":voltage_results,
-    "bounds_val":2000,
+    "bounds_val":20,
     "signal_length":int(2e4),
 }
-param_list['E_0']=2.36504746e-01#(param_list['E_reverse']-param_list['E_start'])/2
+
 noramp_fit=single_electron(param_list, simulation_options, other_values)
 time_results=noramp_fit.other_values["experiment_time"]
 current_results=noramp_fit.other_values["experiment_current"]
 voltage_results=noramp_fit.other_values["experiment_voltage"]
+dcv_time=dcv_time/noramp_fit.nd_param.c_T0
+dcv_voltage=dcv_voltage/noramp_fit.nd_param.c_E0
+noramp_fit.nd_param.nd_omega=2*math.pi/dcv_time[-1]
+noramp_fit.time_vec=dcv_time
+def dim_voltage(voltage):
+    return np.multiply(voltage, noramp_fit.nd_param.c_E0)
+def dim_current(current):
+    return np.multiply(current, noramp_fit.nd_param.c_I0)
+def dim_time(time):
+    return np.multiply(time, noramp_fit.nd_param.c_T0)
+noramp_voltages=noramp_fit.define_voltages()
+def k_vals(param_vals, voltages):
+    kox=np.zeros(len(voltages))
+    kred=np.zeros(len(voltages))
+    pot_coeff=(1-param_vals.alpha)#*param_vals.F)/(param_vals.R*param_vals.T)
+    for i in range(0, len(voltages)):
+        kox[i]=param_vals.k_0*np.exp(pot_coeff*(voltages[i]-param_vals.E_0))
+        kred[i]=param_vals.k_0*np.exp(-param_vals.alpha*(voltages[i]-param_vals.E_0))
+    return kox, kred
+trans_idx=np.where(dcv_voltage==max(dcv_voltage))
+dcv_deriv=np.ones(len(dcv_voltage))
+dcv_deriv[trans_idx[0][0]:]=-1
+noramp_deriv=noramp_fit.define_voltage_derivs()
+
+plt.subplot(2,3,1)
+plt.ylabel("potential")
+plt.xlabel("time")
+plt.title("Input potential")
+plt.plot(dim_time(dcv_time), dim_voltage(dcv_voltage), label="DcV")
+plt.plot(dim_time(noramp_fit.time_vec), dim_voltage(noramp_voltages),label="Sinsusoid")
+d_ox, d_red=k_vals(noramp_fit.nd_param, dcv_voltage)
+n_ox, n_red=k_vals(noramp_fit.nd_param, noramp_voltages)
+plt.subplot(2,3,2)
+plt.title("Capactitance")
+plt.ylabel("current")
+plt.xlabel("time")
+plt.plot(dim_time(dcv_time), dim_current(np.multiply(noramp_fit.nd_param.Cdl, dcv_deriv)),label="DcV")
+plt.plot(dim_time(dcv_time), dim_current(np.multiply(noramp_fit.nd_param.Cdl, noramp_deriv)),label="Sinsusoid")
+plt.subplot(2,3,3)
+plt.xlabel("time")
+plt.ylabel("K_ox")
+plt.title("K_ox")
+plt.plot(dim_time(dcv_time), d_ox,label="DcV")
+plt.plot(dim_time(dcv_time), n_ox,label="Sinsusoid")
+plt.subplot(2,3,4)
+plt.xlabel("time")
+plt.ylabel("K_red")
+plt.title("K_red")
+plt.plot(dim_time(dcv_time), d_red,label="DcV")
+plt.plot(dim_time(dcv_time), n_red,label="Sinsusoid")
+plt.legend()
+noramp_fit.optim_list=["omega"]
+omega=(1/dcv_time[-1])/(noramp_fit.nd_param.c_T0)
+test5=np.array(noramp_fit.test_vals([omega], "timeseries", test=False))
+noramp_fit.simulation_options["dcv"]=True
+test_dcv=np.array(noramp_fit.test_vals([omega], "timeseries", test=False))
+plt.subplot(2,3,5)
+plt.xlabel("time")
+plt.ylabel("current")
+plt.title("I vs t")
+plt.plot(dim_time(dcv_time), dim_current(test_dcv), label="DCV")
+plt.plot(dim_time(dcv_time), dim_current(test5), label="Sinusoidal")
+plt.subplot(2,3,6)
+plt.title("I vs V")
+plt.xlabel("potential")
+plt.ylabel("current")
+plt.plot(dim_voltage(dcv_voltage), dim_current(test_dcv), label="DCV")
+plt.plot(dim_voltage(noramp_voltages), dim_current(test5), label="Sinusoidal")
+plt.legend()
+print (noramp_fit.nd_param.E_reverse-noramp_fit.nd_param.E_start)
+plt.show()
+
+
+
 likelihood_func=noramp_fit.kaiser_filter(current_results)
 test_voltages=noramp_fit.define_voltages()
 noramp_fit.optim_list=[]
@@ -96,14 +189,20 @@ param_bounds={
     'E_0':[0.1, 0.4],#[param_list['E_start'],param_list['E_reverse']],
     'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
     'Ru': [0, 3e3],  #     (uncompensated resistance ohms)
-    'Cdl': [0,1e-4], #(capacitance parameters)
+    'Cdl': [-1e-4,1e-4], #(capacitance parameters)
     'CdlE1': [-2,2],#0.000653657774506,
     'CdlE2': [-0.1,0.1],#0.000245772700637,
     'CdlE3': [-0.05,0.05],#1.10053945995e-06,
     'gamma': [1e-11,4e-10],
     'k_0': [0, 1e4], #(reaction rate s-1)
     'alpha': [0.1, 0.9],
-    'phase' : [0, 2*math.pi]
+    'phase' : [0, 2*math.pi],
+    "delta_E_fac":[0, 10],
+    "E_start":[estart-0.1, estart+0.1],
+    "d_E":[de-0.2, de+0.2],
+    "E_reverse":[ereverse-0.1, estart+0.1],
+    "R1":[-20, 20],
+    "cap_phase":[0, 2*math.pi],
 }
 #'E_0', 'k_0' 'Ru', 'Cdl','gamma'
 harm_class=harmonics(other_values["harmonic_range"], noramp_fit.nd_param.omega*noramp_fit.nd_param.c_T0, 0.1)
@@ -112,7 +211,7 @@ data_harmonics=harm_class.generate_harmonics(time_results, current_results)
 #means2=[9.30117566e+03,1.16018837e-10,1.05469193e-05,1.63103403e+03,8.94085502e+00]
 means=[2.36958426e-01, 9.99999958e+03, 1.58653602e+02, 1.50881707e-05, 6.37371838e-11, 8.94639042e+00,4.71238898038469+math.pi]#9.58653602e+02#8.56987286e+02#1.62644682e+02
 means2=[2.36958426e-01, 9.99999958e+03, 1.58653602e+02, 1.50881707e-05, 6.37371838e-11, 8.94639042e+00,4.71238898038469]
-inv_cdl_means_black=[0.022625846615525375, 282.2528765716474, 1565.32008743633, 7.233724535557822e-06, 0.0432328629721388, 0.00039664847059295294, 1.1720248951887567e-10, 8.940733606629868, 1.4114762214007537, 1.6792883395043496e-06]
+inv_cdl_means_black=[0.22203942952341157, 203.6285119344839, 1001.985168065059, 6.128027486594265e-06, 0.3343079097317636, -0.014983806648834253, 9.105420735807112e-11, 8.940712492157193, 1.3094080333312328, 0.10000000276427351]
 inv_cdl_means_red=[0.22575364212262392, 197.9059067794697, 1939.9502453947625, 1.289377946400102e-05, 0.03672445932151236, -0.0003299037569737262, -1.1304027040442977e-05, 8.677149187960197e-11, 8.940937039777493, 1.5224066122900832, 1.3243217094538047e-08]
 inv_cdl_means_plain=[0.22344327433678945, 254.09569103628488, 2984.336479477873, 5.488953773286254e-06, 0.030523464663436695, 0.0002271156823834275, 5.924975465640491e-11, 8.940811663124784, 1.4491256345114145, 4.729976917695294e-09]
 ninv_cdl_means_red=[0.246621930911074, 78.45894300594209, 2818.6004999485217, 7.053324170917987e-07, -0.673031618742151, 0.09868327578110173, 1.4176466564885793e-10, 8.941170291777855, 2.034070948215475, 0.10000000056123999]
@@ -124,18 +223,48 @@ GoldLarge2=[0.26039781003762164, 166.631058358149, 567.8337430471373, 4.32046168
 GoldLarge3=[0.2584206501377829, 157.11505190360802, 2749.660863756472, 8.802056383466946e-06, 0.026489956471885456, 6.70238627793266e-11, 8.94154301432433, 1.6692873967481876, 0.10000000058720873]
 GC4_2=[0.2568519753260954, 384.6885351368988, 724.4994785328084, 2.9476802894874582e-05, 0.022962092313146165, 1.0351489419094205e-10, 8.940907182492527, 1.4050637398962589, 0.10000000000006122]
 GC4_1=[0.257740555023939, 357.3609131669447, 382.2055036116924, 5.440677575193328e-05, 0.026386317796860403, 1.9319598326712751e-10, 8.94098189688349, 1.406746302896052, 0.1000000005558953]
-#GC4_1=[0.2577409256040222, 357.41199962004214, 208.34836991645813, 9.981079168966267e-05, 0.02638451283800336, 3.544175619714202e-10, 8.940982084935797, 1.4067453971726527, 0.10000000009569851]
+GC4_1=[0.25148325666267257, 233.44600048611264, 399.39999363795624, 3.463022847975771e-05, 0.12039117654624398, -0.004548957421349489, 1.1280142656646058e-10, 8.941034780935478, 1.282448184922395, 0.10000000564839953]
 GC4_3=[0.25636968524906856, 393.3143126102424, 221.27196795533328, 9.809762640551237e-05, 0.021975801504555026, 3.453653918573443e-10, 8.940903530763926, 1.4078216880545553, 0.10000000000000066]
-means=[0.22, 500, 200, 5e-5, 1e-10, 8.94, 3*math.pi/2, 0.5]
-means=[0.217740555023939, 357.3609131669447, 382.2055036116924, 5.440677575193328e-05, 0, 1.9319598326712751e-10, 8.94098189688349, 3/2*math.pi, 0.9000000005558953]
+means=[0.1921478539197466, 0.7853762508786296, 5.03227283373487e-09, -6.992214243482618e-06, -0.21749819741640009, 0.012045436082600197, 1.8746663502462067e-10, 8.940815815310303, 5.762022934017678, 0.6144672085690598]
+#means=[0.217740555023939, 357.3609131669447, 382.2055036116924, 5.440677575193328e-05, 0, 1.9319598326712751e-10, 8.94098189688349, 3/2*math.pi, 0.9000000005558953]
 #means=[3.47301042e-01, 2.24569221e+03, 4.50000000e+05, 1.00000000e-06, 7.70422832e-10, 8.92022169e+00]
-noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'CdlE1',"CdlE2",'gamma','omega', 'phase','alpha']
-#noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'gamma','omega', 'phase','alpha']
-test=noramp_fit.test_vals(inv_cdl_means_black, "timeseries", test=False)
-plt.title("MEANS")
-plt.plot(voltage_results*noramp_fit.nd_param.c_E0, test)
-plt.plot(voltage_results*noramp_fit.nd_param.c_E0, current_results)
+noramp_fit.optim_list=["Cdl","gamma","phase"]#['E_0', 'k_0', 'Ru','Cdl', 'CdlE1',"CdlE2",'gamma','omega', 'phase','alpha']
+#noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl', 'CdlE1',"CdlE2",'gamma', 'omega', 'phase', "alpha"]
+noramp_fit.optim_list=["phase"]
+
+test5=np.array(noramp_fit.test_vals([param_list["phase"]], "timeseries", test=False))
+test6=np.flip(noramp_fit.test_vals([1.282448184922395], "timeseries", test=False)*-1)
+noramp_fit.optim_list=["Cdl","gamma","phase"]
+test_6_cdl=noramp_fit.test_vals([1e-5, 0,param_list["phase"]], "timeseries", test=False)
+test_6_gamma=noramp_fit.test_vals([0, 1e-10,param_list["phase"]], "timeseries", test=False)
+test_5_gamma=noramp_fit.test_vals([0, 1e-10,1.282448184922395], "timeseries", test=False)
+#test_6_cdl=np.flip(test_6_cdl*-1)
+test_6_gamma=np.flip(test_6_gamma*-1)
+#plt.plot(test_6_cdl, label ="Capacative")
+plt.subplot(1,2,1)
+plt.plot(time_results, test_6_gamma, label="flipped")
+plt.plot(time_results, test_5_gamma,label="normal")
+plt.subplot(1,2,2)
+plt.plot(voltage_results, test_6_gamma, label="flipped")
+plt.plot(voltage_results, test_5_gamma,label="normal")
+#plt.plot(test5, label="both")
+plt.legend()
+#start_time, end_time=harm_class.peak_plots(time_results,voltage_results, test5,noramp_fit.nd_param.nd_omega, "normal")
+#harm_class.peak_plots(time_results,voltage_results, np.flip(test6*-1),noramp_fit.nd_param.nd_omega, "flipped",start_time, end_time, 2)
 plt.show()
+test=test5
+#plt.subplot(1,2,1)
+#plt.plot(test3)
+#plt.plot(test2)
+#plt.plot(test4)
+#plt.subplot(1,2,2)
+#plt.plot(test6)
+#plt.plot(test7)
+#plt.plot(test5)
+#plt.show()
+#test=np.multiply(test, noramp_fit.nd_param.c_I0)
+#noramp_fit.simulation_options["numerical_method"]="inverted"
+#test2=noramp_fit.test_vals([math.pi], "timeseries", test=False)
 noise_val=0.02
 noise_max=max(test)*noise_val
 noise=np.random.normal(0,noise_max, len(test))
@@ -155,7 +284,8 @@ harm_class.harmonics_and_voltages(np.multiply(time_results, noramp_fit.nd_param.
 
 dummy_times=np.linspace(0, 1, len(likelihood_func))
 #noramp_fit.optim_list=['Ru', 'omega']
-noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl', 'CdlE1','CdlE2','gamma', 'omega', 'phase', "alpha"]
+noramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl', 'CdlE1',"CdlE2",'gamma', 'omega', 'phase', "alpha"]
+
 param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
 for i in range(0, noramp_fit.n_parameters()):
     param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]
@@ -189,11 +319,29 @@ cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
 print list(cmaes_results)
 #noramp_fit.simulate(found_parameters,time_results, normalise=True, likelihood="fourier", test=True )
 cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=True)
-noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=True)
+gamma_idx=noramp_fit.optim_list.index("gamma")
+cdl_idx=noramp_fit.optim_list.index("Cdl")
+gamma_results=copy.deepcopy(cmaes_results)
+cdl_results=copy.deepcopy(cmaes_results)
+gamma_results[gamma_idx]=0
+cdl_results[cdl_idx]=0
+gamma_time=noramp_fit.test_vals(cdl_results, likelihood="timeseries", test=False)
+cdl_time=noramp_fit.test_vals(gamma_results, likelihood="timeseries", test=False)
+
+start_time, end_time=harm_class.peak_plots(time_results,voltage_results, cmaes_time,noramp_fit.nd_param.nd_omega, "numerical")
+harm_class.peak_plots(time_results,voltage_results, current_results,noramp_fit.nd_param.nd_omega, "data", start_time, end_time, 2)
+plt.show()
+
+#noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=True)
 print folder
 print Method
-plt.plot(time_results, true_data)
+#plt.plot(time_results, true_data)
+plt.plot(time_results, cdl_time)
+plt.plot(time_results, gamma_time)
 plt.plot(time_results, cmaes_time)
+plt.show()
+plt.plot(time_results, cmaes_time)
+plt.plot(time_results, true_data)
 plt.show()
 plt.plot(voltage_results, true_data)
 plt.plot(voltage_results, cmaes_time)
@@ -202,7 +350,7 @@ plt.plot(voltage_results, true_data)
 plt.plot(voltage_results, np.flip(cmaes_time, axis=0))
 plt.show()
 cmaes_harmonics=harm_class.generate_harmonics(time_results, cmaes_time)
-harm_class.harmonics_and_voltages(np.multiply(time_results, noramp_fit.nd_param.c_T0),np.multiply(voltage_results, noramp_fit.nd_param.c_E0), np.multiply(cmaes_harmonics, noramp_fit.nd_param.c_I0), np.multiply(cmaes_time, noramp_fit.nd_param.c_I0),  np.multiply(current_results, noramp_fit.nd_param.c_I0), np.multiply(data_harmonics, noramp_fit.nd_param.c_I0), "numerical", "data", "Carbon")
+harm_class.harmonics_and_voltages(np.multiply(time_results, noramp_fit.nd_param.c_T0),np.multiply(voltage_results, noramp_fit.nd_param.c_E0), np.multiply(cmaes_harmonics, noramp_fit.nd_param.c_I0), np.multiply(cmaes_time, noramp_fit.nd_param.c_I0),  np.multiply(current_results, noramp_fit.nd_param.c_I0), np.multiply(data_harmonics, noramp_fit.nd_param.c_I0), "numerical", "data", "Black")
 
 #hann=np.hanning(len(cmaes_time))
 #f=np.fft.fftfreq(len(time_results), time_results[1]-time_results[0])
