@@ -43,7 +43,6 @@ class single_electron:
         last_point= (self.harmonic_range[-1]*self.nd_param.omega)+(self.nd_param.omega*self.filter_val)
         self.test_frequencies=frequencies[np.where(self.frequencies<last_point)]
         self.other_values=other_values
-        print "OMEGA", self.nd_param.CdlE1
     def define_boundaries(self, boundaries):
         self.boundaries=boundaries
     def normalise(self, norm, boundaries):

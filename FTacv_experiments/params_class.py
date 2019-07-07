@@ -4,13 +4,26 @@ class params:
     def e0(self, value, flag):
         if flag=='re_dim':
             self.E_0=value*self.c_E0
+            if self.dispersion==True:
+                self.E0_std=self.E0_std*self.c_E0
+                self.E0_mean=self.E0_mean*self.c_E0
         elif flag == 'non_dim':
             self.E_0=value/self.c_E0
+            if self.dispersion==True:
+                self.E0_std=self.E0_std/self.c_E0
+                self.E0_mean=self.E0_mean/self.c_E0
+
     def k0(self, value, flag):
         if flag=='re_dim':
             self.k_0=value/self.c_T0
+            if self.dispersion==True:
+                self.k0_loc=self.k0_loc/self.c_T0
+                self.k0_scale=self.k0_scale/self.c_T0
         elif flag == 'non_dim':
             self.k_0=value*self.c_T0
+            if self.dispersion==True:
+                self.k0_loc=self.k0_loc*self.c_T0
+                self.k0_scale=self.k0_scale*self.c_T0
     def cdl(self, value, flag):
         if flag=='re_dim':
             self.Cdl=value*self.c_I0*self.c_T0/(self.area*self.c_E0)
@@ -83,6 +96,10 @@ class params:
         elif flag == 'non_dim':
             self.CdlE3=value
     def __init__(self,param_dict):
+        if "E0_std" in param_dict:
+            self.dispersion=True
+        else:
+            self.dispersion=False
         self.E_0=param_dict['E_0']
         self.k_0=param_dict['k_0']
         self.Cdl=param_dict['Cdl']
@@ -102,13 +119,22 @@ class params:
         self.phase=param_dict['phase']
         self.num_peaks=param_dict['num_peaks']
         self.time_end=param_dict['time_end']
+        self.c_Gamma=param_dict['original_gamma']
+        if self.dispersion==True:
+            self.E0_std=param_dict["E0_std"]
+            self.E0_mean=param_dict["E0_mean"]
+            self.k0_shape=param_dict["k0_shape"]
+            self.k0_loc=param_dict["k0_loc"]
+            self.k0_scale=param_dict["k0_scale"]
+            self.k0_range=param_dict["k0_range"]
+
         self.T=(273+25)
         self.F=96485.3328959
         self.R=8.314459848
         self.c_E0=(self.R*self.T)/self.F
         self.c_T0=abs(self.c_E0/self.v)
-        self.c_I0=(self.F*self.area*self.gamma)/self.c_T0
-        self.c_Gamma=param_dict['gamma']
+        self.c_I0=(self.F*self.area*self.c_Gamma)/self.c_T0
+
         self.method_switch={
                             'e_0':self.e0,
                             'k_0':self.k0,
@@ -121,7 +147,7 @@ class params:
                             'gamma':self.Gamma,
                             'sampling_freq':self.sf
                             }
-        keys=param_dict.keys()
+        keys=sorted(param_dict.keys())
         for i in range(0, len(keys)):
             if keys[i].lower() in self.method_switch:
                 self.non_dimensionalise(keys[i], param_dict[keys[i]])
