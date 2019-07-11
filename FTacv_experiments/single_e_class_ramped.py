@@ -46,14 +46,12 @@ class single_electron:
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
     def un_normalise(self, norm, boundaries):
         return (norm*(boundaries[1]-boundaries[0]))+boundaries[0]
-    def dimensionalise_data(self,data, times):
-        data=np.multiply(data, self.nd_param.c_I0)
-        times=np.multiply(times,self.nd_param.c_T0)
-        return times, data
-    def nondim_data(self, data, times):
-        data=np.divide(data, self.nd_param.c_I0)
-        times=np.divide(times,self.nd_param.c_T0)
-        return dtimes, data
+    def i_nondim(self, current):
+        return current*self.nd_param.c_I0
+    def e_nondim(self, potential):
+        return potential*self.nd_param.c_E0
+    def t_nondim(self, time):
+        return time*self.nd_param.c_T0
     def n_outputs(self):
         return 1
     def n_parameters(self):
@@ -138,12 +136,8 @@ class single_electron:
         return  new_array
     def kinetic_dispersion(self):
         k0_weights=np.zeros(self.simulation_options["dispersion_bins"])
-        if (self.nd_param.k0_loc-(self.nd_param.k0_range/2))<0:
-            k_start=0
-            k_end=self.nd_param.k0_range
-        else:
-            k_start=self.nd_param.k0_loc-(self.nd_param.k0_range/2)
-            k_end=self.nd_param.k0_loc+(self.nd_param.k0_range/2)
+        k_start=0
+        k_end=1e4
         k0_vals=np.linspace(k_start,k_end, self.simulation_options["dispersion_bins"])
         k0_weights[0]=lognorm.cdf(k0_vals[0], self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
         for k in range(1, len(k0_weights)):
@@ -178,6 +172,8 @@ class single_electron:
         return results
     def simulate(self,parameters, frequencies, test=False):
         if len(parameters)!= len(self.optim_list):
+            print parameters
+            print self.optim_list
             raise ValueError('Wrong number of parameters')
         if self.simulation_options["label"]=="cmaes":
             normed_params=self.change_norm_group(parameters, "un_norm")
@@ -189,23 +185,20 @@ class single_electron:
         self.nd_param=params(self.dim_dict)
         if self.simulation_options["dispersion"]==True:
             e0_vals, e0_disp=self.therm_dispersion()
-            k0_vals, k0_disp=self.kinetic_dispersion()
-            weights=self.weight_matrix(e0_disp, k0_disp)
-            print np.sum(e0_disp), np.sum(k0_disp), np.sum(np.sum(weights))
-            if np.sum(k0_disp)<0.99:
-                print "FIRED"
-                return np.zeros(len(self.time_vec))
+            #k0_vals, k0_disp=self.kinetic_dispersion()
+            #weights=self.weight_matrix(e0_disp, k0_disp)
+            #print np.sum(e0_disp), np.sum(k0_disp), np.sum(np.sum(weights))
+            #if np.sum(k0_disp)<0.99:
+            #    print "FIRED"
+            #    return np.zeros(len(self.time_vec))
             start=time.time()
             #time_series_disp=isolver_ramped_dispersion.e_surface_dispersed(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_disp, k0_disp, weights, self.time_vec)
-            disp_series=np.zeros(len(self.time_vec))
-            time_series2=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec)
-            for i in range(0, len(e0_vals)):
-                for j in range(0, len(k0_vals)):
-                    time_series=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], k0_vals[j], self.time_vec)
-                    disp_series=np.add(disp_series, np.multiply(time_series,weights[i][j]))
-            plt.plot(time_series2)
-            plt.plot(disp_series)
-            plt.show()
+            time_series=np.zeros(len(self.time_vec))
+            #for i in range(0, len(e0_vals)):
+            for j in range(0, len(e0_vals)):
+                    time_series_current=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[j], self.nd_param.k_0, self.time_vec)
+                    time_series=np.add(time_series, np.multiply(time_series_current,e0_disp[j]))
+
             print time.time()-start, "TIME"
         else:
             time_series=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec)

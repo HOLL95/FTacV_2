@@ -4,6 +4,7 @@ import isolver_martin_newton
 import isolver_martin_bisect
 import isolver_martin_brent
 import isolver_inverted
+from scipy.stats import norm, lognorm
 import math
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,15 +27,15 @@ class single_electron:
         self.filter_val=other_values["filter_val"]
         self.bounds_val=other_values["bounds_val"]
         if simulation_options["no_transient"]!=False:
-            self.no_transient=simulation_options["no_transient"]
+            self.time_idx=simulation_options["no_transient"]
+        else:
+            self.time_idx=0
         if self.simulation_options["experimental_fitting"]==True:
-            print "changing this"
-            other_values["experiment_time"]=other_values["experiment_time"][:other_values["signal_length"]]/self.nd_param.c_T0
-            other_values["experiment_current"]=other_values["experiment_current"][:other_values["signal_length"]]/self.nd_param.c_I0
-            other_values["experiment_voltage"]=other_values["experiment_voltage"][:other_values["signal_length"]]/self.nd_param.c_E0
-            self.time_vec=other_values["experiment_time"]
-            if self.simulation_options["no_transient"]!=False:
-                other_values["experiment_current"]=self.transient_remover(self.no_transient, other_values["experiment_time"], other_values["experiment_current"])
+            self.time_vec=other_values["experiment_time"][:other_values["signal_length"]]/self.nd_param.c_T0
+            other_values["experiment_time"]=other_values["experiment_time"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_T0
+            other_values["experiment_current"]=other_values["experiment_current"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_I0
+            other_values["experiment_voltage"]=other_values["experiment_voltage"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_E0
+
         else:
             self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.nd_omega)*2*math.pi
             self.times(other_values["signal_length"])
@@ -49,14 +50,12 @@ class single_electron:
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
     def un_normalise(self, norm, boundaries):
         return (norm*(boundaries[1]-boundaries[0]))+boundaries[0]
-    def dimensionalise_data(self,data, times):
-        data=np.multiply(data, self.nd_param.c_I0)
-        times=np.multiply(times,self.nd_param.c_T0)
-        return times, data
-    def nondim_data(self, data, times):
-        data=np.divide(data, self.nd_param.c_I0)
-        times=np.divide(times,self.nd_param.c_T0)
-        return dtimes, data
+    def i_nondim(self, current):
+        return current*self.nd_param.c_I0
+    def e_nondim(self, potential):
+        return potential*self.nd_param.c_E0
+    def t_nondim(self, time):
+        return time*self.nd_param.c_T0
     def n_outputs(self):
         return 1
     def n_parameters(self):
@@ -145,13 +144,7 @@ class single_electron:
         for key in variables.keys():
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
                 print key, variables[key]
-    def transient_remover(self, start_time, times, current):
-        time_end=self.time_vec[-1]-start_time
-        time_idx=np.where((times>start_time) & (times<time_end))
-        self.time_idx=time_idx
-        new_array=np.zeros(len(current))
-        new_array[self.time_idx]=current[self.time_idx]
-        return  new_array
+
     def test_vals(self, parameters, likelihood, test=False):
         orig_likelihood=self.simulation_options["likelihood"]
         orig_label=self.simulation_options["label"]
@@ -161,6 +154,72 @@ class single_electron:
         self.simulation_options["likelihood"]=orig_likelihood
         self.simulation_options["label"]=orig_label
         return results
+    def kinetic_dispersion(self):
+        k0_weights=np.zeros(self.simulation_options["dispersion_bins"])
+        k_start=0
+        k_end=1e4
+        k0_vals=np.linspace(k_start,k_end, self.simulation_options["dispersion_bins"])
+        k0_weights[0]=lognorm.cdf(k0_vals[0], self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
+        for k in range(1, len(k0_weights)):
+            k0_weights[k]=lognorm.cdf(k0_vals[k], self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)-lognorm.cdf(k0_vals[k-1], self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
+        #plt.plot(k0_vals, k0_weights)
+        #plt.title("k0")
+        #plt.show()
+        return k0_vals, k0_weights
+    def numerical_plots(self):
+        self.debug_time=self.simulation_options["numerical_debugging"]
+        time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.debug_time, self.bounds_val)
+        current=time_series[0]
+        residual=time_series[1]
+        residual_gradient=time_series[2]
+        #plt.subplot(1,2,1)
+        #plt.semilogy(current, np.abs(residual))
+        Nt=self.time_vec[-1]/self.nd_param.sampling_freq
+        bounds_val=max(10*self.nd_param.Cdl*self.nd_param.d_E*self.nd_param.nd_omega/Nt,1.0)
+        middle_index=(len(time_series[0])-1)/2 + 1
+        I0=residual[middle_index]
+        if  self.simulation_options["numerical_method"]=="Newton-Raphson":
+            plt.subplot(1,2,1)
+            plt.title("Residual, t="+str(self.debug_time))
+            plt.plot(current, residual)
+            plt.axvline(time_series[3][1], color="red",linestyle="--")
+            plt.axvline(time_series[3][0]+time_series[3][2], color="black", linestyle="--")
+            plt.axvline(time_series[3][0]-time_series[3][2], color="black",linestyle="--")
+            plt.subplot(1,2,2)
+            plt.title("Residual gradient")
+            plt.plot(current, ((residual_gradient)))
+            plt.show()
+        else:
+            plt.plot(current, residual, label=round(self.debug_time, 4))
+            plt.show()
+            #plt.axvline(time_series[3][0]+time_series[3][2], color="black",linestyle="--")
+            #plt.axvline(time_series[3][0]-time_series[3][2],color="black",linestyle="--")
+
+    def therm_dispersion(self):
+        e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
+        e0_vals=np.linspace(self.nd_param.E_start,self.nd_param.E_reverse, self.simulation_options["dispersion_bins"])
+        e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        for i in range(1, len(e0_weights)):
+            e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        #plt.plot(e0_vals, e0_weights)
+        #print self.nd_param.E0_mean,self.nd_param.E0_std
+        #plt.title("e0")
+        #plt.show()
+        return e0_vals, e0_weights
+    def weight_matrix(self,e0_disp, k0_disp):
+        e0_mat, k0_mat=np.meshgrid(e0_disp, k0_disp)
+        weights=np.multiply(e0_mat, k0_mat)
+        return weights
+    def variable_params(self, param_list, param_vals):
+        true_vals=copy.deepcopy(param_list)
+        y=len(param_list)#
+        for i in range(1, y):
+            if (y%i)==0:
+                x=i
+        for i in range(0, y):
+            plt.subplot((y/x), x, i+1)
+
+
     def simulate(self,parameters, frequencies, test=False):
         if len(parameters)!= len(self.optim_list):
             raise ValueError('Wrong number of parameters')
@@ -180,65 +239,54 @@ class single_electron:
         elif self.simulation_options["numerical_method"]=="inverted":
             solver=isolver_inverted.martin_surface_brent
         if self.simulation_options["numerical_debugging"]!=False:
-            self.debug_time=self.simulation_options["numerical_debugging"]
-            time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.debug_time, self.bounds_val)
-            current=time_series[0]
-            residual=time_series[1]
-            residual_gradient=time_series[2]
-            #plt.subplot(1,2,1)
-            #plt.semilogy(current, np.abs(residual))
-            Nt=self.time_vec[-1]/self.nd_param.sampling_freq
-            bounds_val=max(10*self.nd_param.Cdl*self.nd_param.d_E*self.nd_param.nd_omega/Nt,1.0)
-            middle_index=(len(time_series[0])-1)/2 + 1
-            I0=residual[middle_index]
-            if  self.simulation_options["numerical_method"]=="Newton-Raphson":
-                plt.subplot(1,2,1)
-                plt.title("Residual, t="+str(self.debug_time))
-                plt.plot(current, residual)
-                plt.axvline(time_series[3][1], color="red",linestyle="--")
-                plt.axvline(time_series[3][0]+time_series[3][2], color="black", linestyle="--")
-                plt.axvline(time_series[3][0]-time_series[3][2], color="black",linestyle="--")
-                plt.subplot(1,2,2)
-                plt.title("Residual gradient")
-                plt.plot(current, ((residual_gradient)))
-                plt.show()
-            else:
-                plt.plot(current, residual, label=round(self.debug_time, 4))
-                plt.show()
-                #plt.axvline(time_series[3][0]+time_series[3][2], color="black",linestyle="--")
-                #plt.axvline(time_series[3][0]-time_series[3][2],color="black",linestyle="--")
-
+            self.numerical_plots()
         else:
+            if self.simulation_options["dispersion"]==True:
+                time_series=np.zeros(len(self.time_vec))
+                bins=self.simulation_options["dispersion_bins"]
+                if "E0_std" and "k0_shape" in self.optim_list:
+                    e0_vals, e0_disp=self.therm_dispersion()
+                    k0_vals, k0_disp=self.kinetic_dispersion()
+                    weights=self.weight_matrix(e0_disp, k0_disp)
+                    for i in range(0, bins):
+                        for j in range(0, bins):
+                            time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], k0_vals[j],self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                            time_series=np.add(time_series, np.multiply(time_series_current, weights[i,j]))
+                elif "E0_std" in self.optim_list:
+                    e0_vals, e0_disp=self.therm_dispersion()
+                    for i in range(0, bins):
+                        time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                        time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
+                elif "k0_shape" in self.optim_list:
+                    k0_vals, k0_disp=self.kinetic_dispersion()
+                    for i in range(0, bins):
+                        time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, k0_vals[i],self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                        time_series=np.add(time_series, np.multiply(time_series_current, k0_disp[i]))
+                else:
+                    time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
 
-            time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
-        if self.simulation_options["no_transient"]==True:
-            new_array=np.zeros(len(time_series))
-            time_series=np.array(time_series)
-            new_array[self.time_idx]=time_series[self.time_idx]
-            time_series=new_array
+            else:
+                start=time.time()
+                time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                print time.time()-start
+        if self.simulation_options["no_transient"]!=True:
+            time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
         #time_series=np.flip(time_series)
         #time_series=np.flip(time_series, axis=0)
         #time_series=time_series*-1
-        time_series=np.flip(time_series*-1, axis=0)
+        #time_series=np.flip(time_series*-1, axis=0)
         #time_series=(time_series*-1)
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)
             if (self.simulation_options["test"]==True or test==True):
-                #plt.subplot(1,3,1)
-                #plt.title("Likelihood function ("+str(self.harmonic_range[0])+"-"+str(self.harmonic_range[-1])+"harmonics)")
                 plt.plot(self.secret_data_fourier, label="data")
                 plt.plot(filtered , alpha=0.7, label="numerical")
-                #plt.legend()
-                #fourier_end=12
-                #plt.title("Fourier spectrum up to harmonic " + str(fourier_end))
-                #self.fourier_plotter(self.secret_data_time_series, "Data", time_series, "numerical", fourier_end)
                 plt.show()
 
             return filtered
         elif self.simulation_options["likelihood"]=='timeseries':
             if self.simulation_options["test"]==True:
-
                 plt.subplot(1,2,1)
                 plt.plot(self.other_values["experiment_voltage"],time_series)
                 plt.plot(self.other_values["experiment_voltage"],self.secret_data_time_series, alpha=0.7)

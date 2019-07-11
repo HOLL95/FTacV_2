@@ -5,6 +5,7 @@ import isolver_ramped
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider, Button, RadioButtons
 from single_e_class_ramped  import single_electron
 from harmonics_plotter import harmonics
 import pints
@@ -15,8 +16,8 @@ params_for_opt=[]
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 data_path="/Experiment_data"
-folder="/Black"
-Method ="O_Method"
+folder="/Carbon"
+Method ="GC4_1_ramp"
 type="current"
 type2="voltage"
 path=dir_path+data_path+folder
@@ -55,6 +56,7 @@ param_list={
     "k0_range":1e3,
     'alpha': 0.5,
     'sampling_freq' : (1.0/200),
+    "cap_phase":0,
     'phase' : 0,
     'time_end':1000,
     'num_peaks': 50
@@ -66,7 +68,7 @@ simulation_options={
     "experimental_fitting":True,
     "test": False,
     "likelihood":likelihood_options[0],
-    "dispersion":True,
+    "dispersion":False,
     "dispersion_bins":16,
     "label": "cmaes",
     "optim_list":[]
@@ -93,40 +95,69 @@ ramp_fit.simulation_options["dispersion"]=False
 normal=ramp_fit.test_vals([1e-10], likelihood="timeseries", test=False)
 ramp_fit.simulation_options["dispersion"]=True
 disped=ramp_fit.test_vals([1e-10], likelihood="timeseries", test=False)
-plt.plot(normal)
-plt.plot(disped)
-plt.show()
+#plt.plot(normal)
+#plt.plot(disped)
+#plt.show()
 ramp_fit.optim_list=['E_0','k_0', 'Ru', 'Cdl','gamma', 'omega', 'phase', 'alpha']
 param_bounds={
     'E_0':[0.1, 0.4],#[param_list['E_start'],param_list['E_reverse']],
     'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
     'Ru': [0, 3e3],  #     (uncompensated resistance ohms)
-    'Cdl': [0,1e-6], #(capacitance parameters)
-    'CdlE1': [-1, 1],#0.000653657774506,
-    'CdlE2': [0,0.1],#0.000245772700637,
+    'Cdl': [0,1e-3], #(capacitance parameters)
+    'CdlE1': [-5, 5],#0.000653657774506,
+    'CdlE2': [-0.1,0.1],#0.000245772700637,
     'CdlE3': [0,0.1],#1.10053945995e-06,
-    'gamma': [1e-11,9e-10],
+    'gamma': [1e-11,1e-9],
     'k_0': [0, 1e4], #(reaction rate s-1)
-    'alpha': [0.4, 0.6],
-    'k_0': 100.0, #(reaction rate s-1)
+    'alpha': [0.2, 0.8],
+    'k_0': [0, 1e4], #(reaction rate s-1)
     "E0_mean":[0.0, 0.5],
     "E0_std": [0.01, 0.3],
-    "k0_shape":[0,2],
-    "k0_loc":[9e3, 1e4],
-    "k0_scale":[0, 4e3],
+    "k0_shape":[0,5],
+    "k0_loc":[1, 1e4],
+    "k0_scale":[0,2e3],
     "k0_range":[1e2, 1e4],
     'phase' : [0, 2*math.pi]
 }
+ramp_fit.optim_list=[]
 
-ramp_fit.optim_list=['E0_mean', "E0_std",'k0_shape',"k0_loc", "k0_scale", "k0_range", 'Ru', 'Cdl',"CdlE1",'gamma', 'omega', 'phase', 'alpha']
+harm_class=harmonics(other_values["harmonic_range"], ramp_fit.nd_param.omega*ramp_fit.nd_param.c_T0, 0.1)
+ramp_fit.optim_list=["E0_mean", "E0_std","k_0", 'Ru', 'Cdl',"CdlE1","CdlE2",'gamma', 'omega', 'phase', 'alpha']
+
+
+ramp_means_black=[0.20504878429957712, 0.07357984171424121, 126.17588866800264, 24.24736830211999, 9.999999999876686e-07, 0.11886527586092166, 0,1.3175840584818795e-10, 8.959496500290681, 6.2831853071795845, 0.599999999999731]
+ramp_means_black_2=[0.21200070197828386, 0.06888959981526988, 133.96563492653507, 40.08177557223102, 3.226207450320691e-06, -0.021487125154184827, 0.0017931237883237632, 1.2669148148700962e-10, 8.959483328711777, 6.283185307173828, 0.7999999999999661]
+ramp_means_carbon=[0.23192913053278295, 0.07597303082211063,133.999986524228, 20, 9.999999999710656e-06, -0.19135843729198476, 0.012883589352296436, 2.8654939556021e-10, 8.959351751379364, 6.077678909557666, 0.7999999909807196]
+ramp_free_means_black=[0.20504878429957712, 0.04692985835905884, 773.0039074468887, 1.1172494386860095e-06, 6.253912022948444e-06, 0.46590284463560927, -0.020672008906663236, 9.665438282298918e-11, 8.94055300929529,6.2831853071795845,  0.10000008017506497]
+ramp_free_means_black_2=[0.22026089333976873, 0.04776183826475387, 1226.0003897156193, 2.6091841820962103e-10, 6.311657164346574e-06, 0.4861839637949368, -0.021712454485320096, 9.470125832724226e-11, 8.959351751379364, 6.2831853071795845, 0.10000000178756306]
+ramp_free_means_carbon=[0.2445537156141517, 0.07597303082211063,100.9519493198850647, 1.6017819143290766e-07, 3.315492244571699e-05, 0.08995451289980627, -0.003381307141896925, 1.625196327083214e-10, 8.959351751379364,  6.2831853071795845, 0.5415684133427566]
+cmaes_ramped_time=ramp_fit.test_vals(ramp_means_carbon, likelihood="timeseries", test=False)
+cmaes_rampfree_time=ramp_fit.test_vals(ramp_free_means_carbon, likelihood="timeseries", test=False)
+cmaes_rampfree_time_2=ramp_fit.test_vals(ramp_free_means_black_2, likelihood="timeseries", test=False)
+
+data_harmonics=harm_class.generate_harmonics(time_results, current_results)
+ramp_harmonics=harm_class.generate_harmonics(time_results, cmaes_ramped_time)
+ramp_free_harmonics=harm_class.generate_harmonics(time_results, cmaes_rampfree_time)
+ramp_free_harmonics_2=harm_class.generate_harmonics(time_results, cmaes_rampfree_time_2)
+#harm_class.plot_harmonics(time_results, method="abs", Experimental=data_harmonics, Ramped=ramp_harmonics)#, Ramp_free=ramp_free_harmonics)
+harm_class.harmonics_and_time(ramp_fit.t_nondim(time_results), folder, "abs", \
+                            Experimental_harmonics=ramp_fit.i_nondim(data_harmonics),Sinusoidal_harmonics=ramp_fit.i_nondim(ramp_free_harmonics),Ramped_harmonics=ramp_fit.i_nondim(ramp_harmonics),\
+                             Experimental_time_series=ramp_fit.i_nondim(current_results),Sinusoidal_time_series=ramp_fit.i_nondim(cmaes_rampfree_time), Ramped_time_series=ramp_fit.i_nondim(cmaes_ramped_time), alpha=0.5) ##
+test=ramp_fit.test_vals(ramp_means_black, likelihood="timeseries", test=False)
+test_harmonics=harm_class.generate_harmonics(time_results, test)
+
+
+
+
+
+
 param_boundaries=np.zeros((2, ramp_fit.n_parameters()))
 for i in range(0, ramp_fit.n_parameters()):
     param_boundaries[0][i]=param_bounds[ramp_fit.optim_list[i]][0]
     param_boundaries[1][i]=param_bounds[ramp_fit.optim_list[i]][1]
 
 ramp_fit.define_boundaries(param_boundaries)
-harm_class=harmonics(other_values["harmonic_range"], ramp_fit.nd_param.omega*ramp_fit.nd_param.c_T0, 0.1)
-data_harmonics=harm_class.generate_harmonics(time_results, current_results)
+
 #harm_class.plot_harmonics(time_results, test_harmonics, data_harmonics)
 #harm_class.plot_harmonics(time_results, test_harmonics, data_harmonics,"abs", "numerical", "data")
 #harm_class.harmonics_and_time(time_results, test_harmonics, test, data_time=current_results, harmonics2=data_harmonics,label1="numerical", label2="data", title="Black")
@@ -147,7 +178,7 @@ for i in range(0, 1):
 #    x0=found_parameters
 #    print found_parameters
 print folder
-
+#found_parameters=x0
 cmaes_results=ramp_fit.change_norm_group(found_parameters, "un_norm")
 cmaes_time=ramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
 plt.plot(cmaes_time)

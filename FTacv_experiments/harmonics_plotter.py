@@ -29,93 +29,117 @@ class harmonics:
             harmonics[i,0:len(filter_bit)]=filter_bit
             harmonics[i,:]=((np.fft.ifft(harmonics[i,:])))
         return harmonics
-
-    def plot_harmonics(self, times, harmonics, harmonics2=[False, False], method="abs", label1="", label2=""):
+    def empty(self, arg):
+        return arg
+    def plot_harmonics(self, times, method, **kwargs):
+        if method=="abs":
+            a=abs
+        else:
+            a=self.empty
+        harmonics_list=[]
+        harmonics_labels=[]
+        for key, value in kwargs.items():
+            harmonics_list.append(value)
+            harmonics_labels.append(key)
         fig, ax=plt.subplots(self.num_harmonics,1)
         for i in range(0, self.num_harmonics):
-            if method=="abs":
-                ax[i].plot(times, abs(harmonics[i,:]), label=label1)
-            else:
-                ax[i].plot(times, (harmonics[i,:]),label=label1)
-            if label1!="":
-                plt.legend()
-            if harmonics2.any()!=False:
-                ax2=ax[i].twinx()
-                if method=="abs":
-                    ax2.plot(times, abs(harmonics2[i,:]),label=label2, color="orange")
-                else:
-                    ax2.plot(times, (harmonics2[i,:]),label=label2, color="orange")
-                if label2!="":
-                    plt.legend()
-            ax[i].yaxis.set_label_position("right")
-            ax[i].set_ylabel(str(self.harmonics[i]), rotation=0)
+            for j in range(0, len(harmonics_labels)):
+                    ax[i].plot(times, a(harmonics_list[j][i,:]), label=harmonics_labels[j])
+        ax[i].yaxis.set_label_position("right")
+        ax[i].set_ylabel(str(self.harmonics[i]), rotation=0)
+        plt.legend()
         plt.show()
-    def harmonics_and_time(self, times, harmonics, simulated_time, data_time=[False, False], harmonics2=[False, False],label1="", label2="", title=""):
-        plt.figure(num=None, figsize=(15, 6), dpi=80, facecolor='w', edgecolor='k')
+    def harmonics_and_time(self, times,title, method, **kwargs):
+        names=kwargs.keys()
+        titles=[]
+        for i in range(0, len(names)):
+            if ("_" in names[i]) and ("harmonics" in names[i]):
+                titles.append(names[i][:names[i].index("_")])
+        fig=plt.figure(num=None, figsize=(15, 6), dpi=80, facecolor='w', edgecolor='k')
+        if method=="abs":
+            a=abs
+        else:
+            a=self.empty
+        time_list=[]
+        time_labels=[]
+        harmonics_list=[]
+        harmonics_labels=[]
+        for key, value in kwargs.items():
+            if "harmonics" in key:
+                harmonics_list.append(value)
+                harmonics_labels.append(key)
+            elif "alpha" in key:
+                alpha=value
+            else:
+                time_list.append(value)
+                time_labels.append(key)
+
         harm_axes=[]
         harm_len=2
+        fig.text(0.03, 0.5, 'Current(A)', ha='center', va='center', rotation='vertical')
+
         for i in range(0,self.num_harmonics):
             harm_axes.append(plt.subplot2grid((self.num_harmonics,harm_len*2), (i,0), colspan=harm_len))
-            harm_axes[i].plot(times, abs(harmonics[i,:]), label=label1)
-            if label1!="" and i==0:
-                plt.legend()
-            if harmonics2.any()!=False:
-                ax2=harm_axes[i].twinx()
-                ax2.plot(times, abs(harmonics2[i,:]),label=label2, color="orange")
-                if label2!="" and i==0:
-                    plt.legend()
-                harm_axes[i].yaxis.set_label_position("right")
-                harm_axes[i].set_ylabel(str(self.harmonics[i]), rotation=0)
+            for j in range(0, len(titles)):
+                idx=harmonics_labels.index(titles[j]+"_harmonics")
+                harm_axes[i].plot(times, a(harmonics_list[idx][i,:]), label=titles[j])
+            harm_axes[i].yaxis.set_label_position("right")
+            harm_axes[i].set_ylabel(str(self.harmonics[i]), rotation=0)
+        harm_axes[i].legend()
+        harm_axes[i].set_xlabel("Time(s)")
+
         time_ax=plt.subplot2grid((self.num_harmonics,harm_len*2), (0,harm_len), rowspan=self.num_harmonics, colspan=harm_len)
-        time_ax.plot(times, simulated_time, label=label1)
-        if label1!="":
-            plt.legend()
-        if data_time.any()!=False:
-            time_ax.plot(times, data_time, label=label2)
-            if label2!="":
-                plt.legend()
-        if title!="":
-            plt.suptitle(title)
+        for j in range(0, len(titles)):
+            idx=time_labels.index(titles[j]+"_time_series")
+            time_ax.plot(times, time_list[idx], label=titles[j], alpha=alpha)
+        time_ax.set_ylabel("Current(A)")
+        time_ax.set_xlabel("Time(s)")
+        plt.legend()
+        plt.suptitle(title)
         plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.23)
         plt.show()
-    def harmonics_and_voltages(self, times, voltages,harmonics, simulated_time,  data_time=[False, False], harmonics2=[False, False],label1="", label2="", title=""):
-        plt.figure(num=None, figsize=(20, 9), dpi=80, facecolor='w', edgecolor='k')
+    def harmonics_and_voltages(self, times,voltages, title, method, **kwargs):
+        names=kwargs.keys()
+        titles=[]
+        for i in range(0, len(names)):
+            if ("_" in names[i]) and ("harmonics" in names[i]):
+                titles.append(names[i][:names[i].index("_")])
+        fig=plt.figure(num=None, figsize=(15, 6), dpi=80, facecolor='w', edgecolor='k')
+        if method=="abs":
+            a=abs
+        else:
+            a=self.empty
+        voltage_list=[]
+        voltage_labels=[]
+        harmonics_list=[]
+        harmonics_labels=[]
+        for key, value in kwargs.items():
+            if "harmonics" in key:
+                harmonics_list.append(value)
+                harmonics_labels.append(key)
 
+            else:
+                voltage_list.append(value)
+                voltage_labels.append(key)
         harm_axes=[]
         harm_len=2
+        fig.text(0.03, 0.5, 'Current(A)', ha='center', va='center', rotation='vertical')
         for i in range(0,self.num_harmonics):
             harm_axes.append(plt.subplot2grid((self.num_harmonics,harm_len*2), (i,0), colspan=harm_len))
-            harm_axes[i].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-            harm_axes[i].plot(times, (harmonics[i,:]), label=label1)
-            if (i != self.num_harmonics-1):
-                harm_axes[i].get_xaxis().set_visible(False)
-            else:
-                harm_axes[i].set_xlabel("Time(s)")
-            if label1!="" and i==0:
-                plt.legend()
-            if harmonics2.any()!=False:
-                harm_axes[i].plot(times, (harmonics2[i,:]),label=label2)
-                if label2!="" and i==0:
-                    plt.legend()
-                harm_axes[i].yaxis.set_label_position("right")
-                harm_axes[i].set_ylabel(str(self.harmonics[i]), rotation=0)
-
+            for j in range(0, len(titles)):
+                idx=harmonics_labels.index(titles[j]+"_harmonics")
+                harm_axes[i].plot(times, a(harmonics_list[idx][i,:]), label=titles[j])
+            harm_axes[i].yaxis.set_label_position("right")
+            harm_axes[i].set_ylabel(str(self.harmonics[i]), rotation=0)
+        harm_axes[i].legend()
+        harm_axes[i].set_xlabel("Time(s)")
         time_ax=plt.subplot2grid((self.num_harmonics,harm_len*2), (0,harm_len), rowspan=self.num_harmonics, colspan=harm_len)
-        time_ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-        time_ax.plot(voltages, simulated_time, label=label1)
-        time_ax.set_xlabel("Voltage(V)")
+        for j in range(0, len(voltage_list)):
+            idx=voltage_labels.index(titles[j]+"_time_series")
+            time_ax.plot(voltages, voltage_list[idx], label=titles[j])
         time_ax.set_ylabel("Current(A)")
-        if label1!="":
-            plt.legend()
-        if data_time.any()!=False:
-            time_ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-            time_ax.plot(voltages, data_time, label=label2)
-            if label2!="":
-                plt.legend()
-        if title!="":
-            plt.suptitle(title)
-        plt.subplots_adjust(left=0.03, bottom=0.09, right=0.96, top=0.92, wspace=0.23, hspace=0.31)
+        time_ax.set_xlabel("Potential(V)")
+        plt.legend()
+        plt.suptitle(title)
+        plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.23)
         plt.show()
-    def comparison_harmonics_plot(self, times, harmonics, harmonics2, axis):
-        for i in range(0, self.num_harmonics):
-            axis.plot(times, abs(np.subtract(harmonics, harmonics2)))

@@ -67,6 +67,12 @@ param_list={
     'gamma': 1e-10,
     'R1':0,
     "original_gamma":1e-10,       # (surface coverage per unit area)
+    "E0_mean":0.2,
+    "E0_std": 0.09,
+    "k0_shape":0.954,
+    "k0_loc":100,
+    "k0_scale":50,
+    "k0_range":1e3,
     'k_0': 10000.0, #(reaction rate s-1)
     'alpha': 0.5,
     'sampling_freq' : (1.0/200),
@@ -82,7 +88,7 @@ simulation_options={
     "no_transient":False,
     "numerical_debugging": False,
     "experimental_fitting":True,
-    "test": False,
+    "test": True,
     "dcv":False,
     "likelihood":likelihood_options[0],
     "numerical_method": solver_list[1],

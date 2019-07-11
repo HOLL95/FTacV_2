@@ -119,6 +119,7 @@ class params:
         self.phase=param_dict['phase']
         self.num_peaks=param_dict['num_peaks']
         self.time_end=param_dict['time_end']
+        self.cap_phase=param_dict["cap_phase"]
         self.c_Gamma=param_dict['original_gamma']
         if self.dispersion==True:
             self.E0_std=param_dict["E0_std"]
