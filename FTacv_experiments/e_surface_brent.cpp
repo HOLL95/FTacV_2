@@ -69,10 +69,10 @@ struct e_surface_fun {
 
     void update_temporaries(const double In1) {
         const double Ereduced = E - Ru*In1;
-        const double cap_E_reduced=cap_E-Ru*In1;
+        const double cER=cap_E-Ru*In1;
         //const double Ereduced = E;
-        const double Ereduced2 = pow(Ereduced,2);
-        const double Ereduced3 = Ereduced*Ereduced2;
+        const double Ereduced2 = pow(cER,2);
+        const double Ereduced3 = cER*Ereduced2;
         const double expval1 = Ereduced - E0;
         exp11 = std::exp((1.0-alpha)*expval1);
         exp12 = std::exp(-alpha*expval1);
@@ -89,7 +89,7 @@ struct e_surface_fun {
         u1n1 = u1n1_top*tmp;
         //du1n1 = -(u1n1_top*ddenom + du1n1_top*denom)*tmp2;
 
-        Cdlp = Cdl*(1.0 + CdlE*cap_E_reduced + CdlE2*pow(cap_E_reduced,2) + CdlE3*pow(cap_E_reduced,3));
+        Cdlp = Cdl*(1.0 + CdlE*cER + CdlE2*Ereduced2 + CdlE3*Ereduced3);
         //Cdlp = Cdl*(1.0 + CdlE*Edc+ CdlE2*pow(Edc,2)+ CdlE3*pow(Edc,3));
     }
 };
@@ -158,11 +158,9 @@ py::object martin_surface_brent(const double Cdl, const double CdlE, const doubl
     u1n0 = 1.0;
 
     const double E = et(Estart, omega, phase,delta_E ,t1+dt);
-    const double dE = dEdt(omega, cap_phase,delta_E , t1+dt);
+    const double dE = dEdt(omega, cap_phase,delta_E , t1+0.5*dt);
     const double Cdlp = Cdl*(1.0 + CdlE*E + CdlE2*pow(E,2)+ CdlE3*pow(E,2));
-    double tr =(Ereverse-Estart)/2;
     double Itot_bound =bounds_val;//std::max(10*Cdlp*delta_E*omega/Nt,1.0);
-
     //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
     Itot0 =Cdlp*dE;
     Itot1 = Itot0;
@@ -170,11 +168,11 @@ py::object martin_surface_brent(const double Cdl, const double CdlE, const doubl
         while (t1 < t[n_out]) {
             Itot0 = Itot1;
             const double E = et(Estart, omega, phase,delta_E ,t1+dt);
-            const double dE = dEdt(omega, cap_phase,delta_E , t1+dt);
+            const double dE = dEdt(omega, cap_phase,delta_E , t1+0.5*dt);
             const double cap_E=et(Estart, omega, cap_phase,delta_E ,t1+dt);
             const double Edc = 0.0;
 
-            e_surface_fun bc(E,Edc,dE,cap_E, Cdl,CdlE,CdlE2,CdlE3,E0,Ru,R,k0,alpha,Itot0,u1n0,dt,gamma);
+            e_surface_fun bc(E,Edc,dE,cap_E,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,R,k0,alpha,Itot0,u1n0,dt,gamma);
             boost::uintmax_t max_it = max_iterations;
             //Itot1 = boost::math::tools::newton_raphson_iterate(bc, Itot0,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy, max_it);
             std::pair <double, double> sol=boost::math::tools::brent_find_minima(bc,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy, max_it);
