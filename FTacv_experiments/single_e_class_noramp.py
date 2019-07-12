@@ -266,7 +266,9 @@ class single_electron:
                     time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
 
             else:
+                start=time.time()
                 time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                print time.time()-start
         if self.simulation_options["no_transient"]!=True:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
