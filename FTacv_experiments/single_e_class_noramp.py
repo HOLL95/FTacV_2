@@ -144,6 +144,36 @@ class single_electron:
         for key in variables.keys():
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
                 print key, variables[key]
+    def pick_paramaters(self, param_vals, desired_params):
+        num_params=len(desired_params)
+        params=np.zeros(num_params)
+        for i in range(0,num_params):
+            idx=self.optim_list.index(desired_params[i])
+            print desired_params[i], idx
+            params[i]=param_vals[idx]
+        return params
+    def param_scanner(self, param_vals, param_list, percent):
+        current_optim_list=self.optim_list
+        self.optim_list=param_list
+        num_params=len(param_list)
+        for i in range(1, num_params):
+            if num_params%i==0:
+                x=i
+        pc_change=[1-percent, 1, 1+percent]
+        for i in range(0, num_params):
+            plt.subplot(num_params/x, x, i+1)
+            true_val=param_vals[i]
+            plt.title(param_list[i])
+            for j in range(0,3):
+                var_val=true_val*pc_change[j]
+                param_vals[i]=var_val
+                time_series=self.test_vals(param_vals, "timeseries", test=False)
+                plt.plot(self.other_values["experiment_voltage"], time_series, label=('%.2E' % param_vals[i]), alpha=0.7)#
+            plt.plot(self.other_values["experiment_voltage"], self.other_values["experiment_current"], linestyle="--", label="Data")
+            param_vals[i]=true_val
+            plt.legend()
+        self.optim_list=current_optim_list
+        plt.show()
 
     def test_vals(self, parameters, likelihood, test=False):
         orig_likelihood=self.simulation_options["likelihood"]

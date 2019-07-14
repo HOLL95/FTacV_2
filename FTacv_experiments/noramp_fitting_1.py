@@ -112,7 +112,7 @@ param_bounds={
     'CdlE2': [-0.1,0.1],#0.000245772700637,
     'CdlE3': [-0.05,0.05],#1.10053945995e-06,
     'gamma': [1e-11,4e-10],
-    'k_0': [0, 1e4], #(reaction rate s-1)
+    'k_0': [20, 1e4], #(reaction rate s-1)
     'alpha': [0.4, 0.6],
     "cap_phase":[0, 2*math.pi],
     "E0_mean":[0.0, 0.5],
@@ -135,18 +135,22 @@ carbon_means=[0.2629196040175071, 0.010000000426528552, 242.94186943883, 793.655
 black_means=[0.20504878429957712, 0.04692985835905884, 773.0039074468887, 1.1172494386860095e-06, 6.253912022948444e-06, 0.46590284463560927, -0.020672008906663236, 9.665438282298918e-11, 8.94055300929529, 0.10000008017506497, 4.749140535109004, 4.029008370204711]
 black_means_2=[0.22026089333976873, 0.04776183826475387, 1226.0003897156193, 2.6091841820962103e-10, 6.311657164346574e-06, 0.4861839637949368, -0.021712454485320096, 9.470125832724226e-11, 8.940448789535177, 0.10000000178756306, 4.742083569735882, 4.028465609498452]
 black_means_3=[0.19813523414292655, 1.4877187307507795, 4.4556439040686615e-08, 1.1663407409020574e-06, 1.775725496685462, -0.07670261113515547, 1.2372296727209742e-10, 8.940758763885253, 5.622404458746398, 4.172942575228049, 0.5999999999990152]
-carbon_means_2=[0.24437320720249422, 0.9641045582560264, 5.5953463961420694e-08, 3.3222199217955305e-05, 0.09074940228372252, -0.0034091889329414538, 1.6095034096343578e-10, 8.940780387771508, 5.698538006754413, 4.317679292947246, 0.5417098085713957]
+carbon_means_2=[0.24437320720249422, 0.9641045582560264, 20, 3.3222199217955305e-05, 0.09074940228372252, -0.0034091889329414538, 1.6095034096343578e-10, 8.940780387771508, 5.698538006754413, 4.317679292947246, 0.5417098085713957]
+carbon_means_3=[0.26689122715624614, 97.72540069109925, 601.2211952415878, 3.379513907637756e-05, 0.10070581762902808, -0.0038788288927744663, 1.4557809348768636e-10, 8.940779258804525, 5.149017610779459, 4.450212193055553]
 ramp_means=[0.21200070197828386, 0.06888959981526988, 133.96563492653507, 40.08177557223102, 3.226207450320691e-06, -0.021487125154184827, 0.0017931237883237632, 1.2669148148700962e-10, 8.940448789535177, 0.7999999999999661,4.749140535109004, 4.028465609498452]
 ramp_means_carbon_1=[0.24192913053278295, 9999.999986524228, 1.0428644292961376e-08, 9.999999999710656e-06, -0.19135843729198476, 0.012883589352296436, 3.5654939556021e-10, 8.940621635999642, 4.749140535109004, 4.029008370204711]
 ramp_means_carbon=[0.23192913053278295, 0.07597303082211063,133.999986524228, 22.68302, 9.999999999710656e-06, -0.19135843729198476, 0.012883589352296436, 2.8654939556021e-10, 8.940621635999642,0.7999999909807196,4.749140535109004, 4.029008370204711]
 #noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'gamma','omega', 'phase','alpha']d
 carbon_means=[0.2384234383845605, 2.8016906117813805, 14.009822731553978, 3.325500615749805e-05, 0.12980099583898141, -0.005247496549209238, 1.320027160165847e-10, 8.940856411874309, 5.513246206729991, 4.319227044942643, 0.5815664903172559]
 noramp_fit.optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "phase", "cap_phase", "alpha"]
-test=noramp_fit.test_vals(carbon_means_3, "timeseries", test=False)
+test=noramp_fit.test_vals(carbon_means_2, "timeseries", test=False)
 plt.plot(time_results,np.flip(test))
 plt.plot(time_results, current_results)
 plt.show()
-ramp_free_black=(noramp_fit.test_vals(black_means_3, "timeseries", test=False))
+desired_params=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', "phase", "cap_phase", "alpha"]
+plot_params=noramp_fit.pick_paramaters(carbon_means_2, desired_params)
+noramp_fit.param_scanner(plot_params, desired_params, 0.2)
+ramp_free_black=(noramp_fit.test_vals(carbon_means_2, "timeseries", test=False))
 ramp_free_harmonics=harm_class.generate_harmonics(time_results, ramp_free_black)
 #exp_harmonics_2=harm_class.generate_harmonics(time_results, test_2)
 noramp_fit.optim_list=['E0_mean', "E0_std",'k_0', 'Ru',"Cdl", "CdlE1", "CdlE2",'gamma', 'omega', "alpha", "phase", "cap_phase"]
@@ -160,7 +164,8 @@ harm_class.harmonics_and_voltages(noramp_fit.t_nondim(time_results),noramp_fit.e
 
 dummy_times=np.linspace(0, 1, len(likelihood_func))
 #noramp_fit.optim_list=['Ru', 'omega']
-noramp_fit.optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "phase", "cap_phase", "alpha"]
+noramp_fit.dim_dict["alpha"]=0.5
+noramp_fit.optim_list=['E_0','k_0',"Ru","Cdl","CdlE1", "CdlE2",'gamma', 'omega', "phase", "cap_phase"]
 param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
 for i in range(0, noramp_fit.n_parameters()):
     param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]
@@ -183,7 +188,7 @@ CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(noramp_fit.optim_list
 noramp_fit.simulation_options["label"]="cmaes"
 x0=abs(np.random.rand(noramp_fit.n_parameters()))#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
 print len(x0), noramp_fit.n_parameters()
-num_runs=2
+num_runs=20
 score_mat=np.zeros(num_runs)
 param_mat=np.zeros((len(noramp_fit.optim_list), num_runs))
 for i in range(0, num_runs):
@@ -197,9 +202,10 @@ for i in range(0, num_runs):
     cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
     print list(cmaes_results)
     cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=True)
+    plt.subplot(4,5,i+1)
     plt.plot(voltage_results, current_results)
     plt.plot(voltage_results, cmaes_time)
-    plt.show()
+plt.show()
 
 
 print list(cmaes_results)
