@@ -92,9 +92,9 @@ likelihood_func=ramp_fit.kaiser_filter(current_results)
 ramp_fit.pass_extra_data(current_results, likelihood_func)
 ramp_fit.optim_list=["gamma"]
 ramp_fit.simulation_options["dispersion"]=False
-normal=ramp_fit.test_vals([1e-10], likelihood="timeseries", test=False)
-ramp_fit.simulation_options["dispersion"]=True
-disped=ramp_fit.test_vals([1e-10], likelihood="timeseries", test=False)
+#normal=ramp_fit.test_vals([1e-10], likelihood="timeseries", test=False)
+#ramp_fit.simulation_options["dispersion"]=True
+#disped=ramp_fit.test_vals([1e-10], likelihood="timeseries", test=False)
 #plt.plot(normal)
 #plt.plot(disped)
 #plt.show()
@@ -131,18 +131,25 @@ ramp_means_carbon=[0.23192913053278295, 0.07597303082211063,133.999986524228, 20
 ramp_free_means_black=[0.20504878429957712, 0.04692985835905884, 773.0039074468887, 1.1172494386860095e-06, 6.253912022948444e-06, 0.46590284463560927, -0.020672008906663236, 9.665438282298918e-11, 8.94055300929529,6.2831853071795845,  0.10000008017506497]
 ramp_free_means_black_2=[0.22026089333976873, 0.04776183826475387, 1226.0003897156193, 2.6091841820962103e-10, 6.311657164346574e-06, 0.4861839637949368, -0.021712454485320096, 9.470125832724226e-11, 8.959351751379364, 6.2831853071795845, 0.10000000178756306]
 ramp_free_means_carbon=[0.2445537156141517, 0.07597303082211063,100.9519493198850647, 1.6017819143290766e-07, 3.315492244571699e-05, 0.08995451289980627, -0.003381307141896925, 1.625196327083214e-10, 8.959351751379364,  6.2831853071795845, 0.5415684133427566]
-cmaes_ramped_time=ramp_fit.test_vals(ramp_means_carbon, likelihood="timeseries", test=False)
-cmaes_rampfree_time=ramp_fit.test_vals(ramp_free_means_carbon, likelihood="timeseries", test=False)
-cmaes_rampfree_time_2=ramp_fit.test_vals(ramp_free_means_black_2, likelihood="timeseries", test=False)
+ramp_free_means_carbon=[0.24437320720249422,0.9641045582560264, 4.4556439040686615e-08, 3.3222199217955305e-05, 0.09074940228372252, -0.0034091889329414538, 1.6095034096343578e-10, 8.940780387771508, 6.2831853071795845, 6.2831853071795845, 0.5417098085713957]
+ramp_free_means_carbon_1=[0.26689122715624614, 97.72540069109925, 100.2211952415878, 3.379513907637756e-05, 0.10070581762902808*0, -0.0038788288927744663*0, 1.4557809348768636e-10, 8.940779258804525, 5.149017610779459, 4.450212193055553, 0.5]
+ramp_free_means_carbon_2=[0.2712720627064147, 53.00972798907347*100, 126.43581153952566, 3.160962997490096e-05*0, 0.14647947194537103*0, -0.005848319334033306*0, 1.0072445202882476e-10, 8.940709552792356,0, 0.5488793068724522]
+ramp_free_means_carbon_2=[0.2528081478002836, 217.56996476308117, 150.7297882492157, 3.0166883670561975e-05, 0.14790906812787918, -0.005389008883307372, 1.1330727195554263e-10, 8.940664568706621,0, 0.40000000111206985]
+
+cmaes_ramped_time=np.zeros(len(current_results))#ramp_fit.test_vals(ramp_means_carbon, likelihood="timeseries", test=False)
+ramp_fit.simulation_options["dispersion"]=False
+ramp_fit.optim_list=["E_0",'k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "phase",  "alpha"]
+cmaes_rampfree_time=ramp_fit.test_vals(ramp_free_means_carbon_2, likelihood="timeseries", test=False)
+#cmaes_rampfree_time_2=ramp_fit.test_vals(ramp_free_means_black_2, likelihood="timeseries", test=False)
 
 data_harmonics=harm_class.generate_harmonics(time_results, current_results)
 ramp_harmonics=harm_class.generate_harmonics(time_results, cmaes_ramped_time)
 ramp_free_harmonics=harm_class.generate_harmonics(time_results, cmaes_rampfree_time)
-ramp_free_harmonics_2=harm_class.generate_harmonics(time_results, cmaes_rampfree_time_2)
+#ramp_free_harmonics_2=harm_class.generate_harmonics(time_results, cmaes_rampfree_time_2)
 #harm_class.plot_harmonics(time_results, method="abs", Experimental=data_harmonics, Ramped=ramp_harmonics)#, Ramp_free=ramp_free_harmonics)
 harm_class.harmonics_and_time(ramp_fit.t_nondim(time_results), folder, "abs", \
                             Experimental_harmonics=ramp_fit.i_nondim(data_harmonics),Sinusoidal_harmonics=ramp_fit.i_nondim(ramp_free_harmonics),Ramped_harmonics=ramp_fit.i_nondim(ramp_harmonics),\
-                             Experimental_time_series=ramp_fit.i_nondim(current_results),Sinusoidal_time_series=ramp_fit.i_nondim(cmaes_rampfree_time), Ramped_time_series=ramp_fit.i_nondim(cmaes_ramped_time), alpha=0.5) ##
+                             Experimental_time_series=ramp_fit.i_nondim(current_results),Sinusoidal_time_series=ramp_fit.i_nondim(cmaes_rampfree_time), Ramped_time_series=ramp_fit.i_nondim(cmaes_ramped_time)) ##
 test=ramp_fit.test_vals(ramp_means_black, likelihood="timeseries", test=False)
 test_harmonics=harm_class.generate_harmonics(time_results, test)
 

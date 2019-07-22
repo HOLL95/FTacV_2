@@ -108,7 +108,7 @@ class single_electron:
         results=np.zeros(len(top_hat), dtype=complex)
         results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
         #comp_results=np.append(np.real(results), np.imag(results))
-        return (results)
+        return abs(results)
     def times(self, num_points):
         self.num_points=num_points
         #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
@@ -196,7 +196,7 @@ class single_electron:
             time_series=np.zeros(len(self.time_vec))
             #for i in range(0, len(e0_vals)):
             for j in range(0, len(e0_vals)):
-                    time_series_current=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[j], self.nd_param.k_0, self.time_vec)
+                    time_series_current=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[j], self.nd_param.k_0,self.time_vec)
                     time_series=np.add(time_series, np.multiply(time_series_current,e0_disp[j]))
 
             print time.time()-start, "TIME"

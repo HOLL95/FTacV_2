@@ -91,7 +91,7 @@ class harmonics:
         time_ax=plt.subplot2grid((self.num_harmonics,harm_len*2), (0,harm_len), rowspan=self.num_harmonics, colspan=harm_len)
         for j in range(0, len(titles)):
             idx=time_labels.index(titles[j]+"_time_series")
-            time_ax.plot(times, time_list[idx], label=titles[j], alpha=alpha)
+            time_ax.plot(times, time_list[idx], label=titles[j], alpha=0.7)
         time_ax.set_ylabel("Current(A)")
         time_ax.set_xlabel("Time(s)")
         plt.legend()
@@ -121,6 +121,7 @@ class harmonics:
             else:
                 voltage_list.append(value)
                 voltage_labels.append(key)
+        print voltage_labels
         harm_axes=[]
         harm_len=2
         fig.text(0.03, 0.5, 'Current(A)', ha='center', va='center', rotation='vertical')
@@ -135,8 +136,13 @@ class harmonics:
         harm_axes[i].set_xlabel("Time(s)")
         time_ax=plt.subplot2grid((self.num_harmonics,harm_len*2), (0,harm_len), rowspan=self.num_harmonics, colspan=harm_len)
         for j in range(0, len(voltage_list)):
+            print titles[j]
             idx=voltage_labels.index(titles[j]+"_time_series")
-            time_ax.plot(voltages, voltage_list[idx], label=titles[j])
+            if titles[j].lower()=="experimental":
+                time_ax.plot(voltages, voltage_list[idx], label=titles[j], alpha=0.7)
+            else:
+                time_ax.plot(voltages, voltage_list[idx], label=titles[j])
+
         time_ax.set_ylabel("Current(A)")
         time_ax.set_xlabel("Potential(V)")
         plt.legend()

@@ -1,5 +1,5 @@
-#include </users/henney/Documents/Oxford/C++_libraries/pybind11/include/pybind11/pybind11.h>
-#include </users/henney/Documents/Oxford/C++_libraries/pybind11/include/pybind11/stl.h>
+#include </home/henney/Documents/Oxford/C++_libraries/pybind11/include/pybind11/pybind11.h>
+#include </home/henney/Documents/Oxford/C++_libraries/pybind11/include/pybind11/stl.h>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <boost/math/tools/tuple.hpp>
