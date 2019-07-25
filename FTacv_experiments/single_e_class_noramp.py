@@ -45,6 +45,10 @@ class single_electron:
         self.test_frequencies=frequencies[np.where(self.frequencies<last_point)]
         self.other_values=other_values
     def define_boundaries(self, boundaries):
+        if "E0_mean" in self.optim_list:
+            e0_idx=self.optim_list.index("E0_mean")
+            self.e0_min=(boundaries[0][e0_idx])/self.nd_param.c_E0
+            self.e0_max=(boundaries[1][e0_idx])/self.nd_param.c_E0
         self.boundaries=boundaries
     def normalise(self, norm, boundaries):
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
@@ -64,8 +68,6 @@ class single_electron:
         voltages=np.zeros(len(self.time_vec))
         for i in range(0, len(self.time_vec)):
             voltages[i]=isolver_noramp.et(self.nd_param.E_start, self.nd_param.E_reverse,self.nd_param.nd_omega, self.nd_param.phase, (self.time_vec[i]))
-        if self.simulation_options["no_transient"]!=True:
-            voltages=voltages[self.time_idx:]
         return voltages
     def pass_extra_data(self, time_series, fourier):
         self.secret_data_time_series=time_series
@@ -106,7 +108,7 @@ class single_electron:
         L=len(time_series)
         window=np.hanning(L)
         time_series=np.multiply(time_series, window)
-        self.f=np.fft.fftfreq(len(time_series), self.time_vec[1]-self.time_vec[0])
+        f=np.fft.fftfreq(len(time_series), self.time_vec[1]-self.time_vec[0])
         Y=np.fft.fft(time_series)
         #Y_pow=np.power(copy.deepcopy(Y[0:len(frequencies)]),2)
         top_hat=copy.deepcopy(Y[0:len(frequencies)])
@@ -120,22 +122,13 @@ class single_electron:
                 filter_bit=top_hat[index]
                 results[index]=filter_bit
         else:
-            if self.harmonic_range[-1]<15:
-                first_harm=(self.harmonic_range[0]*true_harm)-(self.nd_param.omega*self.filter_val)
-                last_harm=(self.harmonic_range[-1]*true_harm)+(self.nd_param.omega*self.filter_val)
-                likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
-                self.f=self.f[np.where((frequencies>first_harm) & (frequencies<last_harm))]
-                results=np.zeros(len(top_hat), dtype=complex)
-                results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
-            else:
-                results=Y[0:len(time_series)/2]
+            first_harm=(self.harmonic_range[0]*true_harm)-(self.nd_param.omega*self.filter_val)
+            last_harm=(self.harmonic_range[-1]*true_harm)+(self.nd_param.omega*self.filter_val)
+            likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
+            results=np.zeros(len(top_hat), dtype=complex)
+            results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
         #comp_results=np.append((np.real(results)), np.imag(results))
-        return (np.real(results))
-    def abs_transform(self, data):
-        window=np.hanning(len(data))
-        hanning_transform=np.multiply(window, data)
-        f_trans=abs(np.fft.fft(hanning_transform[len(data)/2+1:]))
-        return f_trans
+        return abs(results)
     def times(self, num_points):
         self.num_points=num_points
         #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
@@ -152,12 +145,9 @@ class single_electron:
         return normed_params
     def variable_returner(self):
         variables=vars(self.nd_param)
-        dim_vars=self.dim_dict
         for key in variables.keys():
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
                 print key, variables[key]
-                if key in dim_vars:
-                    print key, dim_vars[key]
     def pick_paramaters(self, param_vals, desired_params):
         num_params=len(desired_params)
         params=np.zeros(num_params)
@@ -167,42 +157,41 @@ class single_electron:
             params[i]=param_vals[idx]
         return params
     def param_scanner(self, param_vals, param_list, unit_dict,percent, title):
-        unit_list=[unit_dict[k] for k in param_list]
-        current_optim_list=self.optim_list
-        self.optim_list=param_list
-        num_params=len(param_list)
-        for i in range(1, num_params):
-            if num_params%i==0:
-                col=i
+            unit_list=[unit_dict[k] for k in param_list]
+            current_optim_list=self.optim_list
+            self.optim_list=param_list
+            num_params=len(param_list)
+            for i in range(1, num_params):
+                if num_params%i==0:
+                    col=i
 
-        pc_change=[1-percent, 1, 1+percent]
-        rows=num_params/col
-        first_elem=((np.arange(0, rows)*col))
-        bottom_elem=np.arange((rows*col)-col, rows*col)
-        for i in range(0, num_params):
-            ax=plt.subplot(rows, col, i+1)
-            if i in first_elem:
-                ax.set_ylabel("Current(A)")
-            else:
-                ax.axes.get_yaxis().set_ticks([])
-            if i in bottom_elem:
-                ax.set_xlabel("Voltage(V)")
-            else:
-                ax.axes.get_xaxis().set_ticks([])
-            true_val=param_vals[i]
-            plt.title(param_list[i])
-            for j in range(0,3):
-                var_val=true_val*pc_change[j]
-                param_vals[i]=var_val
-                time_series=self.test_vals(param_vals, "timeseries", test=False)
-                voltages=self.define_voltages()
-                plt.plot(self.e_nondim(voltages), alpha=0.7)#
-            plt.plot(self.e_nondim(self.other_values["experiment_voltage"]))
-            param_vals[i]=true_val
-            plt.legend()
-        plt.suptitle(title)
-        self.optim_list=current_optim_list
-        plt.show()
+            pc_change=[1-percent, 1, 1+percent]
+            rows=num_params/col
+            first_elem=((np.arange(0, rows)*col))
+            bottom_elem=np.arange((rows*col)-col, rows*col)
+            for i in range(0, num_params):
+                ax=plt.subplot(rows, col, i+1)
+                if i in first_elem:
+                    ax.set_ylabel("Current(A)")
+                else:
+                    ax.axes.get_yaxis().set_ticks([])
+                if i in bottom_elem:
+                    ax.set_xlabel("Voltage(V)")
+                else:
+                    ax.axes.get_xaxis().set_ticks([])
+                true_val=param_vals[i]
+                plt.title(param_list[i])
+                voltages=self.e_nondim(self.other_values["experiment_voltage"])
+                for j in range(0,3):
+                    var_val=true_val*pc_change[j]
+                    param_vals[i]=var_val
+                    time_series=self.test_vals(param_vals, "timeseries", test=False)
+                    plt.plot(voltages,self.i_nondim(time_series), label=str('%.2E' % param_vals[i])+unit_dict[param_list[i]],alpha=0.7)#
+                param_vals[i]=true_val
+                plt.legend()
+            plt.suptitle(title)
+            self.optim_list=current_optim_list
+            plt.show()
 
     def test_vals(self, parameters, likelihood, test=False):
         orig_likelihood=self.simulation_options["likelihood"]
@@ -225,6 +214,22 @@ class single_electron:
         #plt.title("k0")
         #plt.show()
         return k0_vals, k0_weights
+
+    def therm_dispersion(self):
+        e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
+        e0_vals=np.linspace(self.e0_min, self.e0_max, self.simulation_options["dispersion_bins"])
+        e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        for i in range(1, len(e0_weights)):
+            e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        #plt.plot(e0_vals, e0_weights)
+        #print self.nd_param.E0_mean,self.nd_param.E0_std
+        #plt.title("e0")
+        #plt.show()
+        return e0_vals, e0_weights
+    def weight_matrix(self,e0_disp, k0_disp):
+        e0_mat, k0_mat=np.meshgrid(e0_disp, k0_disp)
+        weights=np.multiply(e0_mat, k0_mat)
+        return weights
     def numerical_plots(self):
         self.debug_time=self.simulation_options["numerical_debugging"]
         time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.debug_time, self.bounds_val)
@@ -254,21 +259,6 @@ class single_electron:
             #plt.axvline(time_series[3][0]+time_series[3][2], color="black",linestyle="--")
             #plt.axvline(time_series[3][0]-time_series[3][2],color="black",linestyle="--")
 
-    def therm_dispersion(self):
-        e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
-        e0_vals=np.linspace(self.nd_param.E_start,self.nd_param.E_reverse, self.simulation_options["dispersion_bins"])
-        e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
-        for i in range(1, len(e0_weights)):
-            e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
-        #plt.plot(e0_vals, e0_weights)
-        #print self.nd_param.E0_mean,self.nd_param.E0_std
-        #plt.title("e0")
-        #plt.show()
-        return e0_vals, e0_weights
-    def weight_matrix(self,e0_disp, k0_disp):
-        e0_mat, k0_mat=np.meshgrid(e0_disp, k0_disp)
-        weights=np.multiply(e0_mat, k0_mat)
-        return weights
     def variable_params(self, param_list, param_vals):
         true_vals=copy.deepcopy(param_list)
         y=len(param_list)#
@@ -325,7 +315,7 @@ class single_electron:
                     time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
 
             else:
-                time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
         if self.simulation_options["no_transient"]!=True:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
@@ -336,11 +326,9 @@ class single_electron:
         #time_series=(time_series*-1)
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)
-            #print len(filtered), len(self.secret_data_fourier)
             if (self.simulation_options["test"]==True or test==True):
                 plt.plot(self.secret_data_fourier, label="data")
                 plt.plot(filtered , alpha=0.7, label="numerical")
-
                 plt.show()
 
             return filtered

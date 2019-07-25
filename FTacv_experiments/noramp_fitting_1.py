@@ -77,16 +77,16 @@ simulation_options={
     "numerical_debugging": False,
     "experimental_fitting":True,
     "dispersion":False,
-    "dispersion_bins":50,
+    "dispersion_bins":25,
     "test": False,
-    "likelihood":likelihood_options[1],
+    "likelihood":likelihood_options[0],
     "numerical_method": solver_list[1],
     "label": "MCMC",
     "optim_list":[]
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(2,9,1),
+    "harmonic_range":range(3,9,1),
     "experiment_time": time_results,
     "experiment_current": current_results,
     "experiment_voltage":voltage_results,
@@ -112,11 +112,11 @@ param_bounds={
     'CdlE2': [-0.1,0.1],#0.000245772700637,
     'CdlE3': [-0.05,0.05],#1.10053945995e-06,
     'gamma': [1e-11,1e-9],
-    'k_0': [0, 1e4], #(reaction rate s-1)
+    'k_0': [0, 1e3], #(reaction rate s-1)
     'alpha': [0.4, 0.6],
     "cap_phase":[0, 2*math.pi],
     "E0_mean":[0.0, 0.5],
-    "E0_std": [0.01, 0.3],
+    "E0_std": [0, 0.3],
     "k0_shape":[0,5],
     "k0_loc":[1, 1e4],
     "k0_scale":[0,2e3],
@@ -152,9 +152,6 @@ unit_dict={
 harm_class=harmonics(other_values["harmonic_range"], noramp_fit.nd_param.omega*noramp_fit.nd_param.c_T0, 0.1)
 data_harmonics=harm_class.generate_harmonics(time_results, current_results)
 
-
-
-noramp_fit.optim_list=['E0_mean', "E0_std",'k_0', 'Ru',"Cdl", "CdlE1", "CdlE2",'gamma', 'omega', "alpha", "phase", "cap_phase"]
 #carbon_means=[0.24432865369586831, 0.03718591974278576, 5266.813117359024, 2.3351875006109577e-06, 3.904567925683219e-05, 0.020282592797868926,0, 2.886466778833776e-10, 8.940621635999642, 0.10000000291906254,]
 carbon_means=[0.2629196040175071, 0.010000000426528552, 242.94186943883, 793.6555564492475, 4.020715996280745e-05, 0.012041277069243517,0, 1.702054870510513e-10, 8.94103486982429, 0.8999999976170034, 5.132595831851037, 4.446662466382718]
 black_means=[0.20504878429957712, 0.04692985835905884, 773.0039074468887, 1.1172494386860095e-06, 6.253912022948444e-06, 0.46590284463560927, -0.020672008906663236, 9.665438282298918e-11, 8.94055300929529, 0.10000008017506497, 4.749140535109004, 4.029008370204711]
@@ -164,17 +161,9 @@ carbon_means_2=[0.24437320720249422, 0.9641045582560264, 4.4556439040686615e-08,
 carbon_means_3_alpha=[0.26689122715624614, 97.72540069109925, 601.2211952415878, 3.379513907637756e-05, 0.10070581762902808, -0.0038788288927744663, 1.4557809348768636e-10, 8.940779258804525, 5.149017610779459, 4.450212193055553, 0.5]
 carbon_means_4=[0.26380081065342453, 71.68553415203698, 473.6569599754532, 3.2962209403627705e-05, 0.11560665350196508, -0.00447690722058372, 1.4277760997483275e-10, 8.940785781966794, 5.139463149738304, 4.428851337096966, 0.5999999999355239]
 carbon_means_5_1000_k=[0.26764402303397383, 761.2191987917648, 3.450250003362729e-05, 0.08536733387749873, -0.003128578066079607, 1.5151605215241677e-10, 8.94061684149824, 5.100339061687143, 4.488467382773432, 0.5999999999903135]
-carbon_means_6_20_ru=[ 2.45827239e-01,  1.03894195e+00,20,  3.31526662e-05,  9.25625459e-02, -3.49813855e-03,  1.59975902e-10,  8.94073365e+00,  5.69475975e+00, 4.32091602e+00,  5.39205070e-01]
+carbon_means_6_20_ru=[ 2.45827239e-01, 1.038,20,  3.31526662e-05,  9.25625459e-02, -3.49813855e-03,  1.59975902e-10,  8.94073365e+00,  5.69475975e+00, 4.32091602e+00,  5.39205070e-01]
 carbon_means_abs=[0.25839275077930485, 20.108646168645084, 570.1495572183396,3.2962209403627705e-05, 0.11560665350196508, -0.00447690722058372, 1.425656934986536e-10,8.940620380889355, 0.41318249114045236, 3*math.pi/2, 3*math.pi/2]
 carbon_means_abs_all_peaks=[0.2712720627064147, 53.00972798907347, 126.43581153952566, 3.160962997490096e-05, 0.14647947194537103, -0.005848319334033306, 1.0072445202882476e-10, 8.940709552792356, 0.5488793068724522]
-carbon_means_abs_all_peaks=[0.2528081478002836, 217.56996476308117, 529.7297882492157, 3.0166883670561975e-05, 0.14790906812787918, -0.005389008883307372, 1.1330727195554263e-10, 8.940664568706621, 0.40000000111206985]
-carbon_real_means_2_9=[0.23401239270683966, 517.3330553904649, 502.02453155313185, 9.433072036643362e-05, -0.15234358256552838, -0.05097574419776153, 8.37647178514092e-10, 8.941048726401895, 0.5999846349934077]
-#carbon_real_means_2_9=[0.24129165351893703, 64.61099237850354, 66.00260337835151, 9.999999911688763e-05, 0.06312706075373198, 0.003379043238695978, 9.999983878049103e-10, 8.941153329173714, 0.5999998340165804]
-
-#carbon_means_abs_all_peaks=[0.25284411504380616, 173.03932104409392, 497.4696802264159, 3.1163325909983855e-05, 0.1350430810685781, -0.004863572935476401, 1.1348900615776948e-10, 8.940659360977, 0.4000000057015202]
-
-#[0.24582652385025036, 1.0389632630002914, 3.315224083623959e-05, 0.09256531731427886, -0.003498207108270715, 1.5997595351966788e-10, 8.940733674677231, 5.6947559113205415, 4.3209173109473635, 0.5392074447951628]
-#[0.26956025706514275, 1.3496771740948563, 540.6660725674798, 1.2397017896531734e-17, 3.999999999999838e-10, 8.940704316386999, 5.764429360344229, 2.6128826280929887, 0.5059904984704859]
 
 carbon_means_8_cdl_only=[2.62877094e-01, 9.99984499e+03, 1.15828858e-06, 1.88609404e-05,7.79829258e-10, 8.94036654e+00, 4.79419627e+00, 5.99999976e-01]
 ramp_means=[0.21200070197828386, 0.06888959981526988, 133.96563492653507, 40.08177557223102, 3.226207450320691e-06, -0.021487125154184827, 0.0017931237883237632, 1.2669148148700962e-10, 8.940448789535177, 0.7999999999999661,4.749140535109004, 4.028465609498452]
@@ -185,35 +174,28 @@ ramp_means_carbon=[0.23192913053278295, 0.07597303082211063,133.999986524228, 22
 carbon_means=[0.2384234383845605, 2.8016906117813805, 14.009822731553978, 3.325500615749805e-05, 0.12980099583898141, -0.005247496549209238, 1.320027160165847e-10, 8.940856411874309, 5.513246206729991, 4.319227044942643, 0.5815664903172559]
 noramp_fit.optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "phase", "cap_phase", "alpha"]
 desired_params=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', "phase", "cap_phase", "alpha"]
-noramp_fit.dim_dict["phase"]=3*math.pi/2
-noramp_fit.dim_dict["cap_phase"]=3*math.pi/2
-plot_params=noramp_fit.pick_paramaters(carbon_means_2, desired_params)
-#noramp_fit.param_scanner(plot_params, desired_params, unit_dict, 0.2, "Fixed Alpha")
+plot_params=noramp_fit.pick_paramaters(carbon_means_3_alpha, desired_params)
+noramp_fit.param_scanner(plot_params, desired_params, unit_dict, 0.2, "Fixed Alpha")
 ramp_free_unconstrained=(noramp_fit.test_vals(carbon_means_2, "timeseries", test=False))
 ramp_free_harmonics_1=harm_class.generate_harmonics(time_results, ramp_free_unconstrained)
-ramp_free_fixed_Ru=(noramp_fit.test_vals(carbon_means_abs, "timeseries", test=False))
+ramp_free_fixed_Ru=(noramp_fit.test_vals(carbon_means_6_20_ru, "timeseries", test=False))
+print noramp_fit.dim_dict["k_0"]
 ramp_free_fixed_alpha=(noramp_fit.test_vals(carbon_means_3_alpha, "timeseries", test=False))
 #ramp_free_linear_cdl=(noramp_fit.test_vals(carbon_means_8_cdl_only, "timeseries", test=False))
 ramp_free_harmonics_2=harm_class.generate_harmonics(time_results, ramp_free_fixed_Ru)
 ramp_free_harmonics_3=harm_class.generate_harmonics(time_results, ramp_free_fixed_alpha)
 #ramp_free_harmonics_4=harm_class.generate_harmonics(time_results, ramp_free_linear_cdl)
 #exp_harmonics_2=harm_class.generate_harmonics(time_results, test_2)
+noramp_fit.simulation_options["dispersion"]=False
 noramp_fit.optim_list=['E0_mean', "E0_std",'k_0', 'Ru',"Cdl", "CdlE1", "CdlE2",'gamma', 'omega', "alpha", "cap_phase","phase"]
+param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
+for i in range(0, noramp_fit.n_parameters()):
+        param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]
+        param_boundaries[1][i]=param_bounds[noramp_fit.optim_list[i]][1]
+noramp_fit.define_boundaries(param_boundaries)
 
 ramp_time=noramp_fit.test_vals(ramp_means_carbon, "timeseries", test=False)
-noramp_fit.dim_dict["phase"]=3*math.pi/2
-noramp_fit.dim_dict["cap_phase"]=3*math.pi/2
-noramp_fit.optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "alpha"]
-abs_results=(noramp_fit.test_vals(carbon_means_abs_all_peaks, "timeseries", test=False))
-plt.subplot(1,2,1)
-plt.plot(voltage_results, abs_results, label="experimental")
-plt.plot(voltage_results, current_results, label="data")
-plt.subplot(1,2,2)
-plt.plot(np.fft.ifft(noramp_fit.kaiser_filter(abs_results)), label="experimental")
-plt.plot(np.fft.ifft(noramp_fit.kaiser_filter(current_results)), label="data")
-plt.legend()
-plt.show()
-noramp_fit.variable_returner()
+
 ramp_harmonics=harm_class.generate_harmonics(time_results, ramp_time)
 #harm_class.plot_harmonics(time_results, method="phased", Experimental=data_harmonics, Ramp_free=exp_harmonics, Ramped=ramp_harmonics)
 harm_class.harmonics_and_voltages(noramp_fit.t_nondim(time_results),noramp_fit.e_nondim(voltage_results), folder, "phased", \
@@ -224,6 +206,8 @@ harm_class.harmonics_and_voltages(noramp_fit.t_nondim(time_results),noramp_fit.e
 
 dummy_times=np.linspace(0, 1, len(likelihood_func))
 #noramp_fit.optim_list=['Ru', 'omega']
+noramp_fit.optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "phase", "cap_phase", "alpha"]
+ramp_free_fixed_Ru=(noramp_fit.test_vals(carbon_means_6_20_ru, "timeseries", test=False))
 test=ramp_free_fixed_Ru
 noise_val=0.00
 noise_max=max(test)*noise_val
@@ -236,21 +220,10 @@ time_len=range(0, len(time_results))
 f_len=np.linspace(0, time_results[-1], len(fourier_test1))
 time_plot=np.interp(f_len, time_len, time_results)
 hann=np.hanning(L)
-noramp_fit.dim_dict["phase"]=3*math.pi/2
-noramp_fit.dim_dict["cap_phase"]=3*math.pi/2
-
-abs_params=[]#['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "alpha"]
-abs_param_vals=carbon_means_abs_all_peaks#[0.25839275077930485, 20.108646168645084, 570.1495572183396, 1.425656934986536e-10, 8.940620380889355, 0.41318249114045236]
-for i in range(0, len(abs_params)):
-    noramp_fit.dim_dict[abs_params[i]]=carbon_means_abs_all_peaks[i]
-noramp_fit.optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "alpha"]
+noramp_fit.simulation_options["test"]=False
+noramp_fit.optim_list=['E_0','k_0',"Ru","Cdl","CdlE1", "CdlE2",'gamma', "phase",'omega',"alpha"]
 param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
 for i in range(0, noramp_fit.n_parameters()):
-    if noramp_fit.optim_list[i] in abs_params:
-        idx=abs_params.index(noramp_fit.optim_list[i])
-        param_boundaries[0][i]=abs_param_vals[idx]*0.9
-        param_boundaries[1][i]=abs_param_vals[idx]*1.1
-    else:
         param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]
         param_boundaries[1][i]=param_bounds[noramp_fit.optim_list[i]][1]
 noramp_fit.define_boundaries(param_boundaries)
@@ -267,7 +240,6 @@ elif simulation_options["likelihood"]=="fourier":
     cmaes_problem=pints.SingleOutputProblem(noramp_fit, dummy_times, fourier_arg)
 
 score = pints.SumOfSquaresError(cmaes_problem)#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
-noramp_fit.simulation_options["test"]=False
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(noramp_fit.optim_list))], [np.ones(len(noramp_fit.optim_list))])
 noramp_fit.simulation_options["label"]="cmaes"
 x0=abs(np.random.rand(noramp_fit.n_parameters()))#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
@@ -276,6 +248,7 @@ num_runs=1
 score_mat=np.zeros(num_runs)
 noramp_fit.variable_returner()
 param_mat=np.zeros((num_runs,len(noramp_fit.optim_list)))
+score_vec=np.zeros(num_runs)
 for i in range(0, num_runs):
     found_parameters, found_value=pints.optimise(
                                                 score,
@@ -283,57 +256,29 @@ for i in range(0, num_runs):
                                                 boundaries=CMAES_boundaries,
                                                 method=pints.CMAES
                                                 )
-    print found_value
     cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
-    print list(cmaes_results)
-    cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
-    #plt.subplot(3,5,i+1)
-    print list(cmaes_results)
-    #noramp_fit.simulate(found_parameters,time_results, normalise=True, likelihood="fourier", test=True )
-    cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
-    cmaes_fourier=noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=True)
-    print folder
-    print Method
-    plt.plot(voltage_results, true_data)
-    plt.plot(voltage_results, cmaes_time)
-    plt.show()
-    fourier_data=np.fft.ifft(likelihood_func)
-    results=np.fft.ifft(cmaes_fourier)
-    plt.plot(fourier_data)
-    plt.plot(results)
-    plt.show()
+    param_mat[i,:]=cmaes_results
+    score_vec[i]=found_value
 
+best_idx=np.where(score_vec==min(score_vec))
+best_idx=best_idx[0][0]
+cmaes_results=param_mat[best_idx, :]
 
-
-cmaes_harmonics=harm_class.generate_harmonics(time_results, cmaes_time)
-true_vals=copy.deepcopy(cmaes_results)
-data_harmonics=harm_class.generate_harmonics(time_results, true_data)
-#hann=np.hanning(len(cmaes_time))
-#f=np.fft.fftfreq(len(time_results), time_results[1]-time_results[0])
-#Y1=np.multiply(hann, cmaes_time)
-#y2=np.multiply(hann, current_results)
-#Y1=np.fft.fft(Y1)
-#y2=np.fft.fft(y2)
-#exp_harmonics=harm_class.generate_harmonics(time_results, cmaes_time)
-#harm_class.plot_harmonics(time_results, exp_harmonics, data_harmonics)
-#plt.plot(f,abs(Y1))
-#plt.plot(f,abs(y2))
-#plt.show()
-
-harm_class.plot_harmonics(time_results, cmaes_harmonics, data_harmonics,"abs", "numerical", "data")
-cmaes_prediction=noramp_fit.simulate(found_parameters,frequencies, normalise=True, likelihood="timeseries", test=True )
-print cmaes_results
-
+print list(cmaes_results)
+cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
+plt.plot(voltage_results, current_results)
+plt.plot(voltage_results, cmaes_time)
+plt.show()
 #error=np.std(np.subtract(cmaes_prediction, likelihood_func))
-"""
-#error=np.std(np.subtract(cmaes_time, current_results))
-mcmc_problem=pints.SingleOutputProblem(noramp_fit, dummy_times, likelihood_func)
+
+error=np.std(np.subtract(cmaes_time, current_results))
+mcmc_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
 #mcmc_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
-updated_lb=np.append(cmaes_results*0.5, [0])#found_parameters[3]*0.97,
-updated_ub=np.append(cmaes_results*1.5, [max(likelihood_func)])#found_parameters[3]*1.03,
-updated_ub[1]=1e6
+updated_lb=np.append(cmaes_results*0.75, [0])#found_parameters[3]*0.97,
+updated_ub=np.append(cmaes_results*1.25, [2*error])#found_parameters[3]*1.03,
 updated_boundaries=[updated_lb, updated_ub]
 updated_boundaries=np.sort(updated_boundaries, 0)
+
 noramp_fit.define_boundaries(updated_boundaries)
 log_liklihood=pints.UnknownNoiseLogLikelihood(mcmc_problem)
 log_prior=pints.UniformLogPrior(updated_boundaries[0],
@@ -344,26 +289,16 @@ xs=[mcmc_parameters,
     mcmc_parameters,
     mcmc_parameters
     ]
-noramp_fit.label="MCMC"
+noramp_fit.simulation_options["label"]="MCMC"
 mcmc = pints.MCMCSampling(log_posterior, 3, xs,method=pints.AdaptiveCovarianceMCMC)
 mcmc.set_max_iterations(10000)
 chains=mcmc.run()
-#pints.plot.trace(chains)
-#plt.show()
-means=[np.mean(chains[:, 5000:, x]) for x in np.arange(0, len(noramp_fit.optim_list))]
-print means
-print str(folder)
-#mcmc_times=noramp_fit.simulate(means, time_results, "no", "timeseries", "yes")
-#mcmc_harmonics=harm_class.generate_harmonics(time_results, mcmc_times)
-#harm_class.plot_harmonics(time_results, mcmc_harmonics, data_harmonics,"abs")
-#harm_class.plot_harmonics(time_results, mcmc_harmonics, data_harmonics, "negs")
-#open_query=raw_input("save?")
-
-filename=str(desired_length)+"_"+str(dec_amount)+"_"+str(lcv_3)+"."+folder[1:]
-f=open(filename, "w")
+f=open("GC4_MCMC_chains_uncon_disp.txt", "w")
 np.save(f, chains)
 f.close()
-"""
+pints.plot.trace(chains)
+plt.show()
+
 #means=[2.85905314e-01, 5.86252081e+00, 1.19877032e-10, 4.19903721e-05, 4.78258908e+02, 8.94055732e+00]
 #means2=[9.30117566e+03,1.16018837e-10,1.05469193e-05,1.63103403e+03,8.94085502e+00]
 means=[2.36958426e-01, 9.99999958e+03, 1.58653602e+02, 1.50881707e-05, 6.37371838e-11, 8.94639042e+00,4.71238898038469+math.pi]#9.58653602e+02#8.56987286e+02#1.62644682e+02

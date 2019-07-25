@@ -2,6 +2,7 @@ import isolver_dcv
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import norm, lognorm
 from params_class import params
 import copy
 import time
@@ -15,6 +16,10 @@ class single_electron:
         self.num_harmonics=len(harmonic_range)
         self.filter_val=filter_val
     def define_boundaries(self, boundaries):
+        if "E0_mean" in self.optim_list:
+            e0_idx=self.optim_list.index("E0_mean")
+            self.e0_min=(boundaries[0][e0_idx])/self.nd_param.c_E0
+            self.e0_max=(boundaries[1][e0_idx])/self.nd_param.c_E0
         self.boundaries=boundaries
     def normalise(self, norm, boundaries):
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
@@ -66,6 +71,14 @@ class single_electron:
         plt.plot(freqs, np.imag(Y2), label=label2, alpha=0.7)
         plt.xlabel("frequency")
         plt.legend()
+
+
+    def i_nondim(self, current):
+        return current*self.nd_param.c_I0
+    def e_nondim(self, potential):
+        return potential*self.nd_param.c_E0
+    def t_nondim(self, time):
+        return time*self.nd_param.c_T0
     def kaiser_filter(self, time_series, harmonical=False):
         frequencies=self.frequencies
         L=len(time_series)
@@ -115,8 +128,21 @@ class single_electron:
         new_array=np.zeros(len(current))
         new_array[self.time_idx]=current[self.time_idx]
         return  new_array
+    def therm_dispersion(self):
+        bins=16
+        e0_weights=np.zeros(bins)
+        e0_vals=np.linspace(self.e0_min,self.e0_max, bins)
+        e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        for i in range(1, len(e0_weights)):
+            e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
 
+        #plt.plot(e0_vals, e0_weights)
+        #print self.nd_param.E0_mean,self.nd_param.E0_std
+        #plt.title("e0")
+        #plt.show()
+        return e0_vals, e0_weights
     def simulate(self,parameters, frequencies, flag='optimise', flag2='timeseries', test="no"):
+
         var_list=vars(self)
         if len(parameters)!= len(self.optim_list):
             print len(parameters), len(self.optim_list)
@@ -126,11 +152,20 @@ class single_electron:
             normed_params=self.change_norm_group(parameters, "un_norm")
         else:
             normed_params=copy.deepcopy(parameters)
+        #print "CdlE1", normed_params[self.optim_list.index("CdlE1")]
         for i in range(0, len(self.optim_list)):
             self.dim_dict[self.optim_list[i]]=normed_params[i]
             #print self.optim_list[i]
         self.nd_param=params(self.dim_dict)
-        time_series=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec)
+        if self.dispersion==True:
+            e0_vals, e0_disp=self.therm_dispersion()
+            time_series=np.zeros(len(self.time_vec))
+            for i in range(0, len(e0_vals)):
+                time_series_current=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0, self.time_vec, self.initial_val)
+
+                time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
+        else:
+            time_series=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec, self.initial_val)
         if "no_transient" in var_list:
             new_array=np.zeros(len(time_series))
             time_series=np.array(time_series)
@@ -155,8 +190,8 @@ class single_electron:
             return filtered
         elif flag2=='timeseries':
             if test=="yes":
-                self.variable_returner()
-                plt.plot(time_series)
-                plt.plot(self.secret_data_time_series, alpha=0.7)
+                #plt.axvline(normed_params[0], linestyle="--", color="black")
+                plt.plot(self.i_nondim(time_series))
+                plt.plot(self.i_nondim(self.secret_data_time_series), alpha=0.7)
                 plt.show()
             return time_series
