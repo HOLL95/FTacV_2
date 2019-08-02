@@ -12,7 +12,8 @@ class harmonics:
     def generate_harmonics(self, times, data):
         L=len(data)
         window=np.hanning(L)
-        time_series=np.multiply(data, window)
+        time_series=data
+        #time_series=np.multiply(data, window)
         f=np.fft.fftfreq(len(time_series), times[1]-times[0])
         Y=np.fft.fft(time_series)
         #plt.plot(self.test_frequencies, Y[:len(self.test_frequencies)])
@@ -26,7 +27,8 @@ class harmonics:
         for i in range(0, self.num_harmonics):
             true_harm=self.harmonics[i]*self.input_frequency
             filter_bit=top_hat[np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]
-            harmonics[i,0:len(filter_bit)]=filter_bit
+            harmonics[i,np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]=filter_bit
+            #harmonics[i, 0:len(filter_bit)]=filter_bit
             harmonics[i,:]=((np.fft.ifft(harmonics[i,:])))
         return harmonics
     def empty(self, arg):
