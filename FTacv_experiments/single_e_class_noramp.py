@@ -9,12 +9,12 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from params_class import params
+from decimal import Decimal
 import copy
 import time
 class single_electron:
     def __init__(self, dim_paramater_dictionary, simulation_options, other_values):
         key_list=dim_paramater_dictionary.keys()
-        self.nd_param=params(dim_paramater_dictionary)
         #for i in range(0, len(key_list)):
         #    self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
         self.nd_param=params(dim_paramater_dictionary)
@@ -44,12 +44,27 @@ class single_electron:
         last_point= (self.harmonic_range[-1]*self.nd_param.omega)+(self.nd_param.omega*self.filter_val)
         self.test_frequencies=frequencies[np.where(self.frequencies<last_point)]
         self.other_values=other_values
-    def define_boundaries(self, boundaries):
-        if "E0_mean" in self.optim_list:
-            e0_idx=self.optim_list.index("E0_mean")
-            self.e0_min=(boundaries[0][e0_idx])/self.nd_param.c_E0
-            self.e0_max=(boundaries[1][e0_idx])/self.nd_param.c_E0
-        self.boundaries=boundaries
+        self.boundaries=None
+        self.counter=0
+    def define_boundaries(self, param_bounds):
+        self.param_bounds=param_bounds
+    def def_optim_list(self, optim_list):
+        keys=self.dim_dict.keys()
+        for i in range(0, len(optim_list)):
+            if optim_list[i] in keys:
+                continue
+            else:
+                raise KeyError("Parameter " + optim_list[i]+" not in list")
+        self.optim_list=optim_list
+        param_boundaries=np.zeros((2, self.n_parameters()))
+        for i in range(0, self.n_parameters()):
+                param_boundaries[0][i]=self.param_bounds[self.optim_list[i]][0]
+                param_boundaries[1][i]=self.param_bounds[self.optim_list[i]][1]
+        self.boundaries=param_boundaries
+        if ("E0_std" in optim_list) or ("k0_loc" in optim_list):
+            self.simulation_options["dispersion"]=True
+        else:
+            self.simulation_options["dispersion"]=False
     def normalise(self, norm, boundaries):
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
     def un_normalise(self, norm, boundaries):
@@ -129,6 +144,11 @@ class single_electron:
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
         #comp_results=np.append((np.real(results)), np.imag(results))
         return abs(results)
+    def abs_transform(self, data):
+        window=np.hanning(len(data))
+        hanning_transform=np.multiply(window, data)
+        f_trans=abs(np.fft.fft(hanning_transform[len(data)/2+1:]))
+        return f_trans
     def times(self, num_points):
         self.num_points=num_points
         #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
@@ -149,6 +169,8 @@ class single_electron:
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
                 print key, variables[key]
     def pick_paramaters(self, param_vals, desired_params):
+        if len(desired_params)>len(param_vals):
+            raise ValueError("Too many parameters")
         num_params=len(desired_params)
         params=np.zeros(num_params)
         for i in range(0,num_params):
@@ -156,42 +178,51 @@ class single_electron:
             print desired_params[i], idx
             params[i]=param_vals[idx]
         return params
-    def param_scanner(self, param_vals, param_list, unit_dict,percent, title):
-            unit_list=[unit_dict[k] for k in param_list]
-            current_optim_list=self.optim_list
-            self.optim_list=param_list
-            num_params=len(param_list)
-            for i in range(1, num_params):
-                if num_params%i==0:
-                    col=i
+    def param_scanner(self, param_vals, param_list, unit_dict,percent, title, boundaries=False):
 
-            pc_change=[1-percent, 1, 1+percent]
-            rows=num_params/col
-            first_elem=((np.arange(0, rows)*col))
-            bottom_elem=np.arange((rows*col)-col, rows*col)
-            for i in range(0, num_params):
-                ax=plt.subplot(rows, col, i+1)
-                if i in first_elem:
-                    ax.set_ylabel("Current(A)")
+        unit_list=[unit_dict[k] for k in param_list]
+        current_optim_list=self.optim_list
+        self.optim_list=param_list
+        num_params=len(param_list)
+        for i in range(1, num_params):
+            if num_params%i==0:
+                col=i
+
+        pc_change=[1-percent, 1, 1+percent]
+        rows=num_params/col
+        first_elem=((np.arange(0, rows)*col))
+        bottom_elem=np.arange((rows*col)-col, rows*col)
+        for i in range(0, num_params):
+            ax=plt.subplot(rows, col, i+1)
+            if i in first_elem:
+                ax.set_ylabel("Current(A)")
+            else:
+                ax.axes.get_yaxis().set_ticks([])
+            if i in bottom_elem:
+                ax.set_xlabel("Voltage(V)")
+            else:
+                ax.axes.get_xaxis().set_ticks([])
+            true_val=param_vals[i]
+            plt.title(param_list[i])
+            if boundaries==False:
+                var_vals=np.multiply(true_val, pc_change)
+            else:
+                var_vals=[self.param_bounds[param_list[i]][0], true_val, self.param_bounds[param_list[i]][1]]
+            for j in range(0,3):
+                print var_vals
+                param_vals[i]=var_vals[j]
+                time_series=self.test_vals(param_vals, "timeseries", test=False)
+                voltages=self.define_voltages()
+                if abs(var_vals[j])<0.01:
+                    label="{:.3E}".format(Decimal(str(var_vals[j])))
                 else:
-                    ax.axes.get_yaxis().set_ticks([])
-                if i in bottom_elem:
-                    ax.set_xlabel("Voltage(V)")
-                else:
-                    ax.axes.get_xaxis().set_ticks([])
-                true_val=param_vals[i]
-                plt.title(param_list[i])
-                voltages=self.e_nondim(self.other_values["experiment_voltage"])
-                for j in range(0,3):
-                    var_val=true_val*pc_change[j]
-                    param_vals[i]=var_val
-                    time_series=self.test_vals(param_vals, "timeseries", test=False)
-                    plt.plot(voltages,self.i_nondim(time_series), label=str('%.2E' % param_vals[i])+unit_dict[param_list[i]],alpha=0.7)#
-                param_vals[i]=true_val
-                plt.legend()
-            plt.suptitle(title)
-            self.optim_list=current_optim_list
-            plt.show()
+                    label="%.3f" % var_vals[j]
+                plt.plot(self.e_nondim(self.other_values["experiment_voltage"]), self.i_nondim(time_series),label=label+" "+ str(unit_dict[param_list[i]]), alpha=0.7)#
+            param_vals[i]=true_val
+            plt.legend()
+        plt.suptitle(title)
+        self.optim_list=current_optim_list
+        plt.show()
 
     def test_vals(self, parameters, likelihood, test=False):
         orig_likelihood=self.simulation_options["likelihood"]
@@ -259,6 +290,23 @@ class single_electron:
             #plt.axvline(time_series[3][0]+time_series[3][2], color="black",linestyle="--")
             #plt.axvline(time_series[3][0]-time_series[3][2],color="black",linestyle="--")
 
+    def therm_dispersion(self):
+        e0_min=self.nd_param.E_start#self.param_bounds["E_0"][0]/self.nd_param.c_E0
+        e0_max=self.nd_param.E_reverse#self.param_bounds["E_0"][1]/self.nd_param.c_E0
+        e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
+        e0_vals=np.linspace(e0_min,e0_max, self.simulation_options["dispersion_bins"])
+        e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        for i in range(1, len(e0_weights)):
+            e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        #plt.plot(e0_vals, e0_weights)
+        #print self.nd_param.E0_mean,self.nd_param.E0_std
+        #plt.title("e0")
+        #plt.show()
+        return e0_vals, e0_weights
+    def weight_matrix(self,e0_disp, k0_disp):
+        e0_mat, k0_mat=np.meshgrid(e0_disp, k0_disp)
+        weights=np.multiply(e0_mat, k0_mat)
+        return weights
     def variable_params(self, param_list, param_vals):
         true_vals=copy.deepcopy(param_list)
         y=len(param_list)#
@@ -271,6 +319,8 @@ class single_electron:
 
     def simulate(self,parameters, frequencies, test=False):
         if len(parameters)!= len(self.optim_list):
+            print self.optim_list
+            print parameters
             raise ValueError('Wrong number of parameters')
         if self.simulation_options["label"]=="cmaes":
             normed_params=self.change_norm_group(parameters, "un_norm")
@@ -293,16 +343,18 @@ class single_electron:
             if self.simulation_options["dispersion"]==True:
                 time_series=np.zeros(len(self.time_vec))
                 bins=self.simulation_options["dispersion_bins"]
-                if "E0_std" and "k0_shape" in self.optim_list:
+                if ("E0_std" in self.optim_list) and ("k0_shape" in self.optim_list):
                     e0_vals, e0_disp=self.therm_dispersion()
                     k0_vals, k0_disp=self.kinetic_dispersion()
                     weights=self.weight_matrix(e0_disp, k0_disp)
+                    print sum(k0_disp)
                     for i in range(0, bins):
                         for j in range(0, bins):
                             time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], k0_vals[j],self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
                             time_series=np.add(time_series, np.multiply(time_series_current, weights[i,j]))
                 elif "E0_std" in self.optim_list:
                     e0_vals, e0_disp=self.therm_dispersion()
+                    print sum(e0_disp)
                     for i in range(0, bins):
                         time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
                         time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))

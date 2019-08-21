@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from single_e_class_noramp  import single_electron
 from harmonics_plotter import harmonics
+from matplotlib.widgets import Slider, Button, RadioButtons
 import pints
 import pints.plot
 import copy
@@ -27,20 +28,18 @@ for data in files:
         results=np.loadtxt(path+"/"+data)
     elif (Method in data)  and (type2 in data):
         results2=np.loadtxt(path+"/"+data)
-dec_amount=8
+dec_amount=4
 current_results=results[0::dec_amount, 1]
 time_results=results[0::dec_amount, 0]
 voltage_results=results2[0::dec_amount, 1]
 #plt.plot(time_results, current_results)
 #plt.show()
 
-current_results=results[0::dec_amount, 1]
-time_results=results[0::dec_amount, 0]
-voltage_results=results2[0::dec_amount, 1]
 de=300e-3
 estart=260e-3-de
 ereverse=estart+2*de
 param_list={
+    "E_0":0.2,
     'E_start': estart, #(starting dc voltage - V)
     'E_reverse': ereverse,
     'omega':8.94,#8.88480830076,  #    (frequency Hz)
@@ -77,7 +76,7 @@ simulation_options={
     "numerical_debugging": False,
     "experimental_fitting":True,
     "dispersion":False,
-    "dispersion_bins":25,
+    "dispersion_bins":16,
     "test": False,
     "likelihood":likelihood_options[0],
     "numerical_method": solver_list[1],
@@ -86,43 +85,44 @@ simulation_options={
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(3,9,1),
+    "harmonic_range":range(1,9,1),
     "experiment_time": time_results,
     "experiment_current": current_results,
     "experiment_voltage":voltage_results,
     "bounds_val":20,
-    "signal_length":int(2e4),
+    "signal_length":int(8e3),
 }
-param_list['E_0']=2.36504746e-01#(param_list['E_reverse']-param_list['E_start'])/2
+param_bounds={
+    'E_0':[0.2, 0.3],#[param_list['E_start'],param_list['E_reverse']],
+    'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
+    'Ru': [0, 7e2],  #     (uncompensated resistance ohms)
+    'Cdl': [0,1e-4], #(capacitance parameters)
+    'CdlE1': [0.05,0.15],#0.000653657774506,
+    'CdlE2': [-0.008,0.008],#0.000245772700637,
+    'CdlE3': [-0.01,0.01],#1.10053945995e-06,
+    'gamma': [1e-11,1e-9],
+    'k_0': [1, 1e3], #(reaction rate s-1)
+    'alpha': [0.4, 0.6],
+    "cap_phase":[math.pi, 2*math.pi],
+    "E0_mean":[0.15, 0.35],
+    "E0_std": [0.001, 0.1],
+    "k0_shape":[0,5],
+    "k0_loc":[1, 1e3],
+    "k0_scale":[0,2e3],
+    "k0_range":[1e2, 1e4],
+    'phase' : [0, 2*math.pi]
+}
+#(param_list['E_reverse']-param_list['E_start'])/2
 noramp_fit=single_electron(param_list, simulation_options, other_values)
+noramp_fit.define_boundaries(param_bounds)
 time_results=noramp_fit.other_values["experiment_time"]
 current_results=noramp_fit.other_values["experiment_current"]
 voltage_results=noramp_fit.other_values["experiment_voltage"]
 likelihood_func=noramp_fit.kaiser_filter(current_results)
 test_voltages=noramp_fit.define_voltages()
-noramp_fit.optim_list=[]
 frequencies=noramp_fit.frequencies
 noramp_fit.pass_extra_data(current_results, likelihood_func)
-param_bounds={
-    'E_0':[0.1, 0.4],#[param_list['E_start'],param_list['E_reverse']],
-    'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
-    'Ru': [0, 1e3],  #     (uncompensated resistance ohms)
-    'Cdl': [0,1e-4], #(capacitance parameters)
-    'CdlE1': [-2,2],#0.000653657774506,
-    'CdlE2': [-0.1,0.1],#0.000245772700637,
-    'CdlE3': [-0.05,0.05],#1.10053945995e-06,
-    'gamma': [1e-11,1e-9],
-    'k_0': [0, 1e3], #(reaction rate s-1)
-    'alpha': [0.4, 0.6],
-    "cap_phase":[0, 2*math.pi],
-    "E0_mean":[0.0, 0.5],
-    "E0_std": [0, 0.3],
-    "k0_shape":[0,5],
-    "k0_loc":[1, 1e4],
-    "k0_scale":[0,2e3],
-    "k0_range":[1e2, 1e4],
-    'phase' : [5*math.pi/4, 7*math.pi/4]
-}
+
 unit_dict={
     "E_0": "V",
     'E_start': "V", #(starting dc voltage - V)
@@ -131,12 +131,12 @@ unit_dict={
     'd_E': "V",   #(ac voltage amplitude - V) freq_range[j],#
     'v': r'$s^{-1}$',   #       (scan rate s^-1)
     'area': r'$cm^{2}$', #(electrode surface area cm^2)
-    'Ru': "ohms",  #     (uncompensated resistance ohms)
+    'Ru': r'$\Omega$',  #     (uncompensated resistance ohms)
     'Cdl': "F", #(capacitance parameters)
     'CdlE1': "",#0.000653657774506,
     'CdlE2': "",#0.000245772700637,
     'CdlE3': "",#1.10053945995e-06,
-    'gamma': r'$\frac{mol}{cm^{2}}$',
+    'gamma': r'$mol$ $cm^{-2}$',
     'k_0': r'$s^{-1}$', #(reaction rate s-1)
     'alpha': "",
     "E0_mean":"V",
@@ -164,7 +164,14 @@ carbon_means_5_1000_k=[0.26764402303397383, 761.2191987917648, 3.450250003362729
 carbon_means_6_20_ru=[ 2.45827239e-01, 1.038,20,  3.31526662e-05,  9.25625459e-02, -3.49813855e-03,  1.59975902e-10,  8.94073365e+00,  5.69475975e+00, 4.32091602e+00,  5.39205070e-01]
 carbon_means_abs=[0.25839275077930485, 20.108646168645084, 570.1495572183396,3.2962209403627705e-05, 0.11560665350196508, -0.00447690722058372, 1.425656934986536e-10,8.940620380889355, 0.41318249114045236, 3*math.pi/2, 3*math.pi/2]
 carbon_means_abs_all_peaks=[0.2712720627064147, 53.00972798907347, 126.43581153952566, 3.160962997490096e-05, 0.14647947194537103, -0.005848319334033306, 1.0072445202882476e-10, 8.940709552792356, 0.5488793068724522]
-
+carbon_means_abs_all_peaks=[0.2528081478002836, 217.56996476308117, 529.7297882492157, 3.0166883670561975e-05, 0.14790906812787918, -0.005389008883307372, 1.1330727195554263e-10, 8.940664568706621, 0.40000000111206985]
+another_constrained_fit=[0.25007589734382935, 0.04947794128755774, 20.83219016081861, 0.0002356574033788102, 3.361058693410845e-06, 1.9999995197072655, -0.09693566779590666, 3.665491921443447e-10, 8.941522982029218, 0.49515486096231986, 3.8227156574615946, 5.2169580962884226]
+random_params=[0.25, 0.05, 100,100, 3e-5, 0.1, -0.005, 1e-10, 3*math.pi/2, 0.5]
+noramp_fit.dim_dict["phase"]=3*math.pi/2
+noramp_fit.dim_dict["cap_phase"]=3*math.pi/2
+desired_params=['E0_mean', "E0_std",'k_0', 'Ru',"Cdl", "CdlE1", "CdlE2",'gamma', "cap_phase","alpha"]
+noramp_fit.def_optim_list(desired_params)
+noramp_fit.param_scanner(random_params, desired_params, unit_dict, 0.2, "", boundaries=True)
 carbon_means_8_cdl_only=[2.62877094e-01, 9.99984499e+03, 1.15828858e-06, 1.88609404e-05,7.79829258e-10, 8.94036654e+00, 4.79419627e+00, 5.99999976e-01]
 ramp_means=[0.21200070197828386, 0.06888959981526988, 133.96563492653507, 40.08177557223102, 3.226207450320691e-06, -0.021487125154184827, 0.0017931237883237632, 1.2669148148700962e-10, 8.940448789535177, 0.7999999999999661,4.749140535109004, 4.028465609498452]
 ramp_means_carbon_1=[0.24192913053278295, 9999.999986524228, 1.0428644292961376e-08, 9.999999999710656e-06, -0.19135843729198476, 0.012883589352296436, 3.5654939556021e-10, 8.940621635999642, 4.749140535109004, 4.029008370204711]
@@ -172,11 +179,8 @@ ramp_means_carbon=[0.23192913053278295, 0.07597303082211063,133.999986524228, 22
 #noramp_fit.optim_list=['E_0', 'k_0', 'Ru','Cdl', 'gamma','omega', 'phase','alpha']d
 
 carbon_means=[0.2384234383845605, 2.8016906117813805, 14.009822731553978, 3.325500615749805e-05, 0.12980099583898141, -0.005247496549209238, 1.320027160165847e-10, 8.940856411874309, 5.513246206729991, 4.319227044942643, 0.5815664903172559]
-noramp_fit.optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "phase", "cap_phase", "alpha"]
-desired_params=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', "phase", "cap_phase", "alpha"]
-plot_params=noramp_fit.pick_paramaters(carbon_means_3_alpha, desired_params)
-noramp_fit.param_scanner(plot_params, desired_params, unit_dict, 0.2, "Fixed Alpha")
-ramp_free_unconstrained=(noramp_fit.test_vals(carbon_means_2, "timeseries", test=False))
+noramp_fit.def_optim_list(['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "phase", "cap_phase", "alpha"])
+ramp_free_unconstrained=(noramp_fit.test_vals(carbon_means_3_alpha, "timeseries", test=False))
 ramp_free_harmonics_1=harm_class.generate_harmonics(time_results, ramp_free_unconstrained)
 ramp_free_fixed_Ru=(noramp_fit.test_vals(carbon_means_6_20_ru, "timeseries", test=False))
 print noramp_fit.dim_dict["k_0"]
@@ -186,17 +190,19 @@ ramp_free_harmonics_2=harm_class.generate_harmonics(time_results, ramp_free_fixe
 ramp_free_harmonics_3=harm_class.generate_harmonics(time_results, ramp_free_fixed_alpha)
 #ramp_free_harmonics_4=harm_class.generate_harmonics(time_results, ramp_free_linear_cdl)
 #exp_harmonics_2=harm_class.generate_harmonics(time_results, test_2)
-noramp_fit.simulation_options["dispersion"]=False
-noramp_fit.optim_list=['E0_mean', "E0_std",'k_0', 'Ru',"Cdl", "CdlE1", "CdlE2",'gamma', 'omega', "alpha", "cap_phase","phase"]
-param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
-for i in range(0, noramp_fit.n_parameters()):
-        param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]
-        param_boundaries[1][i]=param_bounds[noramp_fit.optim_list[i]][1]
-noramp_fit.define_boundaries(param_boundaries)
+noramp_fit.dim_dict["omega"]= 8.940621635999642
+noramp_fit.def_optim_list(['E0_mean', "E0_std",'k_0', 'Ru',"Cdl", "CdlE1", "CdlE2",'gamma', "alpha", "cap_phase","phase"])
+carbon_means_abs=[0.25007589734382935, 0.04947794128755774, 20.83219016081861, 0.0002356574033788102, 3.361058693410845e-06, 1.9999995197072655, -0.09693566779590666, 3.665491921443447e-10, 0.49515486096231986, 3.8227156574615946, 5.2169580962884226]
+ramp_free_fixed_Ru=(noramp_fit.test_vals(carbon_means_abs, "timeseries", test=False))
+noramp_fit.def_optim_list(['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma',"alpha", "phase", "cap_phase" ])
+carbon_means_abs=[0.25007589734382935, 20.83219016081861, 0.0002356574033788102, 3.361058693410845e-06, 1.9999995197072655, -0.09693566779590666, 3.665491921443447e-10, 0.49515486096231986, 3.8227156574615946, 5.2169580962884226]
+ramp_free_fixed_Ru=(noramp_fit.test_vals(carbon_means_abs, "timeseries", test=False))
+plt.plot(voltage_results, ramp_free_fixed_Ru)
+#plt.title("DISPERSION COMPARISON")
+plt.show()
+ramp_free_harmonics_2=harm_class.generate_harmonics(time_results, ramp_free_fixed_Ru)
 
-ramp_time=noramp_fit.test_vals(ramp_means_carbon, "timeseries", test=False)
-
-ramp_harmonics=harm_class.generate_harmonics(time_results, ramp_time)
+noramp_fit.variable_returner()
 #harm_class.plot_harmonics(time_results, method="phased", Experimental=data_harmonics, Ramp_free=exp_harmonics, Ramped=ramp_harmonics)
 harm_class.harmonics_and_voltages(noramp_fit.t_nondim(time_results),noramp_fit.e_nondim(voltage_results), folder, "phased", \
                             Experimental_harmonics=noramp_fit.i_nondim(data_harmonics), Constrained_harmonics=noramp_fit.i_nondim(ramp_free_harmonics_1),\
@@ -204,6 +210,34 @@ harm_class.harmonics_and_voltages(noramp_fit.t_nondim(time_results),noramp_fit.e
                             Experimental_time_series=noramp_fit.i_nondim(current_results),Constrained_time_series=noramp_fit.i_nondim(ramp_free_unconstrained),\
                             Ru_time_series=noramp_fit.i_nondim(ramp_free_fixed_Ru), Alpha_time_series=noramp_fit.i_nondim(ramp_free_fixed_alpha))
 
+fig, ax=plt.subplots(1, 1)
+line_elements=[]
+l1,=(ax.plot(voltage_results, ramp_free_fixed_Ru, lw=2))
+ax.plot(voltage_results, current_results, lw=2, alpha=0.5)
+
+
+
+axcolor = 'lightgoldenrodyellow'
+slider_ax=[]
+slider_ax_element=[]
+for i in range(0, len(noramp_fit.optim_list)):
+    slider_ax.append(plt.axes([0.25, 0.0+(i*0.02), 0.65, 0.01], facecolor=axcolor))
+    slider_ax_element.append(Slider(slider_ax[i], noramp_fit.optim_list[i], param_bounds[noramp_fit.optim_list[i]][0], param_bounds[noramp_fit.optim_list[i]][1],carbon_means_abs[i]) )
+
+
+
+def update(val):
+    params=np.zeros(len(noramp_fit.optim_list))
+    for i in range(0, len(noramp_fit.optim_list)):
+        params[i]=slider_ax_element[i].val
+    print list(params)
+    test=noramp_fit.test_vals(params, likelihood="timeseries", test=False)
+    l1.set_ydata(test)
+    fig.canvas.draw_idle()
+
+for i in range(0, len(noramp_fit.optim_list)):
+    slider_ax_element[i].on_changed(update)
+plt.show()
 dummy_times=np.linspace(0, 1, len(likelihood_func))
 #noramp_fit.optim_list=['Ru', 'omega']
 noramp_fit.optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', 'omega', "phase", "cap_phase", "alpha"]
@@ -220,16 +254,10 @@ time_len=range(0, len(time_results))
 f_len=np.linspace(0, time_results[-1], len(fourier_test1))
 time_plot=np.interp(f_len, time_len, time_results)
 hann=np.hanning(L)
-noramp_fit.simulation_options["test"]=False
-noramp_fit.optim_list=['E_0','k_0',"Ru","Cdl","CdlE1", "CdlE2",'gamma', "phase",'omega',"alpha"]
-param_boundaries=np.zeros((2, noramp_fit.n_parameters()))
-for i in range(0, noramp_fit.n_parameters()):
-        param_boundaries[0][i]=param_bounds[noramp_fit.optim_list[i]][0]
-        param_boundaries[1][i]=param_bounds[noramp_fit.optim_list[i]][1]
-noramp_fit.define_boundaries(param_boundaries)
+noramp_fit.def_optim_list(["E0_mean", "E0_std","k0_loc","k0_shape", "k0_scale", 'Ru',"Cdl", "CdlE1", "CdlE2","CdlE3",'gamma', 'omega',"phase","cap_phase","alpha"])
 fourier_arg=likelihood_func
 true_data=current_results
-#if simulation_options["experimental_fitting"]==False:
+#if simulation_options["experimental_fitting"]==False:d
 #elif simulation_options["experimental_fitting"]==True:
     #fourier_arg=likelihood_func
     #true_data=current_results
@@ -242,9 +270,10 @@ elif simulation_options["likelihood"]=="fourier":
 score = pints.SumOfSquaresError(cmaes_problem)#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(noramp_fit.optim_list))], [np.ones(len(noramp_fit.optim_list))])
 noramp_fit.simulation_options["label"]="cmaes"
-x0=abs(np.random.rand(noramp_fit.n_parameters()))#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
+x0=abs(np.random.rand(noramp_fit.n_parameters()))
+print x0
 print len(x0), noramp_fit.n_parameters()
-num_runs=1
+num_runs=20
 score_mat=np.zeros(num_runs)
 noramp_fit.variable_returner()
 param_mat=np.zeros((num_runs,len(noramp_fit.optim_list)))
@@ -257,8 +286,27 @@ for i in range(0, num_runs):
                                                 method=pints.CMAES
                                                 )
     cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
-    param_mat[i,:]=cmaes_results
-    score_vec[i]=found_value
+    print list(cmaes_results)
+    cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
+    #plt.subplot(3,5,i+1)
+    print list(cmaes_results)
+    #noramp_fit.simulate(found_parameters,time_results, normalise=True, likelihood="fourier", test=True )
+    cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
+    cmaes_fourier=noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=True)
+    print folder
+    print Method
+    plt.subplot(1,2,1)
+    plt.plot(voltage_results, true_data)
+    plt.plot(voltage_results, cmaes_time)
+    plt.subplot(1,2,2)
+    plt.plot(time_results, true_data)
+    plt.plot(time_results, cmaes_time)
+    plt.show()
+    fourier_data=np.fft.ifft(fourier_arg)
+    results=np.fft.ifft(cmaes_fourier)
+    plt.plot(fourier_data)
+    plt.plot(results)
+    plt.show()
 
 best_idx=np.where(score_vec==min(score_vec))
 best_idx=best_idx[0][0]
