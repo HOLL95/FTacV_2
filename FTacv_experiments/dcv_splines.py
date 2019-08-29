@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import isolver_noramp
 import math
 import numpy as np
+import scipy
 import matplotlib.pyplot as plt
 from single_e_class_dcv import single_electron
 from harmonics_plotter import harmonics
@@ -48,8 +49,7 @@ plt.show()
 time_results=times[Method]
 voltage_results=voltages[Method]
 current_results=currents[Method]
-plt.plot(voltage_results, current_results)
-plt.show()
+
 param_list={
     "E_0":0.2,
     'E_start': min(voltage_results), #(starting dc voltage - V)
@@ -80,31 +80,18 @@ param_list={
     'time_end':1000,
     'num_peaks': 50
 }
-plt.subplot(1,2,1)
-plt.title("Current results")
-plt.ylabel("Current")
-plt.xlabel("time")
-plt.plot(time_results, current_results)
-plt.subplot(1,2,2)
-plt.title("Input voltage")
-plt.ylabel("voltage")
-plt.xlabel("time")
-plt.plot(time_results, voltage_results)
-plt.show()
-param_list['E_0']=0.23471918314326964
+
 harmonic_range=np.arange(1,7,1)
 dcv_fit=single_electron(param_list, params_for_opt, harmonic_range, 1.0)
 dcv_fit.label="cmaes"
 tr=((dcv_fit.nd_param.E_reverse-dcv_fit.nd_param.E_start));
-
-
 time_results=time_results/dcv_fit.nd_param.c_T0
 current_results=current_results/dcv_fit.nd_param.c_I0
 voltage_results=voltage_results/dcv_fit.nd_param.c_E0
-time_idx=np.where(voltage_results==max(voltage_results))
-time_results=time_results[:time_idx[0][0]]
-voltage_results=voltage_results[:time_idx[0][0]]
-current_results=current_results[:time_idx[0][0]]
+#time_idx=np.where(voltage_results==max(voltage_results))
+#time_results=time_results[:time_idx[0][0]]
+#voltage_results=voltage_results[:time_idx[0][0]]
+#current_results=current_results[:time_idx[0][0]]
 dcv_fit.voltages=voltage_results
 dcv_fit.initial_val=current_results[0]
 print time_results[1]-time_results[0]
@@ -125,16 +112,13 @@ chains=np.load("ramped_results")
 dcv_fit.dispersion=False
 means=[param_list[dcv_fit.optim_list[x]] for x in np.arange(0,len(dcv_fit.optim_list))]
 def dim_current(current):
-    return current*dcv_fit.nd_param.c_I0
+    return np.multiply(current, dcv_fit.nd_param.c_I0)
 def dim_time(time):
-    return time*dcv_fit.nd_param.c_T0
+    return np.multiply(time, dcv_fit.nd_param.c_T0)
 def dim_potential(voltage):
-    return voltage*dcv_fit.nd_param.c_E0
-
-
-
+    return np.multiply(voltage, dcv_fit.nd_param.c_E0)
 param_bounds={
-    'E_0':[0.2, 0.35],#[param_list['E_start'],param_list['E_reverse']],
+    'E_0':[0.12, 0.4],#[param_list['E_start'],param_list['E_reverse']],
     'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
     'Ru': [1, 1e3],  #     (uncompensated resistance ohms)
     'Cdl': [0,1e-4], #(capacitance parameters)
@@ -153,7 +137,6 @@ param_bounds={
     "k0_range":[1e2, 1e4],
 }
 scan_params=['E_0','k_0', "Ru", "Cdl","CdlE1","CdlE2", "gamma"]
-
 carbon_means=[0.2712720627064147, 53.00972798907347, 126.43581153952566, 3.160962997490096e-05, 0.14647947194537103, -0.005848319334033306, 1.0072445202882476e-10, 0]
 dcv_fit.dispersion=True
 scan_params=[]
@@ -173,36 +156,65 @@ for i in range(0, len(scan_params)):
     for q in range(0, len(scan_params)):
         dcv_fit.dim_dict[scan_params[q]]=carbon_means[q]
 plt.show()
-dcv_fit.optim_list=['E0_mean', "E0_std","Ru", "Cdl","CdlE1","CdlE2", "gamma"]
-dcv_fit.dim_dict["k_0"]=50
+
+def nan_helper(y):
+ return np.isnan(y), lambda z: z.nonzero()[0]
+dcv_fit.optim_list=["E0_mean", "E0_std", "k_0", "Ru", "alpha"]
+test=dcv_fit.simulate([0.23264569588050996, 0.0674603084243984, 84.4445611107851, 227.55356998656478, 0.5], frequencies)
+test2=dcv_fit.simulate([0.26309322667095436, 0.08411919477796326, 999.9999999749896, 5.005163812028062e-10, 0.7999999999895195], frequencies)
+test3=dcv_fit.simulate([0.24042307692307694, 0.05995192307692309, 81.25609725526283, 100.0,0.6], frequencies)
+test4=dcv_fit.simulate([0.2507124585192858, 0.012810161448688611, 81.25609725526283,100, 0.7811192097028208], frequencies)
+subtract=np.subtract(current_results, test)
+#plt.plot(voltage_results, subtract)
+#plt.plot(voltage_results, current_results)
+#plt.show()
+f_voltage_range=np.divide(param_bounds["E_0"], dcv_fit.nd_param.c_E0)
+f_voltage_idx=np.where((voltage_results>f_voltage_range[0]) & (voltage_results<f_voltage_range[1]))
+cap_voltages=voltage_results[f_voltage_idx]
+cap_current=copy.deepcopy(current_results)#np.subtract(current_results, test)
+cap_current[f_voltage_idx]=float('NaN')
+nans, x=nan_helper(cap_current)
+cap_current[nans]=np.interp(x(nans), x(~nans), cap_current[~nans])
+max_idx=np.where(voltage_results==(max(voltage_results)))
+max_idx=max_idx[0][0]
+print max_idx
+section_1=cap_current[:max_idx]
+section_2=cap_current[max_idx:]
+degree=3
+
+section_1_polyfit=np.poly1d(np.polyfit(time_results[:max_idx], section_1, degree))
+section_2_polyfit=np.poly1d(np.polyfit(time_results[max_idx:], section_2,degree))
+total_polyfit= np.append(section_1_polyfit(time_results[:max_idx]), section_2_polyfit(time_results[max_idx:]))
+cap_current_2=copy.deepcopy(cap_current)
+cap_current[nans]=total_polyfit[nans]
+cap_time=copy.deepcopy(time_results)
+plt.plot(voltage_results, current_results)
+plt.plot(voltage_results, np.add(cap_current, test2))
+plt.plot(voltage_results, np.add(cap_current, test3))
+plt.plot(voltage_results, np.add(cap_current, test4))
+plt.show()
+
+
+coarse_time=time_results[0::64]
+coarse_current=current_results[0::64]
+coarse_voltage=voltage_results[0::64]
+coarse_time=np.linspace(0, time_results[-1], 18)
+coarse_current=np.interp(coarse_time, time_results, current_results)
+coarse_voltage=np.interp(coarse_time, time_results, voltage_results)
+cs=scipy.interpolate.CubicSpline(coarse_time, coarse_current)
+cs_results=cs(coarse_time)
+plt.plot(coarse_voltage, coarse_current, "x")
+plt.plot(coarse_voltage, cs_results)
+#plt.plot(voltage_results, np.add(cs_results, test))
+#plt.plot(voltage_results, np.add(cs_results, test2))
+plt.show()
+
+
 param_boundaries=np.zeros((2, dcv_fit.n_parameters()))
 for i in range(0, dcv_fit.n_parameters()):
     param_boundaries[0][i]=param_bounds[dcv_fit.optim_list[i]][0]
     param_boundaries[1][i]=param_bounds[dcv_fit.optim_list[i]][1]
 dcv_fit.define_boundaries(param_boundaries)
-cmaes_problem=pints.SingleOutputProblem(dcv_fit, time_results, current_results)
-score = pints.SumOfSquaresError(cmaes_problem)
 dcv_fit.label="cmaes"
-CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(dcv_fit.optim_list))], [np.ones(len(dcv_fit.optim_list))])
 x0=abs(np.random.rand(dcv_fit.n_parameters()))#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
 print len(x0), dcv_fit.n_parameters()
-
-found_parameters, found_value=pints.optimise(
-                                            score,
-                                            x0,
-                                            boundaries=CMAES_boundaries,
-                                            method=pints.CMAES
-                                            )
-cmaes_results=dcv_fit.change_norm_group(found_parameters, "un_norm")
-
-test1=dcv_fit.simulate(cmaes_results,frequencies, "no", "timeseries", "no" )
-#dcv_fit.simulate(found_parameters,time_results, normalise=True, likelihood="fourier", test=True )
-print list(cmaes_results)
-plt.plot(dcv_fit.e_nondim(dcv_fit.voltages), dcv_fit.i_nondim(current_results), label="Data")
-plt.plot(dcv_fit.e_nondim(dcv_fit.voltages), dcv_fit.i_nondim(test1), label="Simulation")
-plt.legend()
-plt.xlabel("Voltage(V)")
-plt.ylabel("Current(A)")
-plt.title(folder)
-plt.show()
-carbon_means=[ 3.22160701e-01,  2.40406450e+02,  8.97760719e-05,  3.29096335e-01,-5.10473887e-03,  2.05353151e-11]

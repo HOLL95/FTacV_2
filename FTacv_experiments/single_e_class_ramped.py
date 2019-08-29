@@ -196,12 +196,11 @@ class single_electron:
             time_series=np.zeros(len(self.time_vec))
             #for i in range(0, len(e0_vals)):
             for j in range(0, len(e0_vals)):
-                    time_series_current=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[j], self.nd_param.k_0,self.time_vec)
+                    time_series_current=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase,  self.nd_param.cap_phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[j], self.nd_param.k_0,self.time_vec)
                     time_series=np.add(time_series, np.multiply(time_series_current,e0_disp[j]))
-
-            print time.time()-start, "TIME"
+            print np.sum(e0_disp), "TIME"
         else:
-            time_series=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec)
+            time_series=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, self.nd_param.cap_phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec)
         if self.simulation_options["no_transient"]==True:
             new_array=np.zeros(len(time_series))
             time_series=np.array(time_series)

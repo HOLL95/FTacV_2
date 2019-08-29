@@ -27,8 +27,8 @@ class harmonics:
         for i in range(0, self.num_harmonics):
             true_harm=self.harmonics[i]*self.input_frequency
             filter_bit=top_hat[np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]
-            harmonics[i,np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]=filter_bit
-            #harmonics[i, 0:len(filter_bit)]=filter_bit
+            #harmonics[i,np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]=filter_bit
+            harmonics[i, 0:len(filter_bit)]=filter_bit
             harmonics[i,:]=((np.fft.ifft(harmonics[i,:])))
         return harmonics
     def empty(self, arg):
@@ -52,6 +52,7 @@ class harmonics:
         plt.legend()
         plt.show()
     def harmonics_and_time(self, times,title, method, **kwargs):
+        plt.rcParams.update({'font.size': 12})
         names=kwargs.keys()
         titles=[]
         for i in range(0, len(names)):
@@ -78,29 +79,47 @@ class harmonics:
 
         harm_axes=[]
         harm_len=2
-        fig.text(0.03, 0.5, 'Current(A)', ha='center', va='center', rotation='vertical')
+        fig.text(0.03, 0.5, 'Current($\mu$A)', ha='center', va='center', rotation='vertical')
 
         for i in range(0,self.num_harmonics):
             harm_axes.append(plt.subplot2grid((self.num_harmonics,harm_len*2), (i,0), colspan=harm_len))
             for j in range(0, len(titles)):
+                labels=titles[j]
+                if "z" in titles[j]:
+                    labels=titles[j]
+                    label_list=list(labels)
+                    idx=[lcv for lcv, x in enumerate(label_list) if x == "z"]
+                    for q in idx:
+                        label_list[q]=" "
+                    labels=''.join(label_list)
                 idx=harmonics_labels.index(titles[j]+"_harmonics")
-                harm_axes[i].plot(times, a(harmonics_list[idx][i,:]), label=titles[j])
+                harm_axes[i].plot(times, np.multiply(a(harmonics_list[idx][i,:]), 1e6), label=labels)
             harm_axes[i].yaxis.set_label_position("right")
             harm_axes[i].set_ylabel(str(self.harmonics[i]), rotation=0)
         harm_axes[i].legend()
         harm_axes[i].set_xlabel("Time(s)")
 
         time_ax=plt.subplot2grid((self.num_harmonics,harm_len*2), (0,harm_len), rowspan=self.num_harmonics, colspan=harm_len)
+
+
         for j in range(0, len(titles)):
+            labels=titles[j]
+            if "z" in titles[j]:
+                label_list=list(labels)
+                idx=[lcv for lcv, x in enumerate(label_list) if x == "z"]
+                for q in idx:
+                    label_list[q]=" "
+                labels=''.join(label_list)
             idx=time_labels.index(titles[j]+"_time_series")
-            time_ax.plot(times, time_list[idx], label=titles[j], alpha=0.7)
-        time_ax.set_ylabel("Current(A)")
+            time_ax.plot(times, np.multiply(time_list[idx], 1e3), label=labels, alpha=0.7)
+        time_ax.set_ylabel("Current(mA)")
         time_ax.set_xlabel("Time(s)")
         plt.legend()
         plt.suptitle(title)
         plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.23)
         plt.show()
     def harmonics_and_voltages(self, times,voltages, title, method, **kwargs):
+        plt.rcParams.update({'font.size': 12})
         names=kwargs.keys()
         titles=[]
         for i in range(0, len(names)):
@@ -126,26 +145,43 @@ class harmonics:
         print voltage_labels
         harm_axes=[]
         harm_len=2
-        fig.text(0.03, 0.5, 'Current(A)', ha='center', va='center', rotation='vertical')
+        fig.text(0.03, 0.5, 'Current($\mu$A)', ha='center', va='center', rotation='vertical')
+        middle_harmonic=int((self.harmonics[0]+self.harmonics[1])/2)
         for i in range(0,self.num_harmonics):
             harm_axes.append(plt.subplot2grid((self.num_harmonics,harm_len*2), (i,0), colspan=harm_len))
             for j in range(0, len(titles)):
+                labels=titles[j]
+                if "z" in titles[j]:
+                    label_list=list(labels)
+                    idx=[lcv for lcv, x in enumerate(label_list) if x == "z"]
+                    for q in idx:
+                        label_list[q]=" "
+                    labels=''.join(label_list)
                 idx=harmonics_labels.index(titles[j]+"_harmonics")
-                harm_axes[i].plot(times, a(harmonics_list[idx][i,:]), label=titles[j])
+                harm_axes[i].plot(times, np.multiply(a(harmonics_list[idx][i,:]), 1e6), label=labels)
+
             harm_axes[i].yaxis.set_label_position("right")
             harm_axes[i].set_ylabel(str(self.harmonics[i]), rotation=0)
-        harm_axes[i].legend()
+            if self.harmonics[i]==middle_harmonic:
+                harm_axes[i].legend()
         harm_axes[i].set_xlabel("Time(s)")
         time_ax=plt.subplot2grid((self.num_harmonics,harm_len*2), (0,harm_len), rowspan=self.num_harmonics, colspan=harm_len)
         for j in range(0, len(voltage_list)):
             print titles[j]
-            idx=voltage_labels.index(titles[j]+"_time_series")
+            idx_label=voltage_labels.index(titles[j]+"_time_series")
+            labels=titles[j]
+            if "z" in labels:
+                label_list=list(labels)
+                idx=[lcv for lcv, x in enumerate(label_list) if x == "z"]
+                for q in idx:
+                    label_list[q]=" "
+                labels=''.join(label_list)
             if titles[j].lower()=="experimental":
-                time_ax.plot(voltages, voltage_list[idx], label=titles[j], alpha=0.7)
+                time_ax.plot(voltages, np.multiply(voltage_list[idx_label], 1e3), label=labels, alpha=0.7)
             else:
-                time_ax.plot(voltages, voltage_list[idx], label=titles[j])
+                time_ax.plot(voltages, np.multiply(voltage_list[idx_label], 1e3), label=labels)
 
-        time_ax.set_ylabel("Current(A)")
+        time_ax.set_ylabel("Current(mA)")
         time_ax.set_xlabel("Potential(V)")
         plt.legend()
         plt.suptitle(title)

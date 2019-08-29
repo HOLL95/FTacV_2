@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2019.7.22)  24 JUL 2019 22:58
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2019.7.22)  29 AUG 2019 15:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -87,8 +87,13 @@ Package ifvtex Info: VTeX not detected.
 \Gm@layouthoffset=\dimen110
 \Gm@layoutvoffset=\dimen111
 \Gm@dimlist=\toks17
-)
-(./image_tex_edited.aux)
+
+
+Package geometry Warning: `lmargin' and `rmargin' result in NEGATIVE (-296.1931
+8pt).
+    `width' should be shortened in length.
+
+) (./image_tex_edited.aux)
 \openout1 = `image_tex_edited.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 3.
@@ -114,14 +119,14 @@ Preview: PDFoutput 1
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * modes: 
-* h-part:(L,W,R)=(22.61993pt, 569.05511pt, 22.61995pt)
+* h-part:(L,W,R)=(-148.09659pt, 910.48817pt, -148.09659pt)
 * v-part:(T,H,B)=(261.08246pt, 142.26378pt, 391.62375pt)
 * \paperwidth=614.295pt
 * \paperheight=794.96999pt
-* \textwidth=569.05511pt
+* \textwidth=910.48817pt
 * \textheight=142.26378pt
-* \oddsidemargin=-49.65005pt
-* \evensidemargin=-49.65005pt
+* \oddsidemargin=-220.36658pt
+* \evensidemargin=-220.36658pt
 * \topmargin=151.81247pt
 * \headheight=12.0pt
 * \headsep=25.0pt
@@ -150,18 +155,18 @@ Preview: Tightpage 0 0 0 0
 Here is how much of TeX's memory you used:
  1277 strings out of 494145
  19328 string characters out of 6157748
- 77425 words of memory out of 5000000
+ 79431 words of memory out of 5000000
  4683 multiletter control sequences out of 15000+600000
  3640 words of font info for 14 fonts, out of 8000000 for 9000
  430 hyphenation exceptions out of 8191
- 34i,10n,56p,240b,199s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 34i,10n,56p,245b,199s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/ams
 fonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr1
 0.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></
 usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on image_tex_edited.pdf (1 page, 57065 bytes).
+Output written on image_tex_edited.pdf (1 page, 58416 bytes).
 PDF statistics:
  32 PDF objects out of 1000 (max. 8388607)
  22 compressed objects within 1 object stream

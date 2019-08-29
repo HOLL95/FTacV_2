@@ -16,10 +16,6 @@ class single_electron:
         self.num_harmonics=len(harmonic_range)
         self.filter_val=filter_val
     def define_boundaries(self, boundaries):
-        if "E0_mean" in self.optim_list:
-            e0_idx=self.optim_list.index("E0_mean")
-            self.e0_min=(boundaries[0][e0_idx])/self.nd_param.c_E0
-            self.e0_max=(boundaries[1][e0_idx])/self.nd_param.c_E0
         self.boundaries=boundaries
     def normalise(self, norm, boundaries):
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
@@ -131,7 +127,7 @@ class single_electron:
     def therm_dispersion(self):
         bins=16
         e0_weights=np.zeros(bins)
-        e0_vals=np.linspace(self.e0_min,self.e0_max, bins)
+        e0_vals=np.linspace(self.nd_param.E_start,self.nd_param.E_reverse, bins)
         e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
         for i in range(1, len(e0_weights)):
             e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
@@ -161,11 +157,11 @@ class single_electron:
             e0_vals, e0_disp=self.therm_dispersion()
             time_series=np.zeros(len(self.time_vec))
             for i in range(0, len(e0_vals)):
-                time_series_current=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0, self.time_vec, self.initial_val)
+                time_series_current=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0, self.time_vec, 0)
 
                 time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
         else:
-            time_series=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec, self.initial_val)
+            time_series=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec, 0)
         if "no_transient" in var_list:
             new_array=np.zeros(len(time_series))
             time_series=np.array(time_series)

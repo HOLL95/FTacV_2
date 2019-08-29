@@ -60,7 +60,9 @@ class single_electron:
         for i in range(0, self.n_parameters()):
                 param_boundaries[0][i]=self.param_bounds[self.optim_list[i]][0]
                 param_boundaries[1][i]=self.param_bounds[self.optim_list[i]][1]
+
         self.boundaries=param_boundaries
+
         if ("E0_std" in optim_list) or ("k0_loc" in optim_list):
             self.simulation_options["dispersion"]=True
         else:
@@ -247,6 +249,8 @@ class single_electron:
         return k0_vals, k0_weights
 
     def therm_dispersion(self):
+        self.e0_min=self.nd_param.E_start#self.nd_param.E0_mean-(5*self.nd_param.E0_std)
+        self.e0_max=self.nd_param.E_reverse#self.nd_param.E0_mean+(5*self.nd_param.E0_std)
         e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
         e0_vals=np.linspace(self.e0_min, self.e0_max, self.simulation_options["dispersion_bins"])
         e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
@@ -290,19 +294,6 @@ class single_electron:
             #plt.axvline(time_series[3][0]+time_series[3][2], color="black",linestyle="--")
             #plt.axvline(time_series[3][0]-time_series[3][2],color="black",linestyle="--")
 
-    def therm_dispersion(self):
-        e0_min=self.nd_param.E_start#self.param_bounds["E_0"][0]/self.nd_param.c_E0
-        e0_max=self.nd_param.E_reverse#self.param_bounds["E_0"][1]/self.nd_param.c_E0
-        e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
-        e0_vals=np.linspace(e0_min,e0_max, self.simulation_options["dispersion_bins"])
-        e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
-        for i in range(1, len(e0_weights)):
-            e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
-        #plt.plot(e0_vals, e0_weights)
-        #print self.nd_param.E0_mean,self.nd_param.E0_std
-        #plt.title("e0")
-        #plt.show()
-        return e0_vals, e0_weights
     def weight_matrix(self,e0_disp, k0_disp):
         e0_mat, k0_mat=np.meshgrid(e0_disp, k0_disp)
         weights=np.multiply(e0_mat, k0_mat)
@@ -345,6 +336,7 @@ class single_electron:
                 bins=self.simulation_options["dispersion_bins"]
                 if ("E0_std" in self.optim_list) and ("k0_shape" in self.optim_list):
                     e0_vals, e0_disp=self.therm_dispersion()
+
                     k0_vals, k0_disp=self.kinetic_dispersion()
                     weights=self.weight_matrix(e0_disp, k0_disp)
                     print sum(k0_disp)
@@ -354,10 +346,18 @@ class single_electron:
                             time_series=np.add(time_series, np.multiply(time_series_current, weights[i,j]))
                 elif "E0_std" in self.optim_list:
                     e0_vals, e0_disp=self.therm_dispersion()
-                    print sum(e0_disp)
                     for i in range(0, bins):
-                        time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
-                        time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
+                            time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                            time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
+                            #plt.subplot(2,2,1)
+                            #plt.plot(self.other_values["experiment_voltage"],time_series_current[self.time_idx:], alpha=0.5)
+                            #plt.subplot(2,2,2)
+                            #plt.plot(self.other_values["experiment_voltage"],np.multiply(time_series_current[self.time_idx:],e0_disp[i]), alpha=0.5)
+                            #plt.subplot(2,2,3)
+                            #plt.plot(self.other_values["experiment_voltage"],time_series[self.time_idx:], alpha=0.5)
+                    #plt.subplot(2,2,4)
+                    #plt.plot(np.multiply(e0_vals, self.nd_param.c_E0), e0_disp)
+                    #plt.show()
                 elif "k0_shape" in self.optim_list:
                     k0_vals, k0_disp=self.kinetic_dispersion()
                     for i in range(0, bins):
@@ -367,7 +367,7 @@ class single_electron:
                     time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
 
             else:
-                time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
         if self.simulation_options["no_transient"]!=True:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
