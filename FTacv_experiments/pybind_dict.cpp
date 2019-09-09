@@ -9,18 +9,16 @@ namespace py = pybind11;
 using namespace std;
 template <typename V>
 V get(py::dict m, const std::string &key, const V &defval) {
+    cout<<defval<<"\n";
     return m[key.c_str()].cast<V>();
-    /*
-    if (m.contains(key.c_str())) {
-      return defval;
-    } else {
-      return m[key.c_str()].cast<V>();
-    }
-    */
 }
 int dict_reader(py::dict params){
-  double test_val=get(params,std::string("test_val"),35.0);
+  float test_val=get(params,std::string("test_val"),35.0);
   cout<<test_val<<"\n";
+  for (auto item : params){
+    cout<<item.first<<"\n";
+    cout<<item.second<<"\n";
+    }
   return 0;
 }
 int main () {

@@ -3,8 +3,6 @@ import os
 import matplotlib.pyplot as plt
 import isolver_noramp
 import math
-import numpy as np
-import matplotlib.pyplot as plt
 from single_e_class_noramp  import single_electron
 from harmonics_plotter import harmonics
 from matplotlib.widgets import Slider, Button, RadioButtons
@@ -45,7 +43,7 @@ files= os.listdir(path)
 types=["current", "voltage"]
 file_dict={"GC4_1_cv":types, "GC4_2_cv":types, "GC4_3_cv":types}
 voltages, currents, times=file_opener(files, path, file_dict, 4)
-filenames=file_dict.keys()
+filenames=sorted(file_dict.keys())
 for files in filenames:
     plt.plot(voltages[files], currents[files], label=files)
 plt.legend()
@@ -57,6 +55,7 @@ time_results=times["GC4_1_cv"]
 de=300e-3
 estart=260e-3-de
 ereverse=estart+2*de
+file="GC4_1_cv"
 param_list={
     "E_0":0.2,
     'E_start': estart, #(starting dc voltage - V)
@@ -95,7 +94,7 @@ simulation_options={
     "numerical_debugging": False,
     "experimental_fitting":True,
     "dispersion":False,
-    "dispersion_bins":100,
+    "dispersion_bins":20,
     "test": False,
     "likelihood":likelihood_options[0],
     "numerical_method": solver_list[1],
@@ -105,31 +104,31 @@ simulation_options={
 other_values={
     "filter_val": 0.5,
     "harmonic_range":range(1,9,1),
-    "experiment_time": times["GC4_1_cv"],
-    "experiment_current": currents["GC4_1_cv"],
-    "experiment_voltage":voltages["GC4_1_cv"],
+    "experiment_time": times[file],
+    "experiment_current": currents[file],
+    "experiment_voltage":voltages[file],
     "bounds_val":20,
     "signal_length":int(2e4),
 }
 param_bounds={
     'E_0':[0.2, 0.3],#[param_list['E_start'],param_list['E_reverse']],
-    'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
-    'Ru': [1, 2e2],  #     (uncompensated resistance ohms)
+    'omega':[0.95*param_list['omega'],1.05*param_list['omega']],#8.88480830076,  #    (frequency Hz)
+    'Ru': [0, 500],  #     (uncompensated resistance ohms)
     'Cdl': [0,1e-4], #(capacitance parameters)
-    'CdlE1': [0.05,0.15],#0.000653657774506,
+    'CdlE1': [-0.05,0.15],#0.000653657774506,
     'CdlE2': [-0.008,0.008],#0.000245772700637,
     'CdlE3': [-0.01,0.01],#1.10053945995e-06,
     'gamma': [1e-11,1e-9],
-    'k_0': [1, 1e4], #(reaction rate s-1)
-    'alpha': [0.1, 0.9],
+    'k_0': [1, 500], #(reaction rate s-1)
+    'alpha': [0.3, 0.8],
     "cap_phase":[0, 2*math.pi],
-    "E0_mean":[0.15, 0.35],
+    "E0_mean":[0.15, 0.3],
     "E0_std": [0.01, 0.2],
     "k0_shape":[0,5],
     "k0_loc":[1, 1e3],
     "k0_scale":[0,2e3],
     "k0_range":[1e2, 1e4],
-    'phase' : [0.97*3*math.pi/2, 1.03*3*math.pi/2]
+    'phase' : [0, 2*math.pi]
 }
 #(param_list['E_reverse']-param_list['E_start'])/2
 noramp_fit=single_electron(param_list, simulation_options, other_values)
@@ -148,7 +147,8 @@ noramp_fit.pass_extra_data(current_results, likelihood_func)
 
 unit_dict={
     "E_0": "V",
-    'E_start': "V", #(starting dc voltage - V)
+    'E_start': "V", #(starting dc voltage - V)1254684939476, 1.4485673957633017e-10, 8.94084836566341, 4.898877306283271, 4.379038086713167, 0.6999999953311751]
+
     'E_reverse': "V",
     'omega':"Hz",#8.88480830076,  #    (frequency Hz)
     'd_E': "V",   #(ac voltage amplitude - V) freq_range[j],#
@@ -190,11 +190,27 @@ carbon_means_abs_all_peaks=[0.2712720627064147, 53.00972798907347, 126.435811539
 carbon_means_abs_all_peaks=[0.2528081478002836, 217.56996476308117, 529.7297882492157, 3.0166883670561975e-05, 0.14790906812787918, -0.005389008883307372, 1.1330727195554263e-10, 8.940664568706621, 0.40000000111206985]
 another_constrained_fit=[0.25007589734382935, 0.04947794128755774, 20.83219016081861, 0.0002356574033788102, 3.361058693410845e-06, 1.9999995197072655, -0.09693566779590666, 3.665491921443447e-10, 8.941522982029218, 0.49515486096231986, 3.8227156574615946, 5.2169580962884226]
 carbon_means_disped=[0.23542237635148117, 0.004406518077359679, 1.6338863524591192, 80.0000000070073, 3.24102216543367e-05, 0.10683350182222259, -0.0041305496741190365, 1.531049485509304e-10, 8.94090414236465, 5.635236560276772, 4.327586365963918, 0.5420683576660721]
-carbon_means_disped_gc41a=[0.2507124585192858, 0.012810161448688611, 81.25609725526283,100, 3.4455963089647964e-05, 0.08570032724521258, -0.0026762829980299324, 1.4591816196158548e-10, 8.940730783653084, 4.965641139765749, 4.375333040247454, 0.7811192097028208]
+carbon_means_disped_gc41a=[0.2507124585192858, 0.052810161448688611, 81.25609725526283,100, 3.4455963089647964e-05, 0.08570032724521258, -0.0026762829980299324, 1.4591816196158548e-10, 8.940730783653084, 4.965641139765749, 4.375333040247454, 0.7811192097028208]
 carbon_means_disped_gc42a=[0.25150277022331746, 0.014115779656223786, 78.20813556543256,58.804257252122355, 3.501508623604994e-05, 0.08815081354697163, -0.0030182380193618527, 1.3910336262835592e-10, 8.941274817456382, 4.946748053531174, 4.3670012650213295, 0.7663320409205243]
 carbon_means_disped_gc43a=[0.2508929602137271, 0.014962342550521588,  74.5650170269896,13.194027307777567, 3.51489903928365e-05, 0.0898311438945581, -0.0031909694983879135, 1.3515246782381657e-10, 8.941160154930586, 4.933768379207287, 4.358597908430476, 0.7621639225400778]
 carbon_means_disped_gc42=[0.25983027085247, 78.20813556543256, 100.00001599685609, 3.501508623604994e-05, 0.08815081354697163, -0.0030182380193618527, 1.3910336262835592e-10, 8.941274817456382, 4.946748053531174, 4.3670012650213295, 0.7785371130874895]
 carbon_means_disped_gc43=[0.25947921946089975, 74.5650170269896, 100.0000011034549117, 3.51489903928365e-05, 0.0898311438945581, -0.0031909694983879135, 1.3515246782381657e-10, 8.941160154930586, 4.933768379207287, 4.358597908430476, 0.7761838774833711]
+higher_sampling_freq=[0.25699207481665864, 0.05555428879890889, 414.56746021325034, 325.8031006821857, 3.519141869992617e-05, 0.07717238077393472, -0.002727432717977485, 1.4690610585539404e-10, 8.940943575263907, 4.896585013895377, 4.391652613525725, 0.8999999860779]
+higher_sampling_freq_2=[0.24936776983318537, 0.06166238798441354, 65.95536643340846, 50.00000000744157, 3.403237947373622e-05, 0.09662067753703223, -0.003521905241046774, 1.3876360325400223e-10, 8.940969817645122, 4.896305529543139, 4.339663409102047, 0.5766195385556642]
+carbon_means_disped_gc41a=[0.24673357615129932, 0.06431065804807556, 61.288851318074876, 1.0000002125554084, 3.427115851232685e-05, 0.08880338471929529, -0.0033551664287031473, 1.3976795665535952e-10, 8.940855717890603, 4.877449155749592, 4.3314073608533965, 0.572544218603636]
+gc4_2=[0.24784915687346862, 0.06316612861983209, 58.030622008233514, 1.0000000612187943, 3.405156321210489e-05, 0.09670855824995263, -0.0035129837977470983, 1.3801359615989042e-10, 8.94093762162615, 4.882482708448655, 4.3317118352679245, 0.5746764358057844]
+gc4_3=[0.24784850701480876, 0.06316545250773771, 58.03170289032332, 1.0000000371416478, 3.405151295634379e-05, 0.0967118100534305, -0.0035131450128175305, 1.380117209701837e-10, 8.940937368486582, 4.882485181424615, 4.33171345860357, 0.5746856092254882]
+carbon_means_disped_gc42a=[0.25386735650141046, 0.05718314856725754, 220.85131424751998, 263.61923792350825, 3.4658312714307376e-05, 0.08305864277903698, -0.003101254684939476, 1.4485673957633017e-10, 8.94084836566341, 4.898877306283271, 4.379038086713167, 0.6999999953311751]
+gc4_3_alternate=[0.24517090736930636, 0.056720112426872436, 223.12968601072467, 269.4152026256152, 3.467489815250535e-05, 0.08073629430570951, -0.003038015139181096, 1.4366133260790924e-10, 8.940854696401248, 4.9005338607773, 4.378474411191984, 0.6999999999960397]
+gc4_1_alternate=[0.24707364221482686, 0.05611157233858666, 215.93921919728885, 261.0012935458973, 3.457664799584686e-05, 0.08731475943652235, -0.00315097559270702, 1.4305526845381745e-10, 8.940962054668862, 4.897135123391333, 4.379405055574097, 0.6999999999984596]
+gc4_2_alternate=[0.24581388949144, 0.056437609561567396, 220.84863259145277, 268.249787363191, 3.465024308699503e-05, 0.08279171693559563, -0.003087944274776373, 1.4514161563358487e-10, 8.940879185090578, 4.900935582894143, 4.379408688250694, 0.6999999997489996]
+
+gc4_2_b=[0.2390418691618472, 0.06341251668841151, 59.55992622848135, 1.0000000065311607, 3.42132227450153e-05, 0.09142523880452204, -0.003427483907861838, 1.4006677642620296e-10, 8.940855668037237, 4.881147386014593, 4.33221437864721, 0.5726264177402156]
+gc4_2_low_ru=[0.2390424106953814, 0.0634126339128772, 59.56331759126466, 1.0000000052336186, 3.421333538191425e-05, 0.09142331002140631, -0.0034273912843145503, 1.3806680869872118e-10, 8.940855654906262, 4.881140108985157, 4.332212053411549, 0.5726231710329381]
+gc4_1_low_ru=[0.23953731576330606, 0.06251048824509087, 54.80881131862505, 1.0, 3.401227622853829e-05, 0.09658746281397658, -0.0035025931533504253, 1.4039829708596723e-10, 8.940959682968415, 4.88941265694472, 4.331036700670979, 0.5725681192157199]
+gc4_3_low_ru=[0.23953952896099746, 0.06432508696935929, 60.84131849364619, 1.0, 3.42647900201487e-05, 0.08893011038618533, -0.0033602097013514043, 1.3972124127562154e-10, 8.94084399186188, 4.8779396488202185, 4.331377454498156, 0.5724578682161762]
+
+
 carbon_means_disped=carbon_means_disped_gc42
 #carbon_means_disped=[0.26309322667095436, 0.08411919477796326, 999.9999999749896, 5.005163812028062e-10, 2.7249704365065652e-05, 0.0014108474638033497, 0.0009417539364441913, 2.1916294751016806e-10, 8.94090414236465, 3*math.pi/2, 3*math.pi/2,0.7999999999895195]
 #carbon_means_disped=[0.24042307692307694, 0.05995192307692309, 81.25609725526283, 100.0, 3.0169689037255904e-05, 0.020629272483467714, -0.0002036780323021597, 1.4591816196158548e-10, 8.959036763806955, 0.0,0.0, 0.5990384615384616]
@@ -220,40 +236,45 @@ ramp_means_carbon=[0.23192913053278295, 0.07597303082211063,133.999986524228, 22
 carbon_means=[0.2384234383845605, 2.8016906117813805, 14.009822731553978, 3.325500615749805e-05, 0.12980099583898141, -0.005247496549209238, 1.320027160165847e-10, 8.940856411874309, 5.513246206729991, 4.319227044942643, 0.5815664903172559]
 noramp_fit.def_optim_list(['E0_mean', "E0_std",'k_0', 'Ru',"Cdl", "CdlE1", "CdlE2",'gamma',"omega", "phase","cap_phase","alpha",])
 
-gc4_1=(noramp_fit.test_vals(carbon_means_disped_gc41a, "timeseries", test=False))
-gc4_2=(noramp_fit.test_vals(carbon_means_disped_gc42a, "timeseries", test=False))
-gc4_3=(noramp_fit.test_vals(carbon_means_disped_gc43a, "timeseries", test=False))
+noramp_fit.simulation_options["dispersion_bins"]=20
+gc4_1=(noramp_fit.test_vals(gc4_1_low_ru, "timeseries", test=False))
+gc4_2=(noramp_fit.test_vals(gc4_2_low_ru, "timeseries", test=False))
+gc4_3=(noramp_fit.test_vals(gc4_3_low_ru, "timeseries", test=False))
+gc4_1a=(noramp_fit.test_vals(gc4_1_alternate, "timeseries", test=False))
+gc4_2a=(noramp_fit.test_vals(gc4_2_alternate, "timeseries", test=False))
+gc4_3a=(noramp_fit.test_vals(gc4_3_alternate, "timeseries", test=False))
 gc_results=[gc4_1, gc4_2, gc4_3]
+gc_alternate=[gc4_1a, gc4_2a, gc4_3a]
 gc_results=[np.multiply(gc_results[i], noramp_fit.nd_param.c_I0*1000) for i in range(0,len(gc_results))]
+gc_dicta=[np.multiply(gc_alternate[i], noramp_fit.nd_param.c_I0*1000) for i in range(0,len(gc_alternate))]
 gc_dict=dict(zip(filenames, gc_results))
-print gc_dict
+gc_alternate=dict(zip(filenames, gc_dicta))
 disped_1=gc4_1
 disped_2=gc4_2
+prop_cycle = plt.rcParams['axes.prop_cycle']
+colors = prop_cycle.by_key()['color']
 for i in range(0, len(filenames)):
-
     plt.subplot(2,3, i+1)
-    plt.plot(voltages[filenames[i]], np.multiply(currents[filenames[i]], 1000),label="data")
-    plt.plot(voltages[filenames[i]], gc_dict[filenames[i]], label="data")
+    plt.plot(voltages[filenames[i]], np.multiply(currents[filenames[i]], 1000),label="Data", color=colors[1])
+    plt.plot(voltages[filenames[i]], gc_dict[filenames[i]], label="Low resistance", color=colors[0])
+    plt.plot(voltages[filenames[i]], gc_alternate[filenames[i]], label="High Resistance", color=colors[2])
     plt.title(filenames[i])
     plt.xlabel("Voltages(V)")
     plt.ylabel("Current(mA)")
     plt.legend()
     plt.subplot(2,3,i+3+1)
-    plt.plot(times[filenames[i]], np.multiply(currents[filenames[i]], 1000), label="data")
-    plt.plot(times[filenames[i]], gc_dict[filenames[i]], label="simulation")
-    plt.plot(times[filenames[i]], np.subtract(np.multiply(currents[filenames[i]], 1000), gc_dict[filenames[i]]),label="residual" )
+    plt.plot(times[filenames[i]], np.multiply(currents[filenames[i]], 1000), label="Data", color=colors[1])
+    plt.plot(times[filenames[i]], gc_dict[filenames[i]], label="Low resistance", color=colors[0])
+    plt.plot(times[filenames[i]], gc_alternate[filenames[i]], label="High Resistance", color=colors[2])
+    plt.plot(times[filenames[i]], np.subtract(np.multiply(currents[filenames[i]], 1000), gc_dict[filenames[i]]),label="Low Resistance Residual" )
+    plt.plot(times[filenames[i]], np.subtract(np.multiply(currents[filenames[i]], 1000), gc_alternate[filenames[i]]),label="High Resitance Residual" )
     plt.ylabel("Current(mA)")
     plt.xlabel("Time(s)")
     plt.legend()
-
-
+    error=np.sum(np.power(np.subtract(np.multiply(currents[filenames[i]], 1000), gc_dict[filenames[i]]),2))
+    print error
 plt.show()
-plt.plot(voltage_results, np.subtract(disped_2, current_results))
-plt.plot(voltage_results, current_results)
-plt.plot(voltage_results, disped_2)
-plt.plot(voltage_results, np.subtract(disped_1, current_results))
-plt.plot(voltage_results, disped_1)
-plt.show()
+
 disped1_harmonics=harm_class.generate_harmonics(time_results, disped_1)
 disped2_harmonics=harm_class.generate_harmonics(time_results, disped_2)
 noramp_fit.variable_returner()
@@ -315,9 +336,11 @@ dummy_times=np.linspace(0, 1, len(likelihood_func))
 nodisp_results=carbon_means_disped_gc43
 noramp_fit.def_optim_list(["E_0", "k_0","Ru","Cdl","CdlE1","CdlE2",'gamma', 'omega',"phase","cap_phase","alpha"])
 noramp_fit.test_vals(nodisp_results, "timeseries")
+noramp_fit.def_optim_list(["E0_mean", "E0_std", "k_0","Ru","Cdl", "CdlE1","CdlE2",'gamma', 'omega',"phase","cap_phase","alpha"])
 #noramp_fit.def_optim_list(["E0_mean", "E0_std", "Ru", "alpha"])
-noramp_fit.dim_dict["Ru"]=100
-noramp_fit.dim_dict["alpha"]=0.5
+noramp_fit.dim_dict["CdlE1"]=0
+noramp_fit.dim_dict["CdlE2"]=0
+noramp_fit.dim_dict["CdlE3"]=0
 #noramp_fit.def_optim_list(["E0_mean", "E0_std", "Ru", "k_0"])
 fourier_arg=likelihood_func
 true_data=current_results
@@ -337,19 +360,18 @@ noramp_fit.simulation_options["label"]="cmaes"
 x0=abs(np.random.rand(noramp_fit.n_parameters()))
 print x0
 print len(x0), noramp_fit.n_parameters()
-num_runs=5
+num_runs=0
 score_mat=np.zeros(num_runs)
 noramp_fit.variable_returner()
 param_mat=np.zeros((num_runs,len(noramp_fit.optim_list)))
 score_vec=np.zeros(num_runs)
+print file
 for i in range(0, num_runs):
-    x0=abs(np.random.rand(noramp_fit.n_parameters()))
-    found_parameters, found_value=pints.optimise(
-                                                score,
-                                                x0,
-                                                boundaries=CMAES_boundaries,
-                                                method=pints.CMAES
-                                                )
+    x0=noramp_fit.change_norm_group(gc4_3_low_ru, "norm")
+    print noramp_fit.change_norm_group(x0, "un_norm")
+    cmaes_fitting=pints.Optimisation(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
+    cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
+    found_parameters, found_value=cmaes_fitting.run()
     cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
     print list(cmaes_results)
     cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
@@ -357,25 +379,33 @@ for i in range(0, num_runs):
     print list(cmaes_results)
     #noramp_fit.simulate(found_parameters,time_results, normalise=True, likelihood="fourier", test=True )
     cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
-    cmaes_fourier=noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=True)
-    print folder
-    print Method
-    plt.subplot(1,2,1)
+    cmaes_fourier=noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=False)
+    param_mat[i,:]=cmaes_results
+    score_vec[i]=found_value
+    #plt.title(file)
+    #plt.subplot(1,2,1)
     plt.plot(voltage_results, true_data)
     plt.plot(voltage_results, cmaes_time)
-    plt.subplot(1,2,2)
-    plt.plot(time_results, true_data)
-    plt.plot(time_results, cmaes_time)
+    #plt.subplot(1,2,2)
+    #plt.plot(time_results, true_data)
+    #plt.plot(time_results, cmaes_time)
     plt.show()
-    fourier_data=np.fft.ifft(fourier_arg)
-    results=np.fft.ifft(cmaes_fourier)
-    plt.plot(fourier_data)
-    plt.plot(results)
-    plt.show()
-
+    #fourier_data=np.fft.ifft(fourier_arg)
+    #results=np.fft.ifft(cmaes_fourier)
+    #plt.plot(fourier_data)
+    #plt.plot(results)
+    #plt.show()
+print file
+print "low_Ru"
+for i in range(0, len(param_mat)):
+    print i
+    print param_mat[i,:]
+    print score_vec[i]
+    print "---" *10
 #best_idx=np.where(score_vec==min(score_vec))
 #best_idx=best_idx[0][0]
-cmaes_results=np.array([0.2507124585192858, 0.012810161448688611, 81.25609725526283,100, 3.4455963089647964e-05, 0.08570032724521258, -0.0026762829980299324, 1.4591816196158548e-10, 8.940730783653084, 4.965641139765749, 4.375333040247454, 0.7811192097028208])#[0.2546334543150689, 0.03323126819215362, 116.24098132960108,144.78687238133318,3.4422425270083556e-05, 0.09197677289665342, -0.002971108200729257, 1.4130483196036997e-10,8.94090414236465, 4.947246577563367, 4.361083156674927, 0.5])#param_mat[best_idx, :]
+cmaes_results=gc4_1_alternate#param_mat[i,:]
+#cmaes_results=np.array([0.2507124585192858, 0.012810161448688611, 81.25609725526283,100, 3.4455963089647964e-05, 0.08570032724521258, -0.0026762829980299324, 1.4591816196158548e-10, 8.940730783653084, 4.965641139765749, 4.375333040247454, 0.7811192097028208])#[0.2546334543150689, 0.03323126819215362, 116.24098132960108,144.78687238133318,3.4422425270083556e-05, 0.09197677289665342, -0.002971108200729257, 1.4130483196036997e-10,8.94090414236465, 4.947246577563367, 4.361083156674927, 0.5])#param_mat[best_idx, :]
 #high alpha disped [0.2507124585192858, 0.012810161448688611, 81.25609725526283,100, 3.4455963089647964e-05, 0.08570032724521258, -0.0026762829980299324, 1.4591816196158548e-10, 8.940730783653084, 4.965641139765749, 4.375333040247454, 0.7811192097028208]
 print list(cmaes_results)
 cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
@@ -387,15 +417,17 @@ plt.show()
 error=np.std(np.subtract(cmaes_time, current_results))
 mcmc_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
 #mcmc_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
-updated_lb=np.append(cmaes_results*0.75, [0])#found_parameters[3]*0.97,
-updated_ub=np.append(cmaes_results*1.25, [2*error])#found_parameters[3]*1.03,
-updated_boundaries=[updated_lb, updated_ub]
-updated_boundaries=np.sort(updated_boundaries, 0)
+#updated_lb=np.append(cmaes_results*0.75, [0])#found_parameters[3]*0.97,
+#updated_ub=np.append(cmaes_results*1.25, [2*error])#found_parameters[3]*1.03,
+#updated_boundaries=[updated_lb, updated_ub]
+#updated_boundaries=np.sort(updated_boundaries, 0)
 
-noramp_fit.define_boundaries(updated_boundaries)
+#noramp_fit.define_boundaries(updated_boundaries)
+updated_lb=np.append(noramp_fit.boundaries[0],0)
+updated_ub=np.append(noramp_fit.boundaries[1], 2*error)
 log_liklihood=pints.UnknownNoiseLogLikelihood(mcmc_problem)
-log_prior=pints.UniformLogPrior(updated_boundaries[0],
-                                updated_boundaries[1])
+log_prior=pints.UniformLogPrior(updated_lb,
+                                updated_ub)
 log_posterior=pints.LogPosterior(log_liklihood, log_prior)
 mcmc_parameters=np.append(cmaes_results, error)
 xs=[mcmc_parameters,
@@ -403,11 +435,10 @@ xs=[mcmc_parameters,
     mcmc_parameters
     ]
 noramp_fit.simulation_options["label"]="MCMC"
-noramp_fit.simulation_options["test"]=False
 mcmc = pints.MCMCSampling(log_posterior, 3, xs,method=pints.AdaptiveCovarianceMCMC)
 mcmc.set_max_iterations(10000)
 chains=mcmc.run()
-f=open("GC4_MCMC_chains_high_alpha_2.txt", "w")
+f=open("GC4_MCMC_1_high_ru", "w")
 np.save(f, chains)
 f.close()
 pints.plot.trace(chains)

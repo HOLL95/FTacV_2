@@ -9,6 +9,10 @@
 #include <exception>
 namespace py = pybind11;
 using namespace std;
+template <typename V>
+V get(py::dict m, const std::string &key, const V &defval) {
+    return m[key.c_str()].cast<V>();
+}
 struct e_surface_fun {
     double E,dE;
     double cap_E;
@@ -98,6 +102,33 @@ double dEdt(double omega, double phase, double delta_E, double t){
   double dedt=(delta_E*omega*std::cos(omega*t+phase));
 	return dedt;
 }
+double c_et(double E_start, double E_reverse, double omega, double phase, double v, double delta_E, double t){
+	double E_dc;
+	double E_t;
+  double tr=((E_reverse-E_start)/v);
+	if (t<tr){
+		E_dc=E_start+(v*t);
+	}else {
+		E_dc=E_reverse-(v*(t-tr));
+	}
+
+	 E_t=E_dc+(delta_E*(sin((omega*t)+phase)));
+
+	return E_t;
+}
+
+double c_dEdt( double E_start, double E_reverse, double omega, double phase, double v, double delta_E, double t){ //
+	double E_dc;
+  double tr=((E_reverse-E_start)/v);
+	if (t < tr){
+		 E_dc=v;
+	}else {
+		 E_dc=-v;
+	}
+  double dedt= E_dc+(delta_E*omega*cos(omega*t+phase));
+
+	return dedt;
+}
 std::vector<vector<double>> NR_function_surface(e_surface_fun &bc, double I_0, double I_minus, double I_bounds){
   cout<<"called"<<"\n";
   double interval=0.01;
@@ -126,47 +157,67 @@ std::vector<vector<double>> NR_function_surface(e_surface_fun &bc, double I_0, d
 }
 
 
-py::object martin_surface_brent(const double Cdl, const double CdlE, const double CdlE2, const double CdlE3, const double omega,const  double phase, const double pi, const double alpha, const double Estart,const  double Ereverse, const double delta_E, const double Ru, const double gamma,const double E0, const double k0, const double cap_phase, const double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
-    const double R = 0;
-    const int Ntim = 600.0;
+py::object brent_current_solver(py::dict params, std::vector<double> t, std::string method, double debug=-1, double bounds_val=10) {
+    const double v=1;
     const int digits_accuracy = std::numeric_limits<double>::digits;
     const double max_iterations = 100;
-    const double dt = (1.0/Ntim)*2*pi/omega;
-    const double Tmax = final_val;
-    const int Nt = Tmax/dt;
-    std::vector<double> Itot;
-    if(t.size() == 0){
-      Itot.resize(Nt,0);
-      t.resize(Nt);
-      for (int i=0; i<Nt; i++) {
-          t[i] = i*dt;
-          }
-        } else {
-      #ifndef NDEBUG
-              //std::cout << "\thave "<<times.size()<<" samples from "<<times[0]<<" to "<<times[times.size()-1]<<std::endl;
-      #endif
-              Itot.resize(t.size(),0);
-          }
+    double E, dE, cap_E;
+    std::vector<double> Itot(t.size(), 0);
+    const double k0 = get(params,std::string("k_0"),35.0);
+    const double alpha = get(params,std::string("alpha"),0.5);
+    const double gamma = get(params,std::string("gamma"),1.0);
+    const double E0 = get(params,std::string("E_0"),0.25);
+    const double Ru = get(params,std::string("Ru"),0.001);
+    const double Cdl = get(params,std::string("Cdl"),0.0037);
+    const double CdlE = get(params,std::string("CdlE1"),0.0);
+    const double CdlE2 = get(params,std::string("CdlE2"),0.0);
+    const double CdlE3 = get(params,std::string("CdlE3"),0.0);
+    const double E_start = get(params,std::string("E_start"),-10.0);
+    const double E_reverse = get(params,std::string("E_reverse"),10.0);
+    const double pi = boost::math::constants::pi<double>();
+    const double omega = get(params,std::string("nd_omega"),2*pi);
+    const double phase = get(params,std::string("phase"),0.0);
+    const double cap_phase = get(params,std::string("cap_phase"),0.0);
+    const double delta_E = get(params,std::string("d_E"),0.1);
+    const double dt=  (1.0/800.0)*2*pi/omega;
     double Itot0,Itot1;
     double u1n0;
+    bool ramped=false;
     double t1 = 0.0;
     u1n0 = 1.0;
+    if ((method.compare("ramped"))==0){
+      ramped=true;
+    }
+    else if ((method.compare("sinusoidal"))==0){
+      ramped=false;
+    }
+    if (ramped==false){
+      E = et(E_start, omega, phase,delta_E ,t1+dt);
+      dE = dEdt(omega, cap_phase,delta_E , t1+dt);
+    }
+    else{
+      E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1);
+      dE = c_dEdt(E_start,  E_reverse,  omega,  cap_phase,  v,  delta_E, t1+0.5*dt);
+    }
+    //cout<<E<<" "<<dE<<" "<<" "<<Cdl<<" "<<CdlE<<" "<<CdlE2<<" "<<CdlE3<<" "<<E0<<" "<<Ru<<" "<<k0<<" "<<alpha<<" "<<Itot0<<" "<<u1n0<<" "<<dt<<" "<<gamma<<" dicts"<<"\n";
 
-    const double E = et(Estart, omega, phase,delta_E ,t1+dt);
-    const double dE = dEdt(omega, cap_phase,delta_E , t1+0.5*dt);
     const double Cdlp = Cdl*(1.0 + CdlE*E + CdlE2*pow(E,2)+ CdlE3*pow(E,2));
     double Itot_bound =bounds_val;//std::max(10*Cdlp*delta_E*omega/Nt,1.0);
-    //std::cout << "Itot_bound = "<<Itot_bound<<std::endl;
     Itot0 =Cdlp*dE;
     Itot1 = Itot0;
     for (int n_out = 0; n_out < t.size(); n_out++) {
         while (t1 < t[n_out]) {
             Itot0 = Itot1;
-            const double E = et(Estart, omega, phase,delta_E ,t1+dt);
-            const double dE = dEdt(omega, cap_phase,delta_E , t1+0.5*dt);
-            const double cap_E=et(Estart, omega, cap_phase,delta_E ,t1+dt);
-            const double Edc = 0.0;
-
+            if (ramped==false){
+              E = et(E_start, omega, phase,delta_E ,t1+dt);
+              dE = dEdt(omega, cap_phase,delta_E , t1+0.5*dt);
+              cap_E=et(E_start, omega, cap_phase,delta_E ,t1+dt);
+            }
+            else{
+              E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1+dt);
+              dE = c_dEdt(E_start,  E_reverse,  omega,  cap_phase,  v,  delta_E, t1+0.5*dt);
+              cap_E=c_et( E_start,  E_reverse,  omega,  cap_phase,  v,  delta_E, t1);
+            }
             e_surface_fun bc(E,dE,cap_E,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,k0,alpha,Itot0,u1n0,dt,gamma);
             boost::uintmax_t max_it = max_iterations;
             //Itot1 = boost::math::tools::newton_raphson_iterate(bc, Itot0,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy, max_it);
@@ -189,6 +240,10 @@ py::object martin_surface_brent(const double Cdl, const double CdlE, const doubl
     }
     return py::cast(Itot);
 }
-PYBIND11_MODULE(isolver_brent, m) {
-	m.def("martin_surface_brent", &martin_surface_brent, "solve for I_tot with dispersion");
+PYBIND11_MODULE(isolver_martin_brent, m) {
+	m.def("brent_current_solver", &brent_current_solver, "solve for I_tot using the brent minimisation method");
+  m.def("c_et", &c_et, "Classical potential input");
+  m.def("c_dEdt", &c_dEdt, "Classical potential input derivative");
+  m.def("et", &et, "Ramp-free potential input");
+  m.def("dEdt", &dEdt, "Ramp-free potential derivative");
 }

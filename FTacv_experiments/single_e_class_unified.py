@@ -1,9 +1,7 @@
 import isolver_noramp
-import isolver_martin
-import isolver_martin_newton
-import isolver_martin_bisect
 import isolver_martin_brent
-import isolver_inverted
+import isolver_martin_NR
+import isolver_brent
 from scipy.stats import norm, lognorm
 import math
 import numpy as np
@@ -36,8 +34,12 @@ class single_electron:
             other_values["experiment_current"]=other_values["experiment_current"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_I0
             other_values["experiment_voltage"]=other_values["experiment_voltage"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_E0
 
+
         else:
-            self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.nd_omega)*2*math.pi
+            if simulation_options["method"]=="sinusoidal":
+                self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.nd_omega)*2*math.pi
+            else:
+                self.nd_param.time_end=2*(self.nd_param.E_reverse-self.nd_param.E_start)
             self.times(other_values["signal_length"])
         frequencies=np.fft.fftfreq(len(self.time_vec), self.time_vec[1]-self.time_vec[0])
         self.frequencies=frequencies[np.where(frequencies>0)]
@@ -45,6 +47,9 @@ class single_electron:
         self.test_frequencies=frequencies[np.where(self.frequencies<last_point)]
         self.other_values=other_values
         self.boundaries=None
+        if self.simulation_options["experimental_fitting"]==True:
+            self.secret_data_fourier=self.kaiser_filter(other_values["experiment_current"])
+            self.secret_data_time_series=other_values["experiment_current"]
     def define_boundaries(self, param_bounds):
         self.param_bounds=param_bounds
     def def_optim_list(self, optim_list):
@@ -56,11 +61,13 @@ class single_electron:
                 raise KeyError("Parameter " + optim_list[i]+" not in list")
         self.optim_list=optim_list
         param_boundaries=np.zeros((2, self.n_parameters()))
-        for i in range(0, self.n_parameters()):
-                param_boundaries[0][i]=self.param_bounds[self.optim_list[i]][0]
-                param_boundaries[1][i]=self.param_bounds[self.optim_list[i]][1]
+        check_for_bounds=vars(self)
+        if "param_bounds" in check_for_bounds.keys():
+            for i in range(0, self.n_parameters()):
+                    param_boundaries[0][i]=self.param_bounds[self.optim_list[i]][0]
+                    param_boundaries[1][i]=self.param_bounds[self.optim_list[i]][1]
 
-        self.boundaries=param_boundaries
+            self.boundaries=param_boundaries
 
         if ("E0_std" in optim_list) or ("k0_loc" in optim_list):
             self.simulation_options["dispersion"]=True
@@ -71,31 +78,27 @@ class single_electron:
     def un_normalise(self, norm, boundaries):
         return (norm*(boundaries[1]-boundaries[0]))+boundaries[0]
     def i_nondim(self, current):
-        return current*self.nd_param.c_I0
+        return np.multiply(current, self.nd_param.c_I0)
     def e_nondim(self, potential):
-        return potential*self.nd_param.c_E0
+        return np.multiply(potential, self.nd_param.c_E0)
     def t_nondim(self, time):
-        return time*self.nd_param.c_T0
+        return np.multiply(time, self.nd_param.c_T0)
     def n_outputs(self):
         return 1
     def n_parameters(self):
         return len(self.optim_list)
     def define_voltages(self):
         voltages=np.zeros(len(self.time_vec))
-        for i in range(0, len(self.time_vec)):
-            voltages[i]=isolver_noramp.et(self.nd_param.E_start, self.nd_param.E_reverse,self.nd_param.nd_omega, self.nd_param.phase, (self.time_vec[i]))
+        if self.simulation_options["method"]=="sinusoidal":
+            for i in range(0, len(self.time_vec)):
+                voltages[i]=isolver_martin_brent.et(self.nd_param.E_start,self.nd_param.nd_omega, self.nd_param.phase, self.nd_param.d_E, (self.time_vec[i]))
+        elif self.simulation_options["method"]=="ramped":
+            for i in range(0, len(self.time_vec)):
+                voltages[i]=isolver_martin_brent.c_et(self.nd_param.E_start, self.nd_param.E_reverse,self.nd_param.nd_omega, self.nd_param.phase, 1,self.nd_param.d_E,(self.time_vec[i]))
         return voltages
     def pass_extra_data(self, time_series, fourier):
         self.secret_data_time_series=time_series
         self.secret_data_fourier=fourier
-    def non_faradaic_filter(self, time_series):
-        signal_length=len(time_series)
-        filtered_val=np.zeros(signal_length)
-        divisor=11
-        endl=divisor-1
-        filtered_val[:int(signal_length/divisor)]=time_series[:int(signal_length/divisor)]
-        filtered_val[int(endl*signal_length/divisor):]=time_series[int(endl*signal_length/divisor):]
-        return filtered_val
     def fourier_plotter(self, time_series_1, label1, time_series_2, label2, fourier_end):
         L=len(time_series_1)
         window=np.hanning(L)
@@ -213,7 +216,7 @@ class single_electron:
                 print var_vals
                 param_vals[i]=var_vals[j]
                 time_series=self.test_vals(param_vals, "timeseries", test=False)
-                voltages=self.define_voltages()
+                voltages=self.voltages()
                 if abs(var_vals[j])<0.01:
                     label="{:.3E}".format(Decimal(str(var_vals[j])))
                 else:
@@ -264,10 +267,9 @@ class single_electron:
         e0_mat, k0_mat=np.meshgrid(e0_disp, k0_disp)
         weights=np.multiply(e0_mat, k0_mat)
         return weights
-    def numerical_plots(self):
+    def numerical_plots(self, solver):
         self.debug_time=self.simulation_options["numerical_debugging"]
-        time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.time_vec[-1], self.time_vec, self.debug_time, self.bounds_val)
-        current=time_series[0]
+        time_series=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], self.debug_time, self.bounds_val)
         residual=time_series[1]
         residual_gradient=time_series[2]
         #plt.subplot(1,2,1)
@@ -305,7 +307,35 @@ class single_electron:
                 x=i
         for i in range(0, y):
             plt.subplot((y/x), x, i+1)
+    def dispersion_simulate(self, solver):
+            time_series=np.zeros(len(self.time_vec))
+            bins=self.simulation_options["dispersion_bins"]
+            if ("E0_std" in self.optim_list) and ("k0_shape" in self.optim_list):
+                e0_vals, e0_disp=self.therm_dispersion()
 
+                k0_vals, k0_disp=self.kinetic_dispersion()
+                weights=self.weight_matrix(e0_disp, k0_disp)
+                print sum(k0_disp)
+                for i in range(0, bins):
+                    for j in range(0, bins):
+                        self.nd_param_dict["E_0"]=e0_vals[i]
+                        self.nd_param_dict["k_0"]=k0_vals[j]
+                        time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
+                        time_series=np.add(time_series, np.multiply(time_series_current, weights[i,j]))
+            elif "E0_std" in self.optim_list:
+                e0_vals, e0_disp=self.therm_dispersion()
+                for i in range(0, bins):
+                        self.nd_param_dict["E_0"]=float(e0_vals[i])
+                        time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
+                        time_series_current=isolver_brent.martin_surface_brent(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0,self.nd_param.cap_phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                        time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
+            elif "k0_shape" in self.optim_list:
+                k0_vals, k0_disp=self.kinetic_dispersion()
+                for i in range(0, bins):
+                    self.nd_param_dict["k_0"]=k0_vals[i]
+                    time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
+                    time_series=np.add(time_series, np.multiply(time_series_current, k0_disp[i]))
+            return time_series
 
     def simulate(self,parameters, frequencies, test=False):
         if len(parameters)!= len(self.optim_list):
@@ -319,45 +349,20 @@ class single_electron:
         for i in range(0, len(self.optim_list)):
             self.dim_dict[self.optim_list[i]]=normed_params[i]
         self.nd_param=params(self.dim_dict)
-        if self.simulation_options["numerical_method"]=="Bisect":
-            solver=isolver_martin_bisect.martin_surface_bisect
-        elif self.simulation_options["numerical_method"]=="Brent minimisation":
-            solver=isolver_martin_brent.martin_surface_brent
+        self.nd_param_dict=vars(self.nd_param)
+        if self.simulation_options["numerical_method"]=="Brent minimisation":
+            solver=isolver_martin_brent.brent_current_solver
         elif self.simulation_options["numerical_method"]=="Newton-Raphson":
-            solver=isolver_martin_newton.martin_surface_newton
-        elif self.simulation_options["numerical_method"]=="inverted":
-            solver=isolver_inverted.martin_surface_brent
+            solver=isolver_martin_NR.NR_current_solver
+        else:
+            raise ValueError('Numerical method not defined')
         if self.simulation_options["numerical_debugging"]!=False:
-            self.numerical_plots()
+            self.numerical_plots(solver)
         else:
             if self.simulation_options["dispersion"]==True:
-                time_series=np.zeros(len(self.time_vec))
-                bins=self.simulation_options["dispersion_bins"]
-                if ("E0_std" in self.optim_list) and ("k0_shape" in self.optim_list):
-                    e0_vals, e0_disp=self.therm_dispersion()
-
-                    k0_vals, k0_disp=self.kinetic_dispersion()
-                    weights=self.weight_matrix(e0_disp, k0_disp)
-                    print sum(k0_disp)
-                    for i in range(0, bins):
-                        for j in range(0, bins):
-                            time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], k0_vals[j],self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
-                            time_series=np.add(time_series, np.multiply(time_series_current, weights[i,j]))
-                elif "E0_std" in self.optim_list:
-                    e0_vals, e0_disp=self.therm_dispersion()
-                    for i in range(0, bins):
-                            time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
-                            time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
-                elif "k0_shape" in self.optim_list:
-                    k0_vals, k0_disp=self.kinetic_dispersion()
-                    for i in range(0, bins):
-                        time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, k0_vals[i],self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
-                        time_series=np.add(time_series, np.multiply(time_series_current, k0_disp[i]))
-                else:
-                    time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)
-
+                time_series=self.dispersion_simulate(solver)
             else:
-                time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+                time_series=solver(self.nd_param_dict, self.time_vec, self.simulation_options["method"],-1, self.bounds_val)
         if self.simulation_options["no_transient"]!=True:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)

@@ -2,7 +2,7 @@ import isolver_noramp
 import isolver_martin
 import isolver_martin_newton
 import isolver_martin_bisect
-import isolver_martin_brent
+import isolver_brent
 import isolver_inverted
 from scipy.stats import norm, lognorm
 import math
@@ -45,6 +45,7 @@ class single_electron:
         self.test_frequencies=frequencies[np.where(self.frequencies<last_point)]
         self.other_values=other_values
         self.boundaries=None
+        self.counter=0
     def define_boundaries(self, param_bounds):
         self.param_bounds=param_bounds
     def def_optim_list(self, optim_list):
@@ -322,7 +323,7 @@ class single_electron:
         if self.simulation_options["numerical_method"]=="Bisect":
             solver=isolver_martin_bisect.martin_surface_bisect
         elif self.simulation_options["numerical_method"]=="Brent minimisation":
-            solver=isolver_martin_brent.martin_surface_brent
+            solver=isolver_brent.martin_surface_brent
         elif self.simulation_options["numerical_method"]=="Newton-Raphson":
             solver=isolver_martin_newton.martin_surface_newton
         elif self.simulation_options["numerical_method"]=="inverted":
@@ -358,6 +359,8 @@ class single_electron:
 
             else:
                 time_series=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0,self.nd_param.cap_phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
+
+
         if self.simulation_options["no_transient"]!=True:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
