@@ -9,6 +9,8 @@ class harmonics:
         self.input_frequency=input_frequency
         self.filter_val=filter_val
         print "initialised!"
+    def reorder(list, order):
+        return [list[i] for i in order]
     def generate_harmonics(self, times, data):
         L=len(data)
         window=np.hanning(L)
@@ -79,6 +81,11 @@ class harmonics:
         for i in range(0, len(names)):
             if ("_" in names[i]) and ("harmonics" in names[i]):
                 titles.append(names[i][:names[i].index("_")])
+        title_lower=[x.lower() for x in titles]
+        exp_idx=title_lower.index("experimental")
+        new_order=range(0, len(titles))
+        new_order[0]=exp_idx
+        new_order[exp_idx]=0
         fig=plt.figure(num=None, figsize=(15, 6), dpi=80, facecolor='w', edgecolor='k')
         if method=="abs":
             a=abs
@@ -97,14 +104,14 @@ class harmonics:
             else:
                 time_list.append(value)
                 time_labels.append(key)
-
         harm_axes=[]
         harm_len=2
         fig.text(0.03, 0.5, 'Current($\mu$A)', ha='center', va='center', rotation='vertical')
 
         for i in range(0,self.num_harmonics):
             harm_axes.append(plt.subplot2grid((self.num_harmonics,harm_len*2), (i,0), colspan=harm_len))
-            for j in range(0, len(titles)):
+            for q in range(0, len(titles)):
+                j=new_order[q]
                 labels=titles[j]
                 if "z" in titles[j]:
                     labels=titles[j]
@@ -123,7 +130,8 @@ class harmonics:
         time_ax=plt.subplot2grid((self.num_harmonics,harm_len*2), (0,harm_len), rowspan=self.num_harmonics, colspan=harm_len)
 
 
-        for j in range(0, len(titles)):
+        for p in range(0, len(titles)):
+            j=new_order[p]
             labels=titles[j]
             if "z" in titles[j]:
                 label_list=list(labels)
@@ -132,7 +140,10 @@ class harmonics:
                     label_list[q]=" "
                 labels=''.join(label_list)
             idx=time_labels.index(titles[j]+"_time_series")
-            time_ax.plot(times, np.multiply(time_list[idx], 1e3), label=labels, alpha=0.7)
+            if labels.lower()=="experimental":
+                time_ax.plot(times, np.multiply(time_list[idx], 1e3), label=labels, alpha=1.0)
+            else:
+                time_ax.plot(times, np.multiply(time_list[idx], 1e3), label=labels, alpha=0.5)
         time_ax.set_ylabel("Current(mA)")
         time_ax.set_xlabel("Time(s)")
         plt.legend()

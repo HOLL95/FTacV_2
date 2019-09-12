@@ -100,6 +100,10 @@ class params:
             self.dispersion=True
         else:
             self.dispersion=False
+        if "Cdlinv" in param_dict:
+            self.dcv=True
+        else:
+            self.dcv=False
         self.E_0=param_dict['E_0']
         self.k_0=param_dict['k_0']
         self.Cdl=param_dict['Cdl']
@@ -128,6 +132,12 @@ class params:
             self.k0_loc=param_dict["k0_loc"]
             self.k0_scale=param_dict["k0_scale"]
             self.k0_range=param_dict["k0_range"]
+        if self.dcv==True:
+            self.Cdlinv=param_dict["Cdlinv"]
+            self.Cdlinv1=param_dict["Cdlinv1"]
+            self.Cdlinv2=param_dict["Cdlinv2"]
+            self.Cdlinv3=param_dict["Cdlinv3"]
+
 
         self.T=(273+25)
         self.F=96485.3328959

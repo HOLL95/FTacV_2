@@ -72,11 +72,11 @@ class single_electron:
     def un_normalise(self, norm, boundaries):
         return (norm*(boundaries[1]-boundaries[0]))+boundaries[0]
     def i_nondim(self, current):
-        return current*self.nd_param.c_I0
+        return np.multiply(current, self.nd_param.c_I0)
     def e_nondim(self, potential):
-        return potential*self.nd_param.c_E0
+        return np.multiply(potential, self.nd_param.c_E0)
     def t_nondim(self, time):
-        return time*self.nd_param.c_T0
+        return np.multiply(time, self.nd_param.c_T0)
     def n_outputs(self):
         return 1
     def n_parameters(self):

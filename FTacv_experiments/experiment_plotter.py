@@ -8,7 +8,7 @@ import pints
 import pints.plot
 import os
 import matplotlib.ticker as ticker
-plt.rcParams.update({'font.size': 12})
+plt.rcParams.update({'font.size': 10})
 harm_class=harmonics(range(1, 6), 8.94, 0.05)
 harmonic_no=4
 max_harm=8
@@ -29,7 +29,7 @@ def voltage_input(time, voltage, ax):
 def time_series(voltage, data, ax):
     ax.plot(voltage, data*1000)
     ax.set_xlabel("Voltage(V)")
-    ax.set_ylabel("Current($\mu$A)")
+    ax.set_ylabel("Current(mA)")
 def fourier(frequencies,freq_idx,  data, ax):
     hanning=np.ones(len(data))#np.hanning(len(data))
     f_data=np.fft.fft(np.multiply(data,hanning))
@@ -41,15 +41,17 @@ def harmonic_plot(time, harmonics, harmonic_no, ax):
     ax.plot(time, (harmonics*1000))
     #ax.title("Harmonic"+ str(harmonic_no))
     ax.set_xlabel("Time(s)")
-    ax.set_ylabel("Current($\mu$A)")
+    ax.set_ylabel("Current(mA)")
 
 #ax.text(-0.1, 1.15, letters[letter_counter], transform=ax.transAxes,
     #fontsize=16, fontweight='bold', va='top', ha='right')
-fig, ax=plt.subplots(3, 4)
+fig, ax=plt.subplots(2, 3)
 directory=os.path.dirname(os.path.realpath(__file__))
 dec_amount=8
+v_array=[]
+c_array=[]
+t_array=[]
 for i in range(0, len(names)):
-
     if i ==0:
         path=directory+folder+"/dcv"
     else:
@@ -58,11 +60,11 @@ for i in range(0, len(names)):
     for filename in files:
         if (names[i] in filename)  and (current in filename):
             results=np.loadtxt(path+"/"+filename)
-            current_results=results[3000::dec_amount, 1]
-            time_results=results[3000::dec_amount, 0]
+            current_results=results[::dec_amount, 1]
+            time_results=results[::dec_amount, 0]
         elif (names[i] in filename)  and (voltage in filename):
             results_v=np.loadtxt(path+"/"+filename)
-            voltage_results=results_v[3000::dec_amount, 1]
+            voltage_results=results_v[::dec_amount, 1]
         elif (dcv_method in filename) and (names[i] in filename):
             dcv_results=open(path+"/"+filename)
             dcv_results=np.loadtxt(dcv_results, skiprows=1)
@@ -74,30 +76,48 @@ for i in range(0, len(names)):
             current_results=current_results[:10000]
             time_results=time_results[:10000]
             voltage_results=voltage_results[:10000]
+    v_array.append(voltage_results)
+    c_array.append(current_results)
+    t_array.append(time_results)
     print len(current_results), len(voltage_results), len(time_results)
 
-    for j in range(0, 4):
-        axes=ax[i,j]
-        if i==0:
 
-            axes.set_title(titles[j])
+
+
+
+
+for j in range(0, 3):
+    for i in range(0, 2):
+        voltage_results=v_array[j]
+        current_results=c_array[j]
+        time_results=t_array[j]
+        axes=ax[i,j]
         if j==0:
             pad = 5
-            axes.annotate(y_names[i], xy=(0, 0.5), xytext=(-axes.yaxis.labelpad - pad, 0),
+            axes.annotate(titles[i], xy=(0, 0.5), xytext=(-axes.yaxis.labelpad - pad, 0),
                 xycoords=axes.yaxis.label, textcoords='offset points',
                 size='large', ha='right', va='center', rotation="horizontal")
-        if j==0:
+        if i==0:
             voltage_input(time_results, voltage_results, axes)
-        elif j==1:
+            reduction=2465
+            if (j+1)==3:
+                axes.plot(time_results[:reduction], voltage_results[:reduction])
+            axes.set_title(y_names[j])
+
+        elif i==1 and (j+1)==3:
+            time_series(voltage_results[reduction:], current_results[reduction:], axes)
+            axes.plot(voltage_results[:reduction], current_results[:reduction]*1000, alpha=0.7)
+        else:
             time_series(voltage_results, current_results, axes)
-        elif j==2:
-            frequencies=np.fft.fftfreq(len(current_results), time_results[1]-time_results[0])
-            freq_idx=np.where((frequencies>0) & (frequencies<omega*12+(omega*0.5)))
-            freqs=frequencies[freq_idx]
-            fourier(freqs, freq_idx, current_results, axes)
-        elif j==3:
-            harmonics=harm_class.generate_harmonics(time_results, current_results)
-            harmonic_plot(time_results, abs(harmonics[harmonic_no, :]), harmonic_no, axes)
+
+        #elif j==2:
+        #    frequencies=np.fft.fftfreq(len(current_results), time_results[1]-time_results[0])
+        #    freq_idx=np.where((frequencies>0) & (frequencies<omega*12+(omega*0.5)))
+        #    freqs=frequencies[freq_idx]
+        #    fourier(freqs, freq_idx, current_results, axes)
+        #elif j==3:
+        #    harmonics=harm_class.generate_harmonics(time_results, current_results)
+        #    harmonic_plot(time_results, abs(harmonics[harmonic_no, :]), harmonic_no, axes)
 
 
 

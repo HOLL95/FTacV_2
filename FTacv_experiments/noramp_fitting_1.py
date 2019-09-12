@@ -49,6 +49,7 @@ for files in filenames:
 plt.legend()
 plt.show()
 time_results=times["GC4_1_cv"]
+voltage_results=voltages["GC4_1_cv"]
 #plt.plot(time_results, current_results)
 #plt.show()
 
@@ -108,7 +109,7 @@ other_values={
     "experiment_current": currents[file],
     "experiment_voltage":voltages[file],
     "bounds_val":20,
-    "signal_length":int(2e4),
+    "signal_length":int(8e4),
 }
 param_bounds={
     'E_0':[0.2, 0.3],#[param_list['E_start'],param_list['E_reverse']],
@@ -190,7 +191,7 @@ carbon_means_abs_all_peaks=[0.2712720627064147, 53.00972798907347, 126.435811539
 carbon_means_abs_all_peaks=[0.2528081478002836, 217.56996476308117, 529.7297882492157, 3.0166883670561975e-05, 0.14790906812787918, -0.005389008883307372, 1.1330727195554263e-10, 8.940664568706621, 0.40000000111206985]
 another_constrained_fit=[0.25007589734382935, 0.04947794128755774, 20.83219016081861, 0.0002356574033788102, 3.361058693410845e-06, 1.9999995197072655, -0.09693566779590666, 3.665491921443447e-10, 8.941522982029218, 0.49515486096231986, 3.8227156574615946, 5.2169580962884226]
 carbon_means_disped=[0.23542237635148117, 0.004406518077359679, 1.6338863524591192, 80.0000000070073, 3.24102216543367e-05, 0.10683350182222259, -0.0041305496741190365, 1.531049485509304e-10, 8.94090414236465, 5.635236560276772, 4.327586365963918, 0.5420683576660721]
-carbon_means_disped_gc41a=[0.2507124585192858, 0.052810161448688611, 81.25609725526283,100, 3.4455963089647964e-05, 0.08570032724521258, -0.0026762829980299324, 1.4591816196158548e-10, 8.940730783653084, 4.965641139765749, 4.375333040247454, 0.7811192097028208]
+carbon_means_disped_gc41a=[0.2507124585192858, 0.012810161448688611, 81.25609725526283,100, 3.4455963089647964e-05, 0.08570032724521258, -0.0026762829980299324, 1.4591816196158548e-10, 8.940730783653084, 4.965641139765749, 4.375333040247454, 0.7811192097028208]
 carbon_means_disped_gc42a=[0.25150277022331746, 0.014115779656223786, 78.20813556543256,58.804257252122355, 3.501508623604994e-05, 0.08815081354697163, -0.0030182380193618527, 1.3910336262835592e-10, 8.941274817456382, 4.946748053531174, 4.3670012650213295, 0.7663320409205243]
 carbon_means_disped_gc43a=[0.2508929602137271, 0.014962342550521588,  74.5650170269896,13.194027307777567, 3.51489903928365e-05, 0.0898311438945581, -0.0031909694983879135, 1.3515246782381657e-10, 8.941160154930586, 4.933768379207287, 4.358597908430476, 0.7621639225400778]
 carbon_means_disped_gc42=[0.25983027085247, 78.20813556543256, 100.00001599685609, 3.501508623604994e-05, 0.08815081354697163, -0.0030182380193618527, 1.3910336262835592e-10, 8.941274817456382, 4.946748053531174, 4.3670012650213295, 0.7785371130874895]
@@ -205,11 +206,11 @@ gc4_3_alternate=[0.24517090736930636, 0.056720112426872436, 223.12968601072467, 
 gc4_1_alternate=[0.24707364221482686, 0.05611157233858666, 215.93921919728885, 261.0012935458973, 3.457664799584686e-05, 0.08731475943652235, -0.00315097559270702, 1.4305526845381745e-10, 8.940962054668862, 4.897135123391333, 4.379405055574097, 0.6999999999984596]
 gc4_2_alternate=[0.24581388949144, 0.056437609561567396, 220.84863259145277, 268.249787363191, 3.465024308699503e-05, 0.08279171693559563, -0.003087944274776373, 1.4514161563358487e-10, 8.940879185090578, 4.900935582894143, 4.379408688250694, 0.6999999997489996]
 
-gc4_2_b=[0.2390418691618472, 0.06341251668841151, 59.55992622848135, 1.0000000065311607, 3.42132227450153e-05, 0.09142523880452204, -0.003427483907861838, 1.4006677642620296e-10, 8.940855668037237, 4.881147386014593, 4.33221437864721, 0.5726264177402156]
 gc4_2_low_ru=[0.2390424106953814, 0.0634126339128772, 59.56331759126466, 1.0000000052336186, 3.421333538191425e-05, 0.09142331002140631, -0.0034273912843145503, 1.3806680869872118e-10, 8.940855654906262, 4.881140108985157, 4.332212053411549, 0.5726231710329381]
 gc4_1_low_ru=[0.23953731576330606, 0.06251048824509087, 54.80881131862505, 1.0, 3.401227622853829e-05, 0.09658746281397658, -0.0035025931533504253, 1.4039829708596723e-10, 8.940959682968415, 4.88941265694472, 4.331036700670979, 0.5725681192157199]
 gc4_3_low_ru=[0.23953952896099746, 0.06432508696935929, 60.84131849364619, 1.0, 3.42647900201487e-05, 0.08893011038618533, -0.0033602097013514043, 1.3972124127562154e-10, 8.94084399186188, 4.8779396488202185, 4.331377454498156, 0.5724578682161762]
 
+gc4_2_b=[0.2390418691618472, 0.06341251668841151, 59.55992622848135, 1.0000000065311607, 3.42132227450153e-05, 0.09142523880452204, -0.003427483907861838, 1.4006677642620296e-10, 8.940855668037237, 4.881147386014593, 4.33221437864721, 0.5726264177402156]
 
 carbon_means_disped=carbon_means_disped_gc42
 #carbon_means_disped=[0.26309322667095436, 0.08411919477796326, 999.9999999749896, 5.005163812028062e-10, 2.7249704365065652e-05, 0.0014108474638033497, 0.0009417539364441913, 2.1916294751016806e-10, 8.94090414236465, 3*math.pi/2, 3*math.pi/2,0.7999999999895195]
@@ -245,19 +246,26 @@ gc4_2a=(noramp_fit.test_vals(gc4_2_alternate, "timeseries", test=False))
 gc4_3a=(noramp_fit.test_vals(gc4_3_alternate, "timeseries", test=False))
 gc_results=[gc4_1, gc4_2, gc4_3]
 gc_alternate=[gc4_1a, gc4_2a, gc4_3a]
+nondim_times=noramp_dit.t_nondim(time_results)
+
 gc_results=[np.multiply(gc_results[i], noramp_fit.nd_param.c_I0*1000) for i in range(0,len(gc_results))]
 gc_dicta=[np.multiply(gc_alternate[i], noramp_fit.nd_param.c_I0*1000) for i in range(0,len(gc_alternate))]
 gc_dict=dict(zip(filenames, gc_results))
 gc_alternate=dict(zip(filenames, gc_dicta))
+def RMSE(data, sim):
+    data=data*1000
+    error=1.0/len(data)*np.sqrt(np.sum((np.power(np.subtract(data, sim),2))))
+    return error
 disped_1=gc4_1
 disped_2=gc4_2
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 for i in range(0, len(filenames)):
-    plt.subplot(2,3, i+1)
+    #plt.subplot(2,3, i+1)
     plt.plot(voltages[filenames[i]], np.multiply(currents[filenames[i]], 1000),label="Data", color=colors[1])
     plt.plot(voltages[filenames[i]], gc_dict[filenames[i]], label="Low resistance", color=colors[0])
     plt.plot(voltages[filenames[i]], gc_alternate[filenames[i]], label="High Resistance", color=colors[2])
+    print filenames[i], RMSE(np.multiply(currents[filenames[i]], 1000), gc_dict[filenames[i]]), RMSE(np.multiply(currents[filenames[i]], 1000), gc_alternate[filenames[i]])
     plt.title(filenames[i])
     plt.xlabel("Voltages(V)")
     plt.ylabel("Current(mA)")
@@ -266,8 +274,8 @@ for i in range(0, len(filenames)):
     plt.plot(times[filenames[i]], np.multiply(currents[filenames[i]], 1000), label="Data", color=colors[1])
     plt.plot(times[filenames[i]], gc_dict[filenames[i]], label="Low resistance", color=colors[0])
     plt.plot(times[filenames[i]], gc_alternate[filenames[i]], label="High Resistance", color=colors[2])
-    plt.plot(times[filenames[i]], np.subtract(np.multiply(currents[filenames[i]], 1000), gc_dict[filenames[i]]),label="Low Resistance Residual" )
-    plt.plot(times[filenames[i]], np.subtract(np.multiply(currents[filenames[i]], 1000), gc_alternate[filenames[i]]),label="High Resitance Residual" )
+    plt.plot(times[filenames[i]], np.subtract(np.multiply(currents[filenames[i]], 1000), gc_dict[filenames[i]]),label="Low Resistance Residual" ,color=colors[3])
+    plt.plot(times[filenames[i]], np.subtract(np.multiply(currents[filenames[i]], 1000), gc_alternate[filenames[i]]),label="High Resitance Residual",color=colors[4] )
     plt.ylabel("Current(mA)")
     plt.xlabel("Time(s)")
     plt.legend()
@@ -281,10 +289,8 @@ noramp_fit.variable_returner()
 #harm_class.plot_harmonics(time_results, method="phased", Experimental=data_harmonics, Ramp_free=exp_harmonics, Ramped=ramp_harmonics)
 harm_class.harmonics_and_voltages(noramp_fit.t_nondim(time_results), noramp_fit.e_nondim(voltage_results),folder, "phased", \
                             Experimental_harmonics=noramp_fit.i_nondim(data_harmonics), Experimental_time_series=noramp_fit.i_nondim(current_results),\
-                            FixedzResistance_harmonics=noramp_fit.i_nondim(disped2_harmonics),\
-                            FixedzAlpha_harmonics=noramp_fit.i_nondim(disped1_harmonics), \
-                            FixedzResistance_time_series=noramp_fit.i_nondim(disped_2),\
-                            FixedzAlpha_time_series=noramp_fit.i_nondim(disped_1))
+                            LowzResistance_harmonics=noramp_fit.i_nondim(disped1_harmonics), \
+                            LowzResistance_time_series=noramp_fit.i_nondim(disped_1))
 
 fig, ax=plt.subplots(1, 1)
 line_elements=[]
@@ -336,7 +342,7 @@ dummy_times=np.linspace(0, 1, len(likelihood_func))
 nodisp_results=carbon_means_disped_gc43
 noramp_fit.def_optim_list(["E_0", "k_0","Ru","Cdl","CdlE1","CdlE2",'gamma', 'omega',"phase","cap_phase","alpha"])
 noramp_fit.test_vals(nodisp_results, "timeseries")
-noramp_fit.def_optim_list(["E0_mean", "E0_std", "k_0","Ru","Cdl", "CdlE1","CdlE2",'gamma', 'omega',"phase","cap_phase","alpha"])
+noramp_fit.def_optim_list(["E_0","k_0","Ru","Cdl",'gamma', 'omega',"phase","alpha"])
 #noramp_fit.def_optim_list(["E0_mean", "E0_std", "Ru", "alpha"])
 noramp_fit.dim_dict["CdlE1"]=0
 noramp_fit.dim_dict["CdlE2"]=0
@@ -360,14 +366,14 @@ noramp_fit.simulation_options["label"]="cmaes"
 x0=abs(np.random.rand(noramp_fit.n_parameters()))
 print x0
 print len(x0), noramp_fit.n_parameters()
-num_runs=0
+num_runs=1
 score_mat=np.zeros(num_runs)
 noramp_fit.variable_returner()
 param_mat=np.zeros((num_runs,len(noramp_fit.optim_list)))
 score_vec=np.zeros(num_runs)
 print file
 for i in range(0, num_runs):
-    x0=noramp_fit.change_norm_group(gc4_3_low_ru, "norm")
+    x0=abs(np.random.rand(noramp_fit.n_parameters()))#noramp_fit.change_norm_group(gc4_3_low_ru, "norm")
     print noramp_fit.change_norm_group(x0, "un_norm")
     cmaes_fitting=pints.Optimisation(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
     cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)

@@ -63,6 +63,10 @@ param_list={
     'CdlE1': 0,#0.000653657774506,
     'CdlE2': 0,#0.000245772700637,
     'CdlE3': 0,#1.10053945995e-06,
+    'Cdlinv': 1e-6, #(capacitance parameters)
+    'Cdlinv1': 0,#0.000653657774506,
+    'Cdlinv2': 0,#0.000245772700637,
+    'Cdlinv3': 0,#1.10053945995e-06,
     'gamma': 1e-10,          # (surface coverage per unit area)
     'original_gamma': 1e-10,
     "cap_phase":0,
@@ -97,15 +101,13 @@ harmonic_range=np.arange(1,7,1)
 dcv_fit=single_electron(param_list, params_for_opt, harmonic_range, 1.0)
 dcv_fit.label="cmaes"
 tr=((dcv_fit.nd_param.E_reverse-dcv_fit.nd_param.E_start));
-
-
 time_results=time_results/dcv_fit.nd_param.c_T0
 current_results=current_results/dcv_fit.nd_param.c_I0
 voltage_results=voltage_results/dcv_fit.nd_param.c_E0
 time_idx=np.where(voltage_results==max(voltage_results))
-time_results=time_results[:time_idx[0][0]]
-voltage_results=voltage_results[:time_idx[0][0]]
-current_results=current_results[:time_idx[0][0]]
+#time_results=time_results[:time_idx[0][0]]
+#voltage_results=voltage_results[:time_idx[0][0]]
+#current_results=current_results[:time_idx[0][0]]
 dcv_fit.voltages=voltage_results
 dcv_fit.initial_val=current_results[0]
 print time_results[1]-time_results[0]
@@ -141,7 +143,11 @@ param_bounds={
     'Cdl': [0,1e-4], #(capacitance parameters)
     'CdlE1': [-1,1],#0.000653657774506,
     'CdlE2': [-0.1,0.1],#0.000245772700637,
-    'CdlE3': [-0.005,0.005],#1.10053945995e-06,
+    'CdlE3': [-0.03,0.03],#1.10053945995e-06,
+    'Cdlinv': [0,1e-4], #(capacitance parameters)
+    'Cdlinv1': [-1,1],#0.000653657774506,
+    'Cdlinv2': [-0.1,0.1],#0.000245772700637,
+    'Cdlinv3': [-0.03,0.03],#1.10053945995e-06,
     'gamma': [1e-11,4e-10],
     'k_0': [1, 1e2], #(reaction rate s-1)
     'alpha': [0.1, 0.9],
@@ -174,8 +180,8 @@ for i in range(0, len(scan_params)):
     for q in range(0, len(scan_params)):
         dcv_fit.dim_dict[scan_params[q]]=carbon_means[q]
 plt.show()
-dcv_fit.optim_list=['E0_mean', "E0_std","Ru", "Cdl","CdlE1","CdlE2", "gamma"]
-dcv_fit.dim_dict["k_0"]=50
+dcv_fit.dispersion=True
+dcv_fit.optim_list=["E0_mean", "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2","CdlE3","Cdlinv", "Cdlinv1","Cdlinv2", "Cdlinv3", "gamma", "alpha"]
 param_boundaries=np.zeros((2, dcv_fit.n_parameters()))
 for i in range(0, dcv_fit.n_parameters()):
     param_boundaries[0][i]=param_bounds[dcv_fit.optim_list[i]][0]

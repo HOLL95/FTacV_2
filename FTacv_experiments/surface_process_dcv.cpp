@@ -133,10 +133,10 @@ struct TerminationCondition  {
     return abs(min - max) <= 0.00000000001;
   }
 };
-py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double omega, double phase, double pi, double alpha, double E_start, double E_reverse, double delta_E, double Ru, double gamma,double E0, double k0, std::vector<double> times, double initial_val) {
+py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3,double Cdlinv, double Cdlinv1, double Cdlinv2, double Cdlinv3, double omega, double phase, double pi, double alpha, double E_start, double E_reverse, double delta_E, double Ru, double gamma,double E0, double k0, std::vector<double> times, double initial_val) {
   //set up temporal mesh
   const int v =1;
-  const int Nt=20;
+  const int Nt=50;
   vector<double> Itot;
   const double dt = (1.0/Nt)*2*pi/omega;
 
@@ -171,12 +171,20 @@ py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double
     const boost::uintmax_t max_it = 100;
     Itot0 = initial_val;//Cdlp*delta_E;
     Itot1 = Itot0;
+    ///e_surface_fun bc(E,dE,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,R,k0,alpha,Itot0,u1n0,dt,gamma);
+    double tr=E_reverse-E_start;
     for (int n_out = 0; n_out < times.size(); n_out++) {
         while (t1 < times[n_out]) {
             Itot0 = Itot1;
             const double E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1);
             const double dE = c_dEdt(E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1+0.5*dt);
             boost::uintmax_t it = max_it;
+            if (t1>tr){
+              Cdl=Cdl;//Cdlinv;
+              CdlE=Cdlinv1;
+              CdlE2=Cdlinv2;
+              CdlE3=Cdlinv3;
+            }
             e_surface_fun bc(E,dE,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,R,k0,alpha,Itot0,u1n0,dt,gamma);
             std::pair <double, double> sol=boost::math::tools::brent_find_minima(bc,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy);
             //Itot1 = boost::math::tools::newton_raphson_iterate(bc, Itot0,Itot0-Itot_bound,Itot0+Itot_bound, digits_accuracy);
@@ -189,6 +197,7 @@ py::object e_surface(double Cdl, double CdlE, double CdlE2, double CdlE3, double
         Itot[n_out] = (Itot1-Itot0)*(times[n_out]-t1+dt)/dt + Itot0;
 
     }
+  //cout<<Cdl<<" "<<CdlE<<" "<<CdlE2<<" "<<CdlE3<<"\n";
   return py::cast(Itot);
 }
 PYBIND11_MODULE(isolver_dcv, m) {

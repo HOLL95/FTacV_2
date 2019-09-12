@@ -138,7 +138,7 @@ class single_electron:
         #plt.show()
         return e0_vals, e0_weights
     def simulate(self,parameters, frequencies, flag='optimise', flag2='timeseries', test="no"):
-
+        #self.time_vec=[]
         var_list=vars(self)
         if len(parameters)!= len(self.optim_list):
             print len(parameters), len(self.optim_list)
@@ -152,16 +152,17 @@ class single_electron:
         for i in range(0, len(self.optim_list)):
             self.dim_dict[self.optim_list[i]]=normed_params[i]
             #print self.optim_list[i]
-        self.nd_param=params(self.dim_dict)
+        self.nd_param=params(self.dim_dict)#
+        #print self.nd_param.Cdlinv1, self.nd_param.Cdlinv2, self.nd_param.Cdlinv3
         if self.dispersion==True:
             e0_vals, e0_disp=self.therm_dispersion()
             time_series=np.zeros(len(self.time_vec))
             for i in range(0, len(e0_vals)):
-                time_series_current=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0, self.time_vec, 0)
+                time_series_current=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3,self.nd_param.Cdlinv, self.nd_param.Cdlinv1,self.nd_param.Cdlinv2,self.nd_param.Cdlinv3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0, self.time_vec, 0)
 
                 time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
         else:
-            time_series=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec, 0)
+            time_series=isolver_dcv.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3,self.nd_param.Cdlinv, self.nd_param.Cdlinv1,self.nd_param.Cdlinv2,self.nd_param.Cdlinv3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec, 0)
         if "no_transient" in var_list:
             new_array=np.zeros(len(time_series))
             time_series=np.array(time_series)
@@ -188,6 +189,6 @@ class single_electron:
             if test=="yes":
                 #plt.axvline(normed_params[0], linestyle="--", color="black")
                 plt.plot(self.i_nondim(time_series))
-                plt.plot(self.i_nondim(self.secret_data_time_series), alpha=0.7)
+                #plt.plot(self.i_nondim(self.secret_data_time_series), alpha=0.7)
                 plt.show()
             return time_series
