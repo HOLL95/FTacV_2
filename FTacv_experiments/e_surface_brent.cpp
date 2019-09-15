@@ -128,7 +128,7 @@ std::vector<vector<double>> NR_function_surface(e_surface_fun &bc, double I_0, d
 
 py::object martin_surface_brent(const double Cdl, const double CdlE, const double CdlE2, const double CdlE3, const double omega,const  double phase, const double pi, const double alpha, const double Estart,const  double Ereverse, const double delta_E, const double Ru, const double gamma,const double E0, const double k0, const double cap_phase, const double final_val, std::vector<double> t, double debug=-1, double bounds_val=10) {
     const double R = 0;
-    const int Ntim = 600.0;
+    const int Ntim = 700.0;
     const int digits_accuracy = std::numeric_limits<double>::digits;
     const double max_iterations = 100;
     const double dt = (1.0/Ntim)*2*pi/omega;

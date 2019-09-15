@@ -44,10 +44,10 @@ for files in file_dict.keys():
 plt.legend()
 plt.show()
 
-
-time_results=times[Method]
-voltage_results=voltages[Method]
-current_results=currents[Method]
+dec_amount=4
+time_results=times[Method][0::dec_amount]
+voltage_results=voltages[Method][0::dec_amount]
+current_results=currents[Method][0::dec_amount]
 plt.plot(voltage_results, current_results)
 plt.show()
 param_list={
@@ -137,7 +137,7 @@ def dim_potential(voltage):
 
 
 param_bounds={
-    'E_0':[0.2, 0.35],#[param_list['E_start'],param_list['E_reverse']],
+    'E_0':[0.1, 0.35],#[param_list['E_start'],param_list['E_reverse']],
     'omega':[0.98*param_list['omega'],1.02*param_list['omega']],#8.88480830076,  #    (frequency Hz)
     'Ru': [1, 1e3],  #     (uncompensated resistance ohms)
     'Cdl': [0,1e-4], #(capacitance parameters)
@@ -181,7 +181,9 @@ for i in range(0, len(scan_params)):
         dcv_fit.dim_dict[scan_params[q]]=carbon_means[q]
 plt.show()
 dcv_fit.dispersion=True
-dcv_fit.optim_list=["E0_mean", "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2","CdlE3","Cdlinv", "Cdlinv1","Cdlinv2", "Cdlinv3", "gamma", "alpha"]
+dcv_fit.optim_list=["E0_mean", "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2","Cdlinv", "Cdlinv1","Cdlinv2", "gamma", "alpha"]
+dcv_fit.dim_dict["CdlE3"]=0
+dcv_fit.dim_dict["Cdlinv3"]=0
 param_boundaries=np.zeros((2, dcv_fit.n_parameters()))
 for i in range(0, dcv_fit.n_parameters()):
     param_boundaries[0][i]=param_bounds[dcv_fit.optim_list[i]][0]

@@ -109,7 +109,7 @@ other_values={
     "experiment_current": currents[file],
     "experiment_voltage":voltages[file],
     "bounds_val":20,
-    "signal_length":int(8e4),
+    "signal_length":int(2e4),
 }
 param_bounds={
     'E_0':[0.2, 0.3],#[param_list['E_start'],param_list['E_reverse']],
@@ -121,7 +121,7 @@ param_bounds={
     'CdlE3': [-0.01,0.01],#1.10053945995e-06,
     'gamma': [1e-11,1e-9],
     'k_0': [1, 500], #(reaction rate s-1)
-    'alpha': [0.3, 0.8],
+    'alpha': [0.4, 0.6],
     "cap_phase":[0, 2*math.pi],
     "E0_mean":[0.15, 0.3],
     "E0_std": [0.01, 0.2],
@@ -246,7 +246,7 @@ gc4_2a=(noramp_fit.test_vals(gc4_2_alternate, "timeseries", test=False))
 gc4_3a=(noramp_fit.test_vals(gc4_3_alternate, "timeseries", test=False))
 gc_results=[gc4_1, gc4_2, gc4_3]
 gc_alternate=[gc4_1a, gc4_2a, gc4_3a]
-nondim_times=noramp_dit.t_nondim(time_results)
+nondim_times=noramp_fit.t_nondim(time_results)
 
 gc_results=[np.multiply(gc_results[i], noramp_fit.nd_param.c_I0*1000) for i in range(0,len(gc_results))]
 gc_dicta=[np.multiply(gc_alternate[i], noramp_fit.nd_param.c_I0*1000) for i in range(0,len(gc_alternate))]
@@ -342,7 +342,7 @@ dummy_times=np.linspace(0, 1, len(likelihood_func))
 nodisp_results=carbon_means_disped_gc43
 noramp_fit.def_optim_list(["E_0", "k_0","Ru","Cdl","CdlE1","CdlE2",'gamma', 'omega',"phase","cap_phase","alpha"])
 noramp_fit.test_vals(nodisp_results, "timeseries")
-noramp_fit.def_optim_list(["E_0","k_0","Ru","Cdl",'gamma', 'omega',"phase","alpha"])
+noramp_fit.def_optim_list(["E0_mean","E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2",'gamma', 'omega',"phase","cap_phase","alpha"])
 #noramp_fit.def_optim_list(["E0_mean", "E0_std", "Ru", "alpha"])
 noramp_fit.dim_dict["CdlE1"]=0
 noramp_fit.dim_dict["CdlE2"]=0
