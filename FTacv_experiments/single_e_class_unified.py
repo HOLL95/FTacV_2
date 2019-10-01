@@ -10,8 +10,21 @@ from params_class import params
 from decimal import Decimal
 import copy
 import time
+import pickle
 class single_electron:
-    def __init__(self, dim_paramater_dictionary, simulation_options, other_values):
+    def __init__(self,file_name="", dim_paramater_dictionary={}, simulation_options={}, other_values={}, param_bounds={}):
+        if len(dim_paramater_dictionary)==0 and len(simulation_options)==0 and len(other_values)==0:
+            self.file_init=True
+            file=open(file_name, "r")
+            save_dict=pickle.load(file)
+            dim_paramater_dictionary=save_dict["param_dict"]
+            simulation_options=save_dict["simulation_opts"]
+            other_values=save_dict["other_vals"]
+            param_bounds=save_dict["bounds"]
+            self.save_dict=save_dict
+        else:
+            self.file_init=False
+
         key_list=dim_paramater_dictionary.keys()
         #for i in range(0, len(key_list)):
         #    self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
@@ -29,10 +42,15 @@ class single_electron:
         else:
             self.time_idx=0
         if self.simulation_options["experimental_fitting"]==True:
+            #if self.file_init==False:
             self.time_vec=other_values["experiment_time"][:other_values["signal_length"]]/self.nd_param.c_T0
             other_values["experiment_time"]=other_values["experiment_time"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_T0
             other_values["experiment_current"]=other_values["experiment_current"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_I0
             other_values["experiment_voltage"]=other_values["experiment_voltage"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_E0
+            #else:
+            #    sf=other_values["experiment_time"][1]-other_values["experiment_time"][0]
+            #    self.time_vec=np.arange(0, other_values["experiment_time"][-1], sf)
+
 
 
         else:
@@ -47,6 +65,7 @@ class single_electron:
         self.test_frequencies=frequencies[np.where(self.frequencies<last_point)]
         self.other_values=other_values
         self.boundaries=None
+        self.param_bounds=param_bounds
         if self.simulation_options["experimental_fitting"]==True:
             self.secret_data_fourier=self.kaiser_filter(other_values["experiment_current"])
             self.secret_data_time_series=other_values["experiment_current"]
@@ -58,7 +77,7 @@ class single_electron:
             if optim_list[i] in keys:
                 continue
             else:
-                raise KeyError("Parameter " + optim_list[i]+" not in list")
+                raise KeyError("Parameter " + optim_list[i]+" not found in model")
         self.optim_list=optim_list
         param_boundaries=np.zeros((2, self.n_parameters()))
         check_for_bounds=vars(self)
@@ -153,6 +172,26 @@ class single_electron:
         hanning_transform=np.multiply(window, data)
         f_trans=abs(np.fft.fft(hanning_transform[len(data)/2+1:]))
         return f_trans
+    def saved_param_simulate(self, params):
+        if self.file_init==False:
+            raise ValueError('No file provided')
+        else:
+            self.def_optim_list(self.save_dict["optim_list"])
+            type=self.simulation_options["likelihood"]
+            return self.test_vals(params,type, test=False)
+    def save_state(self, results, filepath, filename, params):
+        other_vals_save=self.other_values
+        other_vals_save["experiment_time"]=results["experiment_time"]
+        other_vals_save["experiment_current"]=results["experiment_current"]
+        other_vals_save["experiment_voltage"]=results["experiment_voltage"]
+        file=open(filepath+"/"+filename, "w")
+        save_dict={"simulation_opts":self.simulation_options, \
+                    "other_vals":other_vals_save, \
+                    "bounds":self.param_bounds, \
+                    "param_dict":self.dim_dict ,\
+                    "params":params, "optim_list":self.optim_list}
+        pickle.dump(save_dict, file, pickle.HIGHEST_PROTOCOL)
+        file.close()
     def times(self, num_points):
         self.num_points=num_points
         #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
@@ -231,16 +270,19 @@ class single_electron:
     def test_vals(self, parameters, likelihood, test=False):
         orig_likelihood=self.simulation_options["likelihood"]
         orig_label=self.simulation_options["label"]
+        orig_test=self.simulation_options["test"]
         self.simulation_options["likelihood"]=likelihood
         self.simulation_options["label"]="MCMC"
-        results=self.simulate(parameters, self.frequencies, test)
+        self.simulation_options["test"]=test
+        results=self.simulate(parameters, self.frequencies)
         self.simulation_options["likelihood"]=orig_likelihood
         self.simulation_options["label"]=orig_label
+        self.simulation_options["test"]=orig_test
         return results
     def kinetic_dispersion(self):
         k0_weights=np.zeros(self.simulation_options["dispersion_bins"])
-        k_start=0
-        k_end=1e4
+        k_start=lognorm.ppf(0.0001, self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
+        k_end=lognorm.ppf(0.9999, self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
         k0_vals=np.linspace(k_start,k_end, self.simulation_options["dispersion_bins"])
         k0_weights[0]=lognorm.cdf(k0_vals[0], self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
         for k in range(1, len(k0_weights)):
@@ -327,7 +369,6 @@ class single_electron:
                 for i in range(0, bins):
                         self.nd_param_dict["E_0"]=float(e0_vals[i])
                         time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
-                        time_series_current=isolver_brent.martin_surface_brent(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], self.nd_param.k_0,self.nd_param.cap_phase, self.time_vec[-1], self.time_vec, -1, self.bounds_val)
                         time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
             elif "k0_shape" in self.optim_list:
                 k0_vals, k0_disp=self.kinetic_dispersion()
@@ -337,7 +378,7 @@ class single_electron:
                     time_series=np.add(time_series, np.multiply(time_series_current, k0_disp[i]))
             return time_series
 
-    def simulate(self,parameters, frequencies, test=False):
+    def simulate(self,parameters, frequencies):
         if len(parameters)!= len(self.optim_list):
             print self.optim_list
             print parameters
@@ -362,13 +403,14 @@ class single_electron:
             if self.simulation_options["dispersion"]==True:
                 time_series=self.dispersion_simulate(solver)
             else:
+
                 time_series=solver(self.nd_param_dict, self.time_vec, self.simulation_options["method"],-1, self.bounds_val)
         if self.simulation_options["no_transient"]!=True:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)
-            if (self.simulation_options["test"]==True or test==True):
+            if (self.simulation_options["test"]==True):
                 plt.plot(self.secret_data_fourier, label="data")
                 plt.plot(filtered , alpha=0.7, label="numerical")
                 plt.show()

@@ -58,7 +58,7 @@ ramped_other_values={
     "bounds_val":20,
     "signal_length":int(5e5),
 }
-
+plt.rcParams.update({'font.size': 14})
 noramp_simulations=single_electron(noramp_startup.generic_noramp_params, simulation_options, noramp_other_values)
 ramped_simulations=single_electron(ramp_startup.generic_ramped_params, ramped_simulation_options, ramped_other_values)
 harm_class=harmonics(noramp_other_values["harmonic_range"],noramp_simulations.nd_param.omega, 0.2)
@@ -68,7 +68,7 @@ k_s=np.flip([10**x for x in range(1, 5)])
 fig, ax =plt.subplots(1, len(omegas))
 for i in range(0, len(omegas)):
     for j in range(0, len(k_s)):
-        ax[i].plot(ramped_simulations.time_vec, ramped_simulations.i_nondim(1e3*ramped_simulations.test_vals([k_s[j], omegas[i]], "timeseries")), label=k_s[j])
+        ax[i].plot(ramped_simulations.time_vec, ramped_simulations.i_nondim(1e3*ramped_simulations.test_vals([k_s[j], omegas[i]], "timeseries")), label="$k^0=$"+str(k_s[j]))
     ax[i].set_title('$\\omega$='+ str(omegas[i]/math.pi)+"$\pi$")
     ax[i].set_xlabel("Time(s)")
     ax[i].set_ylabel("Current(mA)")

@@ -18,6 +18,7 @@ letters=['A', 'B', 'C', 'D', 'E', 'F', "G", 'H', 'I', 'J', 'K', 'L']
 folder="/Experiment_data/Carbon"
 names=["PostLinearRamp","GC4_1_ramp_cv", "GC4_1_cv"]
 y_names=["Linear Sweep", "Ramped", "Sinusoidal"]
+types=["Voltage input", "Current response"]
 current="current"
 voltage="voltage"
 dcv_method="asA_4"
@@ -45,7 +46,8 @@ def harmonic_plot(time, harmonics, harmonic_no, ax):
 
 #ax.text(-0.1, 1.15, letters[letter_counter], transform=ax.transAxes,
     #fontsize=16, fontweight='bold', va='top', ha='right')
-fig, ax=plt.subplots(2, 3)
+plt.rcParams.update({'font.size': 12})
+fig, ax=plt.subplots(3, 2)
 directory=os.path.dirname(os.path.realpath(__file__))
 dec_amount=8
 v_array=[]
@@ -91,18 +93,19 @@ for j in range(0, 3):
         voltage_results=v_array[j]
         current_results=c_array[j]
         time_results=t_array[j]
-        axes=ax[i,j]
+        axes=ax[j,i]
         if j==0:
-            pad = 5
-            axes.annotate(titles[i], xy=(0, 0.5), xytext=(-axes.yaxis.labelpad - pad, 0),
-                xycoords=axes.yaxis.label, textcoords='offset points',
-                size='large', ha='right', va='center', rotation="horizontal")
+
+            axes.set_title(types[i])
         if i==0:
             voltage_input(time_results, voltage_results, axes)
             reduction=2465
             if (j+1)==3:
                 axes.plot(time_results[:reduction], voltage_results[:reduction])
-            axes.set_title(y_names[j])
+            pad = 5
+            axes.annotate(y_names[j], xy=(0, 0.5), xytext=(-axes.yaxis.labelpad - pad, 0),
+                xycoords=axes.yaxis.label, textcoords='offset points',
+                size='large', ha='right', va='center', rotation="horizontal")
 
         elif i==1 and (j+1)==3:
             time_series(voltage_results[reduction:], current_results[reduction:], axes)

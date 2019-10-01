@@ -84,17 +84,17 @@ param_list={
     'time_end':1000,
     'num_peaks': 50
 }
-plt.rcParams.update({'font.size': 12})
+plt.rcParams.update({'font.size': 20})
 plt.subplot(1,2,2)
 plt.title("DCV current vs voltage")
 plt.ylabel("Current(mA)")
-plt.xlabel("Time(s)")
+plt.xlabel("Voltage(V)")
 plt.plot(voltage_results, current_results*1e3)
 plt.subplot(1,2,1)
 plt.title("DCV voltage vs time")
-plt.ylabel("Voltage(mV)")
+plt.ylabel("Voltage(V)")
 plt.xlabel("Time(s)")
-plt.plot(time_results, voltage_results*1e3)
+plt.plot(time_results, voltage_results)
 plt.show()
 param_list['E_0']=0.23471918314326964
 harmonic_range=np.arange(1,7,1)

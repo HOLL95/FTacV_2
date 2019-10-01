@@ -64,10 +64,10 @@ def chain_appender(chains, param):
 all_params=['E0_mean', "E0_std",'k_0', 'Ru',"Cdl", "CdlE1", "CdlE2",'gamma',"omega", "phase","cap_phase","alpha",]
 optim_list=['E0_mean', "E0_std", 'k_0', 'Ru', "alpha"]
 positions=[all_params.index(x) for x in optim_list]
-
+plt.rcParams.update({'font.size': 12})
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 n_param=len(titles)
-chains=np.load("GC4_MCMC_1_high_ru")
+chains=np.load("GC4_MCMC_1_low_ru")
 fig_size=(12,12)
 fig, ax=plt.subplots(n_param, n_param)
 def plot_kde_1d(x, ax):
@@ -79,8 +79,10 @@ def plot_kde_1d(x, ax):
     ax.hist(x, bins=x2)
     if np.mean(x)<0.001:
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    else:
+    elif np.mean(x)<1:
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.4f'))
+    else:
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     ax.set_xticks(np.linspace(xmin, xmax, 4))
 def plot_kde_2d(x, y, ax):
     # Get minimum and maximum values
@@ -105,12 +107,16 @@ def plot_kde_2d(x, y, ax):
     ax.contour(xx, yy, f, colors='k')
     if np.mean(x)<0.001:
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    else:
+    elif np.mean(x)<1:
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.4f'))
+    else:
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     if np.mean(y)<0.001:
         ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    else:
+    elif np.mean(y)<1:
         ax.yaxis.set_major_formatter(FormatStrFormatter('%.4f'))
+    else:
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     # Fix aspect ratio
     print ((xmax - xmin)/ (ymax - ymin))
     ax.set_aspect((xmax - xmin)/ (ymax - ymin))

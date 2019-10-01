@@ -52,7 +52,7 @@ class FTACV_initialisation:
             'CdlE3': 0,#1.10053945995e-06,
             'gamma': 1e-10,
             "original_gamma":1e-10,        # (surface coverage per unit area)
-            'k_0': 10, #(reaction rate s-1)
+            'k_0': 1.0, #(reaction rate s-1)
             'alpha': 0.5,
             "E0_mean":0.2,
             "E0_std": 0.09,
@@ -64,7 +64,7 @@ class FTACV_initialisation:
             'sampling_freq' : (1.0/200),
             'phase' : 3*(math.pi/2),
             "time_end": None,
-            'num_peaks': 50
+            'num_peaks': 20
         }
         self.generic_ramped_params={
             "E_0":0.25,
@@ -81,7 +81,7 @@ class FTACV_initialisation:
             'CdlE3': 0,#1.10053945995e-06,
             'gamma': 1e-10,
             "original_gamma":1e-10,          # (surface coverage per unit area)
-            'k_0': 100.0, #(reaction rate s-1)
+            'k_0': 1.0, #(reaction rate s-1)
             "E0_mean":0.2,
             "E0_std": 0.09,
             "k0_shape":0.954,

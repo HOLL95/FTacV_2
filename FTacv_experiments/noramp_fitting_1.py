@@ -52,7 +52,7 @@ time_results=times["GC4_1_cv"]
 voltage_results=voltages["GC4_1_cv"]
 #plt.plot(time_results, current_results)
 #plt.show()
-
+plt.rcParams.update({'font.size': 14})
 de=300e-3
 estart=260e-3-de
 ereverse=estart+2*de
@@ -261,7 +261,7 @@ disped_2=gc4_2
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 for i in range(0, len(filenames)):
-    #plt.subplot(2,3, i+1)
+    plt.subplot(2,3, i+1)
     plt.plot(voltages[filenames[i]], np.multiply(currents[filenames[i]], 1000),label="Data", color=colors[1])
     plt.plot(voltages[filenames[i]], gc_dict[filenames[i]], label="Low resistance", color=colors[0])
     plt.plot(voltages[filenames[i]], gc_alternate[filenames[i]], label="High Resistance", color=colors[2])
@@ -283,7 +283,7 @@ for i in range(0, len(filenames)):
     print error
 plt.show()
 
-disped1_harmonics=harm_class.generate_harmonics(time_results, disped_1)
+disped1_harmonics=harm_class.generate_harmonic  (time_results, disped_1)
 disped2_harmonics=harm_class.generate_harmonics(time_results, disped_2)
 noramp_fit.variable_returner()
 #harm_class.plot_harmonics(time_results, method="phased", Experimental=data_harmonics, Ramp_free=exp_harmonics, Ramped=ramp_harmonics)

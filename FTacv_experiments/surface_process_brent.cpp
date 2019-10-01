@@ -179,7 +179,7 @@ py::object brent_current_solver(py::dict params, std::vector<double> t, std::str
     const double phase = get(params,std::string("phase"),0.0);
     const double cap_phase = get(params,std::string("cap_phase"),0.0);
     const double delta_E = get(params,std::string("d_E"),0.1);
-    const double dt=  (1.0/800.0)*2*pi/omega;
+    const double dt=  t[1]-t[0];
     double Itot0,Itot1;
     double u1n0;
     bool ramped=false;
