@@ -64,7 +64,7 @@ class FTACV_initialisation:
             'sampling_freq' : (1.0/200),
             'phase' : 3*(math.pi/2),
             "time_end": None,
-            'num_peaks': 20
+            'num_peaks': 10
         }
         self.generic_ramped_params={
             "E_0":0.25,

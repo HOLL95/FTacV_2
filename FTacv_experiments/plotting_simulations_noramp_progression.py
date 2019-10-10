@@ -28,8 +28,27 @@ other_values={
     "bounds_val":20,
     "signal_length":int(2e4),
 }
-
-noramp_simulations=single_electron(startup.generic_noramp_params, simulation_options, other_values)
+param_bounds={
+    'E_0':[0.2, 0.3],#[param_list['E_start'],param_list['E_reverse']],
+    'omega':[0.95*startup.generic_noramp_params['omega'],1.05*startup.generic_noramp_params['omega']],#8.88480830076,  #    (frequency Hz)
+    'Ru': [0, 700],  #     (uncompensated resistance ohms)
+    'Cdl': [0,1e-4], #(capacitance parameters)
+    'CdlE1': [-0.05,0.15],#0.000653657774506,
+    'CdlE2': [-0.01,0.01],#0.000245772700637,
+    'CdlE3': [-0.01,0.01],#1.10053945995e-06,
+    'gamma': [1e-11,1e-9],
+    'k_0': [10, 1e3], #(reaction rate s-1)
+    'alpha': [0.35, 0.65],
+    "cap_phase":[0, 2*math.pi],
+    "E0_mean":[0.15, 0.3],
+    "E0_std": [0.001, 0.2],
+    "k0_shape":[0,1],
+    "k0_loc":[0, 5e3],
+    "k0_scale":[0,5e3],
+    "k0_range":[1e2, 1e4],
+    'phase' : [0, 2*math.pi]
+}
+noramp_simulations=single_electron(None, startup.generic_noramp_params, simulation_options, other_values, param_bounds)
 other_values["signal_length"]=int(5e5)
 #ramped_simulations=single_electron(startup.generic_ramped_params, simulation_options, other_values)
 
@@ -68,7 +87,7 @@ volts=noramp_simulations.e_nondim(noramp_simulations.other_values["experiment_vo
 currs=noramp_simulations.i_nondim(noramp_simulations.other_values["experiment_current"]*1e3)
 letters=["A", "B", "C", "D", "E", "F", "G"]
 for i in range(0, len(plot_array)):
-    plt.subplot(1, 5, i+1)
+    plt.subplot(3, 2, i+1)
     plt.xlabel("Voltage(mV)")
     plt.ylabel("Current(mA)")
     plt.title(titles[i])

@@ -35,6 +35,10 @@ class harmonics:
         return harmonics
     def empty(self, arg):
         return arg
+    def inv_objective_fun(self, func, time_series):
+        obj_func=np.append(func(time_series),0)
+        time_domain=(np.fft.ifft(np.append(obj_func,np.flip(obj_func))))
+        return time_domain
     def harmonic_selecter(self, ax, time_series, times):
         f=np.fft.fftfreq(len(time_series), times[1]-times[0])
         hann=np.hanning(len(time_series))
@@ -77,6 +81,7 @@ class harmonics:
     def harmonics_and_time(self, times,title, method, **kwargs):
         plt.rcParams.update({'font.size': 12})
         names=kwargs.keys()
+        print names
         titles=[]
         for i in range(0, len(names)):
             if ("_" in names[i]) and ("harmonics" in names[i]):

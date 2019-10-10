@@ -125,6 +125,8 @@ class params:
         self.time_end=param_dict['time_end']
         self.cap_phase=param_dict["cap_phase"]
         self.c_Gamma=param_dict['original_gamma']
+        param_dict["nd_omega"]=param_dict["omega"]
+        self.nd_omega=param_dict["omega"]
         if self.dispersion==True:
             self.E0_std=param_dict["E0_std"]
             self.E0_mean=param_dict["E0_mean"]
@@ -162,7 +164,15 @@ class params:
         for i in range(0, len(keys)):
             if keys[i].lower() in self.method_switch:
                 self.non_dimensionalise(keys[i], param_dict[keys[i]])
-
+        self.nd_param_dict=self.non_dim_dict(param_dict)
+    def non_dim_dict(self, param_dict):
+        dict_of_class=vars(self)
+        keys=dict_of_class.keys()
+        return_dict=dict(param_dict)
+        for key in keys:
+            if key in param_dict:
+                return_dict[key]=dict_of_class[key]
+        return return_dict
 
     def non_dimensionalise(self, name,name_value):
         function = self.method_switch[name.lower()]

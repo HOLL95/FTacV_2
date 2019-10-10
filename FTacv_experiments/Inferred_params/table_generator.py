@@ -54,10 +54,9 @@ optim_list=["",'E0_mean', "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2", "gamma", "
 name_list=[fancy_names[x] for x in optim_list]
 with open("alice_yellow_params.pkl", "rb") as f:
     my_list=pickle.load(f)
+print my_list[0]
+values=my_list[1:]
 names=my_list[0]
-values=my_list[1:][0]
-
-#names=my_list[0]
 f =open("image_tex_test.tex", "r")
 table_file=open("image_tex_edited.tex", "w")
 param_num=len(name_list)+1
@@ -82,9 +81,7 @@ for i in range(0, len(names)):
             end_str="\\\\\n"
         else:
             end_str=" & "
-        print names[i]
         if abs(values[i][j])>1e-2:
-
             row_n=row_n+(str(round(values[i][j],3))+ end_str)
         else:
             row_n=row_n+("{:.3E}".format(Decimal(str(values[i][j])))+ end_str)
@@ -118,7 +115,8 @@ for line in f:
 f.close()
 table_file.close()
 filename=""
-filename="alice_yellow_params_"
+for i in range(0, len(names)):
+    filename=filename+names[i]+"_"
 filename=filename+"table.png"
 os.system("pdflatex image_tex_edited.tex")
 os.system("convert -density 300 -trim image_tex_edited.pdf -quality 100 " + filename)
