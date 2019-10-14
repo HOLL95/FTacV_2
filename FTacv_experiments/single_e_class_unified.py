@@ -95,6 +95,17 @@ class single_electron:
             self.simulation_options["dispersion"]=True
         else:
             self.simulation_options["dispersion"]=False
+        if self.simulation_options["dispersion"]==True:
+            if "k_0" not in self.optim_list:
+                k0params=set(["k0_loc", "k0_shape", "k0_scale"])
+                if k0params.issubset(set(self.optim_list))==False:
+                    missing_param=k0params-(k0params & set(self.optim_list))
+                    raise ValueError("Missing the following kinetic dispersion parameters: "+ (", ").join([str(x) for x in missing_param]))
+            if "E_0" not in self.optim_list:
+                e0params=set(["E0_std", "E0_mean"])
+                if e0params.issubset(set(self.optim_list))==False:
+                    missing_param=e0params-(e0params & set(self.optim_list))
+                    raise ValueError("Missing the following thermodynamic dispersion parameters: " + (", ").join([str(x) for x in missing_param]))
     def normalise(self, norm, boundaries):
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
     def un_normalise(self, norm, boundaries):
@@ -168,8 +179,8 @@ class single_electron:
             likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
             results=np.zeros(len(top_hat), dtype=complex)
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
-        #comp_results=np.append((np.real(results)), np.imag(results))
-        return abs(results)
+        comp_results=np.append((np.real(results)), np.imag(results))
+        return comp_results
     def abs_transform(self, data):
         window=np.hanning(len(data))
         hanning_transform=np.multiply(window, data)
@@ -290,7 +301,7 @@ class single_electron:
         self.simulation_options["test"]=orig_test
         return results
     def paralell_disperse(self, solver):
-        start=time.time()
+        time_series=np.zeros(len(self.time_vec))
         if ("E0_std" in self.optim_list) and ("k0_shape" in self.optim_list):
             e0_vals, e0_disp=self.therm_dispersion()
             k0_vals, k0_disp=self.kinetic_dispersion()
@@ -298,24 +309,28 @@ class single_electron:
             flags=zip(["E_0"]*len(values), ["k_0"]*len(values))
             weights=list(itertools.product(e0_disp, k0_disp))
             weights=[weights[i][0]*weights[i][1] for i in range(len(weights))]
+            weight_val_tuple=zip(flags, values, weights)
+            paralell=paralell_class(self.nd_param_dict, self.time_vec, "sinusoidal", self.bounds_val, isolver_martin_brent.brent_current_solver)
+            time_series=paralell.paralell_dispersion(weight_val_tuple)
 
         elif "E0_std" in self.optim_list:
+            start1=time.time()
             e0_vals, e0_disp=self.therm_dispersion()
-            values=zip(e0_vals)
-            flags=zip(["E_0"]*len(values))
-            weights=e0_disp
-        elif "k0_shape" in self.optim_list:
+            for i in range(0, self.simulation_options["dispersion_bins"]):
+                    self.nd_param_dict["E_0"]=float(e0_vals[i])
+                    time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
+                    time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
+        elif ("k0_shape" in self.optim_list):
             k0_vals, k0_disp=self.kinetic_dispersion()
-            values=zip(k0_vals)
-            flags=zip(["k_0"]*len(values))
-            weights=k0_disp
-        weight_val_tuple=zip(flags, values, weights)
-        paralell=paralell_class(self.nd_param_dict, self.time_vec, "sinusoidal", self.bounds_val, isolver_martin_brent.brent_current_solver)
-        disped_time=paralell.paralell_dispersion(weight_val_tuple)
-        print time.time()-start, "total"
-        return disped_time
+            for i in range(0, self.simulation_options["dispersion_bins"]):
+                self.nd_param_dict["k_0"]=k0_vals[i]
+                time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
+                time_series=np.add(time_series, np.multiply(time_series_current, k0_disp[i]))
+
+
+        return time_series
     def kinetic_dispersion(self):
-        print self.nd_param.k0_shape, self.nd_param.k0_loc, self.nd_param.k0_scale
+        #print self.nd_param.k0_shape, self.nd_param.k0_loc, self.nd_param.k0_scale
         k0_weights=np.zeros(self.simulation_options["dispersion_bins"])
         k_start=lognorm.ppf(0.0001, self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
         k_end=lognorm.ppf(0.9999, self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
@@ -387,7 +402,6 @@ class single_electron:
             plt.subplot((y/x), x, i+1)
 
     def simulate(self,parameters, frequencies):
-        print self.dim_dict["omega"], self.dim_dict["k_0"]
         if len(parameters)!= len(self.optim_list):
             print self.optim_list
             print parameters
@@ -441,60 +455,23 @@ class paralell_class:
         self.method=method
         self.bounds=bounds
         self.solver=solver
-        self.counter=0
-        x=self.solver(self.params, self.times, self.method,-1, self.bounds)
     def paralell_simulate(self, weight_val_entry):
-        self.counter+=1
+        start=time.time()
+        self.sim_params=copy.deepcopy(self.params)
         for i in range(len(weight_val_entry[0])):
-            self.params[weight_val_entry[0][i]]=weight_val_entry[1][i]
-        time_series=self.solver(self.params, self.times, self.method,-1, self.bounds)
-        time_series=np.multiply(time_series, weight_val_entry[2])
-        return time_series
-    def paralell_dispersion(self, weight_list):
-        start=time.time()
-        p = mp.Pool(4)
-        start=time.time()
-        sc = p.map_async(self,  [weight for weight in weight_list])
-        print time.time()-start, "paralell"
-        start=time.time()
-        results=sc.get()
-        print time.time()-start, "collect"
-        p.close()
-        start=time.time()
-        disped_time=np.sum(results, axis=0)
-        #plt.plot(disped_time)
-        #plt.show()
-        return disped_time
-    def __call__(self, x):
-        return self.paralell_simulate(x)
-
-
-
-"""
-    def __init__(self, params, times, method, bounds, solver):
-        self.params=params
-        self.times=times
-        self.method=method
-        self.bounds=bounds
-        self.solver=solver
-    def paralell_simulate(self, weight_val_entry):
-        for i in range(weight_val_entry[0]):
-            self.params[weight_val_entry[0][i]]=weight_val_entry[1][i]
-        time_series=self.solver(self.params, self.times, self.method,-1, self.bounds)
-        plt.plot(time_series)
-        plt.show()
+            self.sim_params[weight_val_entry[0][i]]=weight_val_entry[1][i]
+        time_series=self.solver(self.sim_params, self.times, self.method,-1, self.bounds)
         time_series=np.multiply(time_series, weight_val_entry[2])
         return (time_series)
     def paralell_dispersion(self, weight_list):
-        p = mp.Pool(mp.cpu_count())
+        p = mp.Pool(4)
+        start1=time.time()
+        sc = p.map_async(self,  [weight for weight in weight_list])
         start=time.time()
-        sc = p.map_async(self,  [weight_tuple for weight_tuple in weight_list])
-        print sc
-        disped_time=sc.get()
-        disped_time=np.sum(disped_time, axis=0)
-        #for i in range(20):
-            #self.solver(self.params, self.times, self.method,-1, self.bounds)
-        #print time.time()-start, "discrete"
+        results=sc.get()
+        p.close()
+        disped_time=np.sum(results, axis=0)
+        start2=time.time()
+        return disped_time
     def __call__(self, x):
         return self.paralell_simulate(x)
-"""

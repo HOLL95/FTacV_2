@@ -14,7 +14,7 @@ files=os.listdir(path)#
 file_numbers=[]
 counter=1
 cols=["low", "high", "fixed"]
-rows=["2"]
+rows=["3"]
 file1="Noramp_1_cv_low_ru.pkl"
 ramped_current=("_").join([Electrode, "Electrode", "Ramped",rows[0], "cv", "current" ])
 ramped_voltage=("_").join([Electrode, "Electrode", "Ramped",rows[0], "cv", "voltage" ])
@@ -26,12 +26,14 @@ def find(name, path, Electrode):
                 print name
                 return np.loadtxt(root+"/"+Electrode+"/"+name)
 param_dict={}
-for lcv_1 in range(0, len(cols)):
-    for lcv_2 in range(0, len(rows)):
-        filename=("_").join(["Noramp", rows[lcv_2], "cv", cols[lcv_1], "ru"])+"."
-        print filename
-        result=single_electron(path+"/"+filename)
-        param_dict[rows[lcv_2]+"_"+cols[lcv_1]]=result.save_dict["params"][0]
+filename_1=["Noramp_3_cv_fixed_ru.fixed_alpha", "Noramp_3_cv_high_ru.fourier"]
+master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"]
+optim_dict={}
+for names in filename_1:
+    result=single_electron(path+"/"+names)
+    file_key=names[:names.index(".")]
+    optim_dict[file_key]=[result.save_dict["params"][0][result.save_dict["optim_list"].index(key)] if  (key in result.save_dict["optim_list"]) else result.dim_dict[key] for key in master_optim_list]
+
 voltage_results=find(ramped_voltage, one_above, Electrode)
 current_results=find(ramped_current, one_above, Electrode)
 time_results=current_results[:,0]
@@ -93,29 +95,24 @@ ramped_results=single_electron(None, ramped_params, simulation_options_ramped, r
 ramped_results.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
 time_results=ramped_results.other_values["experiment_time"]
 current_results=ramped_results.other_values["experiment_current"]
-harm_class=harmonics(ramped_results.other_values["harmonic_range"], ramped_results.nd_param.omega*ramped_results.nd_param.c_T0, 0.05)
+harm_class=harmonics(ramped_results.other_values["harmonic_range"], ramped_results.nd_param.omega*ramped_results.nd_param.c_T0, 0.2)
 #results_dict={"1_experimental": current_results}
 results_dict={}
-for keys in param_dict.keys():
+exp_harms=harm_class.generate_harmonics(time_results, current_results)
+print optim_dict.keys()
+for keys in optim_dict.keys():
+    time_series=ramped_results.test_vals(optim_dict[keys], "timeseries")
     if "fixed" in keys:
-        ramped_results.def_optim_list(["E0_mean", "E0_std","k_0","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
-        ramped_results.dim_dict["Ru"]=65
-    time_series=ramped_results.test_vals(param_dict[keys], "timeseries")
-    results_dict[keys]=time_series
-    ramped_results.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
-
+        results_dict["fixed"]=time_series
+    else:
+        results_dict["Fourier"]=time_series
+    data_harms=harm_class.generate_harmonics(time_results, time_series)
+    print keys
+    print optim_dict[keys]
+    harm_class.plot_harmonics(time_results, "abs", exp=exp_harms,sim=data_harms)
 data_harmonics=harm_class.generate_harmonics(time_results, current_results)
 data_likelihood=harm_class.inv_objective_fun(ramped_results.kaiser_filter, current_results)
-plot_dict_0={
-    "experimental_harmonics":ramped_results.i_nondim(data_harmonics),
-    "experimental_time_series":ramped_results.i_nondim(current_results),
-}
-print ramped_results.dim_dict["phase"]
-for keys in results_dict.keys():
-
-    current_time=results_dict[keys]
-    print len(current_time)
-    plot_dict_0[keys[keys.index("_")+1:]+"zresistace_harmonics"]=ramped_results.i_nondim(harm_class.generate_harmonics(time_results, current_time))
-    plot_dict_0[keys[keys.index("_")+1:]+"zresistace_time_series"]=ramped_results.i_nondim(current_time)
-harm_class.harmonics_and_time(ramped_results.t_nondim(time_results),"Yellow2", "abs", **plot_dict_0)
+results_dict["experimental"]=current_results
+harm_class.harmonics_plus("Yellow2", "abs",ramped_results.t_nondim(time_results), **results_dict)
 #harm_class.inv_objective_fun(ramped_results.kaiser_filter, current_time))
+#"voltages": ramped_results["experiment_voltage"]
