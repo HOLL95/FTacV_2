@@ -102,10 +102,9 @@ double dEdt(double omega, double phase, double delta_E, double t){
   double dedt=(delta_E*omega*std::cos(omega*t+phase));
 	return dedt;
 }
-double c_et(double E_start, double E_reverse, double omega, double phase, double v, double delta_E, double t){
+double c_et(double E_start, double E_reverse,double tr, double omega, double phase, double v, double delta_E, double t){
 	double E_dc;
 	double E_t;
-  double tr=((E_reverse-E_start)/v);
 	if (t<tr){
 		E_dc=E_start+(v*t);
 	}else {
@@ -117,15 +116,35 @@ double c_et(double E_start, double E_reverse, double omega, double phase, double
 	return E_t;
 }
 
-double c_dEdt( double E_start, double E_reverse, double omega, double phase, double v, double delta_E, double t){ //
+double c_dEdt( double tr, double omega, double phase, double v, double delta_E, double t){ //
 	double E_dc;
-  double tr=((E_reverse-E_start)/v);
 	if (t < tr){
 		 E_dc=v;
 	}else {
 		 E_dc=-v;
 	}
   double dedt= E_dc+(delta_E*omega*cos(omega*t+phase));
+
+	return dedt;
+}
+double dcv_et(double E_start, double E_reverse,double tr, double v,  double t){
+	double E_dc;
+	if (t<tr){
+		E_dc=E_start+(v*t);
+	}else {
+		E_dc=E_reverse-(v*(t-tr));
+	}
+	return E_dc;
+}
+
+double dcv_dEdt( double tr, double v, double t){ //
+	double E_dc;
+	if (t < tr){
+		 E_dc=v;
+	}else {
+		 E_dc=-v;
+	}
+  double dedt= E_dc;
 
 	return dedt;
 }
@@ -182,22 +201,33 @@ py::object brent_current_solver(py::dict params, std::vector<double> t, std::str
     const double dt=  t[1]-t[0];
     double Itot0,Itot1;
     double u1n0;
-    bool ramped=false;
+    int input=-1; // 0 for ramped, 1 for sinusoidal, 2 for DCV
     double t1 = 0.0;
     u1n0 = 1.0;
+    double tr=E_reverse-E_start;
     if ((method.compare("ramped"))==0){
-      ramped=true;
+      input=0;
     }
     else if ((method.compare("sinusoidal"))==0){
-      ramped=false;
+      input =1;
     }
-    if (ramped==false){
-      E = et(E_start, omega, phase,delta_E ,t1+dt);
-      dE = dEdt(omega, cap_phase,delta_E , t1+dt);
+    else if ((method.compare("dcv"))==0){
+      input =2;
     }
     else{
-      E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1);
-      dE = c_dEdt(E_start,  E_reverse,  omega,  cap_phase,  v,  delta_E, t1+0.5*dt);
+      throw std::runtime_error("Input voltage method not defined");
+    }
+    if (input==0){
+      E = et(E_start, omega, phase,delta_E ,t1+dt);
+      dE = dEdt(omega, cap_phase,delta_E , t1+0.5*dt);
+    }
+    else if (input ==1){
+      E = c_et( E_start, E_reverse, tr, omega,  phase,  v,  delta_E, t1);
+      dE = c_dEdt(tr,  omega,  cap_phase,  v,  delta_E, t1+0.5*dt);
+    }
+    else if (input==2){
+      E=dcv_et(E_start, E_reverse,tr,v, t1);
+      dE=dcv_dEdt(tr,v, t1+0.5*dt);
     }
     //cout<<E<<" "<<dE<<" "<<" "<<Cdl<<" "<<CdlE<<" "<<CdlE2<<" "<<CdlE3<<" "<<E0<<" "<<Ru<<" "<<k0<<" "<<alpha<<" "<<Itot0<<" "<<u1n0<<" "<<dt<<" "<<gamma<<" dicts"<<"\n";
 
@@ -208,15 +238,20 @@ py::object brent_current_solver(py::dict params, std::vector<double> t, std::str
     for (int n_out = 0; n_out < t.size(); n_out++) {
         while (t1 < t[n_out]) {
             Itot0 = Itot1;
-            if (ramped==false){
+            if (input==1){
               E = et(E_start, omega, phase,delta_E ,t1+dt);
               dE = dEdt(omega, cap_phase,delta_E , t1+0.5*dt);
               cap_E=et(E_start, omega, cap_phase,delta_E ,t1+dt);
             }
-            else{
-              E = c_et( E_start,  E_reverse,  omega,  phase,  v,  delta_E, t1+dt);
-              dE = c_dEdt(E_start,  E_reverse,  omega,  cap_phase,  v,  delta_E, t1+0.5*dt);
-              cap_E=c_et( E_start,  E_reverse,  omega,  cap_phase,  v,  delta_E, t1);
+            else if (input ==1){
+              E = c_et( E_start, E_reverse, tr, omega,  phase,  v,  delta_E, t1);
+              dE = c_dEdt(tr,  omega,  cap_phase,  v,  delta_E, t1+0.5*dt);
+              cap_E= c_et( E_start, E_reverse, tr, omega,  cap_phase,  v,  delta_E, t1);
+            }
+            else if (input ==2){
+              E=dcv_et(E_start, E_reverse,tr,v, t1);
+              dE=dcv_dEdt(tr,v, t1+0.5*dt);
+              cap_E=E;
             }
             e_surface_fun bc(E,dE,cap_E,Cdl,CdlE,CdlE2,CdlE3,E0,Ru,k0,alpha,Itot0,u1n0,dt,gamma);
             boost::uintmax_t max_it = max_iterations;
@@ -246,4 +281,6 @@ PYBIND11_MODULE(isolver_martin_brent, m) {
   m.def("c_dEdt", &c_dEdt, "Classical potential input derivative");
   m.def("et", &et, "Ramp-free potential input");
   m.def("dEdt", &dEdt, "Ramp-free potential derivative");
+  m.def("dcv_et", &dcv_et, "DCV potential input");
+  m.def("dcv_dEdt", &dcv_dEdt, "DCV potential derivative");
 }

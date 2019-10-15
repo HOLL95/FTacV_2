@@ -23,10 +23,15 @@ class harmonics:
         last_harm=(self.harmonics[-1]*self.input_frequency)
         frequencies=f[np.where((f>0) & (f<(last_harm+(0.5*self.input_frequency))))]
         top_hat=(copy.deepcopy(Y[0:len(frequencies)]))
+        #test_hat=(copy.deepcopy(Y[0:len(frequencies)]))
         harmonics=np.zeros((self.num_harmonics, len(time_series)), dtype="complex")
+        #plt.plot(frequencies, top_hat)
+        #plt.show()
         for i in range(0, self.num_harmonics):
             true_harm=self.harmonics[i]*self.input_frequency
-            filter_bit=top_hat[np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]
+            freq_idx=np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))
+            filter_bit=top_hat[freq_idx]
+            #test_hat[freq_idx]=1e5
             #harmonics[i,np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]=filter_bit
             harmonics[i, 0:len(filter_bit)]=filter_bit
             harmonics[i,:]=((np.fft.ifft(harmonics[i,:])))
@@ -101,8 +106,10 @@ class harmonics:
         titles=[titles[x] for x in new_order]
         time_list=[time_list[x] for x in new_order]
         harmonics_list=[]
+        print "~"*50
         for i in range(0, len(time_list)):
-            harmonics_list.append(self.generate_harmonics(times, time_list[i]))
+            harms=self.generate_harmonics(times, time_list[i])
+            harmonics_list.append(harms)
         harm_axes=[]
         harm_len=2
         fig.text(0.03, 0.5, 'Current($\mu$A)', ha='center', va='center', rotation='vertical')

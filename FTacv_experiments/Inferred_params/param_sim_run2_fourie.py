@@ -14,7 +14,7 @@ path=("/").join([dir_path , Electrode])
 files=os.listdir(path)#
 file_numbers=[]
 counter=1
-cols=["high"]
+cols=["low"]
 rows=[str(x) for x in range(1,4)]
 #fig, ax=plt.subplots(len(rows),len(cols))
 optim_list=['E0_mean', "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2", "gamma", "omega","phase", "cap_phase", "alpha"]
@@ -26,7 +26,7 @@ counter=0
 for lcv_1 in range(0, len(cols)):
     for lcv_2 in range(0, len(rows)):
         #dot_idx=names.index(".")
-        filename=("_").join(["Noramp", rows[lcv_2], "cv", cols[lcv_1], "ru"])+".fourier"
+        filename=("_").join(["Noramp", rows[lcv_2], "cv", cols[lcv_1], "ru"])+".fourier1"
 
         #file_numbers.append(names[names.index(".")-1])
         result=single_electron(path+"/"+filename)
@@ -34,7 +34,7 @@ for lcv_1 in range(0, len(cols)):
         voltage_results=result.other_values["experiment_voltage"]
         current_results=result.other_values["experiment_current"]
         time_results=result.other_values["experiment_time"]
-        harm_class=harmonics(result.other_values["harmonic_range"], result.dim_dict["omega"], 0.1)
+        harm_class=harmonics(range(3, 9,1), result.dim_dict["omega"], 0.1)
         likelihood_func=result.kaiser_filter(current_results)
         #for i in range(0, len(self.save_dict[params])):
         #if lcv_2==0:
@@ -55,9 +55,9 @@ for lcv_1 in range(0, len(cols)):
         data_harms=harm_class.generate_harmonics(time_results, current_results)
         sim_harms=harm_class.generate_harmonics(time_results, simulations)
         harm_class.plot_harmonics(time_results, "phased", data=data_harms, sim=sim_harms)
-        plt.plot(voltage_results, simulations)
-        plt.plot(voltage_results, current_results, alpha=0.7)
-        plt.show()
+        #plt.plot(simulations)
+        #plt.plot(likelihood_func, alpha=0.7)
+        #plt.show()
         #inv_func=harm_class.inv_objective_fun(result.kaiser_filter, simulations)
         #inv_func_data=harm_class.inv_objective_fun(result.kaiser_filter, likelihood_func)
         #plt.subplot(len(cols), len(rows), counter)

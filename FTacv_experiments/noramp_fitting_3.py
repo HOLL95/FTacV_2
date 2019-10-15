@@ -14,7 +14,7 @@ exp="Experimental-120919"
 bla="Blank-110919"
 resistances=["high_ru", "low_ru", "fixed_ru"]
 ru_upper_bound=[700, 85, 50]
-ru_pick=1
+ru_pick=2
 resistance_type=resistances[ru_pick]
 print resistance_type
 exp_type=exp
@@ -89,7 +89,7 @@ for lcv_1 in range(1, 11):
         "dispersion_bins":16,
         "test": False,
         "method": "sinusoidal",
-        "likelihood":likelihood_options[1],
+        "likelihood":likelihood_options[0],
         "numerical_method": solver_list[1],
         "label": "MCMC",
         "optim_list":[]
@@ -106,7 +106,7 @@ for lcv_1 in range(1, 11):
     param_bounds={
         'E_0':[0.2, 0.3],#[param_list['E_start'],param_list['E_reverse']],
         'omega':[0.95*param_list['omega'],1.05*param_list['omega']],#8.88480830076,  #    (frequency Hz)
-        'Ru': [0, ru_upper_bound[ru_pick]],  #     (uncompensated resistance ohms)
+        'Ru': [40, ru_upper_bound[ru_pick]],  #     (uncompensated resistance ohms)
         'Cdl': [0,1e-4], #(capacitance parameters)
         'CdlE1': [-0.05,0.15],#0.000653657774506,
         'CdlE2': [-0.01,0.01],#0.000245772700637,
@@ -132,7 +132,8 @@ for lcv_1 in range(1, 11):
     #noramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])
     #noramp_fit.dim_dict["gamma"]=0
     if ru_pick==2:
-        noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0" ,"Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase", "alpha"])
+        noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0" ,"Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase"])
+        noramp_fit.dim_dict["alpha"]=0.5
         noramp_fit.dim_dict["Ru"]=65
         #noramp_fit.dim_dict["alpha"]=0.5
     true_data=current_results
@@ -175,7 +176,7 @@ for lcv_1 in range(1, 11):
         sim_options=resistance_type+"_"+"k0_disp"
     else:
         sim_options=resistance_type
-    filename=("_").join([folder,Method, sim_options])+".fourier2"
+    filename=("_").join([folder,Method, sim_options])+".fixed_alpha2"
     filepath=("/").join([dir_path, "Inferred_params", Electrode_save])
     noramp_fit.save_state(results_dict, filepath, filename, save_params)
     best_idx=np.where(score_vec==min(score_vec))

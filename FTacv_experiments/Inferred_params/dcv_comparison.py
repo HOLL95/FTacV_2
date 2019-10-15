@@ -13,33 +13,44 @@ path=("/").join([dir_path , Electrode])
 files=os.listdir(path)#
 file_numbers=[]
 counter=1
-cols=["low", "high", "fixed"]
-rows=["3"]
+experiment=str(1)
+repeat=str(1)
 file1="Noramp_1_cv_low_ru.pkl"
-ramped_current=("_").join([Electrode, "Electrode", "Ramped",rows[0], "cv", "current" ])
-ramped_voltage=("_").join([Electrode, "Electrode", "Ramped",rows[0], "cv", "voltage" ])
-def find(name, path, Electrode):
+
+
+def find(name, path, Electrode, skiprows=0):
     for root, dirs, files in os.walk(path):
         if Electrode in dirs:
             files=os.listdir(root+"/"+Electrode)
             if name in files:
                 print name
-                return np.loadtxt(root+"/"+Electrode+"/"+name)
+                return np.loadtxt(root+"/"+Electrode+"/"+name, skiprows=skiprows)
 param_dict={}
 filename_1=["Ramped_3_cv_high_ru.ts"]
 labels=["Ramped"]
 master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"]
 optim_dict={}
+
+
+
 for names in filename_1:
     result=single_electron(path+"/"+names)
-    stored_current=result.other_values["experiment_current"]
-    stored_voltage=result.other_values["experiment_voltage"]
-    stored_time=result.other_values["experiment_time"]
     file_key=names[:names.index(".")]
     optim_dict[file_key]=[result.save_dict["params"][0][result.save_dict["optim_list"].index(key)] if  (key in result.save_dict["optim_list"]) else result.dim_dict[key] for key in master_optim_list]
+for i in range(1, 4):
+    for j in range(1, 4):
+        plt.subplot(2,3,i)
+        dcv_results=("_").join([Electrode, "Electrode", "Direct_CV", str(i), str(j)])
+        dcv_blank=("_").join(["Blank", Electrode, "Electrode", "Direct_CV", str(i), str(j)])
+        exp_results=find(dcv_results, one_above, Electrode,1)
+        blank_results=find(dcv_blank, one_above, Electrode,1)
+        plt.plot(exp_results[:,1], exp_results[:,2])
+        plt.subplot(2,3,i+3)
+        plt.plot(exp_results[:,0], exp_results[:,2]-blank_results[:,2])
+plt.show()
 
-voltage_results=find(ramped_voltage, one_above, Electrode)
-current_results=find(ramped_current, one_above, Electrode)
+
+
 time_results=current_results[:,0]
 current_results=current_results[:,1]
 ramped_params={
@@ -81,7 +92,7 @@ simulation_options_ramped={
     "test": False,
     "likelihood":"timeseries",
     "numerical_method": "Brent minimisation",
-    "method":"ramped",
+    "method":"dcv",
     "label": "MCMC",
     "optim_list":[]
 }

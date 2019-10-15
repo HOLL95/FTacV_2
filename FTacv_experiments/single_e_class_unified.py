@@ -127,7 +127,10 @@ class single_electron:
                 voltages[i]=isolver_martin_brent.et(self.nd_param.E_start,self.nd_param.nd_omega, self.nd_param.phase, self.nd_param.d_E, (self.time_vec[i]))
         elif self.simulation_options["method"]=="ramped":
             for i in range(0, len(self.time_vec)):
-                voltages[i]=isolver_martin_brent.c_et(self.nd_param.E_start, self.nd_param.E_reverse,self.nd_param.nd_omega, self.nd_param.phase, 1,self.nd_param.d_E,(self.time_vec[i]))
+                voltages[i]=isolver_martin_brent.c_et(self.nd_param.E_start, self.nd_param.E_reverse, (self.nd_param.E_reverse-self.nd_param.E_start) ,self.nd_param.nd_omega, self.nd_param.phase, 1,self.nd_param.d_E,(self.time_vec[i]))
+        elif self.simulation_options["method"]=="dcv":
+            for i in range(0, len(self.time_vec)):
+                voltages[i]=isolver_martin_brent.dcv_et(self.nd_param.E_start, self.nd_param.E_reverse, (self.nd_param.E_reverse-self.nd_param.E_start) , 1,(self.time_vec[i]))
         return voltages
     def pass_extra_data(self, time_series, fourier):
         self.secret_data_time_series=time_series
@@ -418,6 +421,8 @@ class single_electron:
             solver=isolver_martin_brent.brent_current_solver
         elif self.simulation_options["numerical_method"]=="Newton-Raphson":
             solver=isolver_martin_NR.NR_current_solver
+            if self.simulation_options["method"]=="dcv":
+                raise ValueError("Newton-Raphson dcv simulation not implemented")
         else:
             raise ValueError('Numerical method not defined')
         if self.simulation_options["numerical_debugging"]!=False:
