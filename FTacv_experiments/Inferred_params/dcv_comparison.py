@@ -2,6 +2,8 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy
+import copy
 dir_path = os.path.dirname(os.path.realpath(__file__))
 slash_idx=[i for i in range(len(dir_path)) if dir_path[i]=="/"]
 one_above=dir_path[:slash_idx[-1]]
@@ -27,6 +29,7 @@ def find(name, path, Electrode, skiprows=0):
                 return np.loadtxt(root+"/"+Electrode+"/"+name, skiprows=skiprows)
 param_dict={}
 filename_1=["Ramped_3_cv_high_ru.ts"]
+param_results=[]
 labels=["Ramped"]
 master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"]
 optim_dict={}
@@ -35,31 +38,27 @@ optim_dict={}
 
 for names in filename_1:
     result=single_electron(path+"/"+names)
-    file_key=names[:names.index(".")]
-    optim_dict[file_key]=[result.save_dict["params"][0][result.save_dict["optim_list"].index(key)] if  (key in result.save_dict["optim_list"]) else result.dim_dict[key] for key in master_optim_list]
+    param_results.append([result.save_dict["params"][0][result.save_dict["optim_list"].index(key)] if  (key in result.save_dict["optim_list"]) else result.dim_dict[key] for key in master_optim_list])
+exp_currents=[]
+blank_currents=[]
 for i in range(1, 4):
     for j in range(1, 4):
-        plt.subplot(2,3,i)
+        #plt.subplot(2,3,i)
         dcv_results=("_").join([Electrode, "Electrode", "Direct_CV", str(i), str(j)])
         dcv_blank=("_").join(["Blank", Electrode, "Electrode", "Direct_CV", str(i), str(j)])
         exp_results=find(dcv_results, one_above, Electrode,1)
         blank_results=find(dcv_blank, one_above, Electrode,1)
-        plt.plot(exp_results[:,1], exp_results[:,2])
-        plt.subplot(2,3,i+3)
-        plt.plot(exp_results[:,0], exp_results[:,2]-blank_results[:,2])
-plt.show()
+        blank_currents.append(blank_results[:,2])
+        exp_currents.append(exp_results[:,2]-blank_results[:,2])
+voltages=exp_results[:,1]
 
-
-
-time_results=current_results[:,0]
-current_results=current_results[:,1]
-ramped_params={
+dcv_params={
     "E_0":0.25,
-    'E_start': -180e-3, #(starting dc voltage - V)
-    'E_reverse': 620e-3,    #  (reverse dc voltage - V)
+    'E_start': -0.15, #(starting dc voltage - V)
+    'E_reverse': 0.6,    #  (reverse dc voltage - V)
     'omega':8.94,  #    (frequency Hz)
-    'd_E': 150e-3,   #(ac voltage amplitude - V) freq_range[j],#
-    'v': 29.8e-3,   #       (scan rate s^-1)
+    'd_E': 0,   #(ac voltage amplitude - V) freq_range[j],#
+    'v': 30e-3,   #       (scan rate s^-1)
     'area': 0.07, #(electrode surface area cm^2)
     'Ru': 1.0,  #     (uncompensated resistance ohms)
     'Cdl': 1e-5, #(capacitance parameters)
@@ -83,7 +82,7 @@ ramped_params={
     'num_peaks': 600
 }
 
-simulation_options_ramped={
+simulation_options_dcv={
     "no_transient":False,
     "numerical_debugging": False,
     "experimental_fitting":True,
@@ -97,21 +96,22 @@ simulation_options_ramped={
     "optim_list":[]
 }
 
-ramp_other_values={
+dcv_other_values={
     "filter_val": 0.5,
     "harmonic_range":range(2,6,1),
-    "experiment_time": time_results,
-    "experiment_current":current_results, #noramp_startup.current_results["GC4_1_cv"],
-    "experiment_voltage":voltage_results[:,1],#noramp_startup.voltage_results["GC4_1_cv"],
+    "experiment_time": exp_results[:,0],
+    "experiment_current":exp_currents[4], #noramp_startup.current_results["GC4_1_cv"],
+    "experiment_voltage":exp_results[:,1],#noramp_startup.voltage_results["GC4_1_cv"],
     "bounds_val":20,
-    "signal_length":len(current_results),
+    "signal_length":len(exp_results[:,0]),
 }
-ramped_results=single_electron(None, ramped_params, simulation_options_ramped, ramp_other_values, result.param_bounds)
-ramped_results.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
-time_results=ramped_results.other_values["experiment_time"]
-current_results=ramped_results.other_values["experiment_current"]
-voltage_results=ramped_results.other_values["experiment_voltage"]
-harm_class=harmonics(ramped_results.other_values["harmonic_range"], ramped_results.nd_param.omega*ramped_results.nd_param.c_T0, 0.05)
+dcv_results=single_electron(None, dcv_params, simulation_options_dcv, dcv_other_values, result.param_bounds)
+dcv_results.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
+time_results=dcv_results.other_values["experiment_time"]
+current_results=dcv_results.other_values["experiment_current"]
+voltage_results=dcv_results.other_values["experiment_voltage"]
+voltages2=dcv_results.define_voltages()
+
 #f1=np.fft.fftfreq(len(current_results), time_results[1]-time_results[0])
 #f2=np.fft.fftfreq(len(stored_current), stored_time[2]-stored_time[0])
 #plt.plot(f1, np.fft.fft(current_results))
@@ -119,32 +119,49 @@ harm_class=harmonics(ramped_results.other_values["harmonic_range"], ramped_resul
 #plt.show()
 #results_dict={"1_experimental": current_results}
 results_dict={}
+for i in range(0, len(param_results)):
+    cdl_0=copy.deepcopy(param_results[i])
+    for j in range(0, len(dcv_results.optim_list)):
+        if "Cdl" in dcv_results.optim_list[j]:
+            cdl_0[j]=0
+    time_series=dcv_results.test_vals(cdl_0, "timeseries")
+    print dcv_results.dim_dict["Cdl"]
+    cdl_idx=tuple(np.where((voltages<0.16) | (voltages>0.38)))
+    farad_idx=tuple(np.where((voltages>0.16) & (voltages<0.38)))
+    cdl_only=copy.deepcopy(current_results)
+    cdl_only[farad_idx]=0
+    inter=np.interp(time_results[farad_idx], time_results, current_results)
+    plt.plot(inter)
+    plt.show()
+    halfway=np.where(voltages==max(voltages))
 
-file_keys=optim_dict.keys()
 
-for keys in file_keys:
-    counter=-1
-    for files in filename_1:
-        counter+=1
-        if keys in files:
-            label=labels[counter]
-    harm_class=harmonics(ramped_results.other_values["harmonic_range"], ramped_results.nd_param.omega*ramped_results.nd_param.c_T0, 0.2)
-    #optim_dict[keys][ramped_results.optim_list.index("cap_phase")]=0
-    #optim_dict[keys][ramped_results.optim_list.index("phase")]=0
-    #optim_dict[keys][ramped_results.optim_list.index("omega")]=8.89
-    print keys
-    time_series=ramped_results.test_vals(optim_dict[keys], "timeseries")
-    print label
-    print optim_dict[keys]
+    cdl_part_1=cdl_only[:halfway[0][0]]
+    cdl_part_2=cdl_only[halfway[0][0]:]
+    cs=scipy.interpolate.CubicSpline(half_time[0::32], cdl_part_1[0::32])
+    cs_results=cs(half_time[0::32])
+    cs_results=np.interp(half_time, half_time[0::32], cs_results)
+    plt.plot(cs_results)
+    plt.show()
+    plt.plot(half_time[0::32], cdl_part_1-cs_results)
+    plt.show()
 
-    results_dict[label]=ramped_results.i_nondim(time_series)
-    data_harms=harm_class.generate_harmonics(time_results, time_series)
-exp_harms=harm_class.generate_harmonics(time_results, current_results)
+    #cdl_only=np.interp(farad_idx, range(0, len(cdl_only)), cdl_only)
+    plt.plot(cdl_part_1)
+    plt.plot(cdl_part_2)
+plt.show()
+    #plt.plot(voltages[5:], time_series[5:])
+
+#plt.plot(voltages,current_results)
+#plt.show()
+
+    #data_harms=harm_class.generate_harmonics(time_results, time_series)
+    #exp_harms=harm_class.generate_harmonics(time_results, current_results)
 
 #harm_class.plot_harmonics(time_results, "abs", exp=exp_harms,sim=data_harms)
 #data_harmonics=harm_class.generate_harmonics(time_results, current_results)
-#data_likelihood=harm_class.inv_objective_fun(ramped_results.kaiser_filter, current_results)
-results_dict["experimental"]=ramped_results.i_nondim(current_results)
-harm_class.harmonics_plus("Yellow2", "abs",time_results, **results_dict)
-#harm_class.inv_objective_fun(ramped_results.kaiser_filter, current_time))
-#"voltages": ramped_results["experiment_voltage"]
+#data_likelihood=harm_class.inv_objective_fun(dcv_results.kaiser_filter, current_results)
+#results_dict["experimental"]=dcv_results.i_nondim(current_results)
+#harm_class.harmonics_plus("Yellow2", "abs",time_results, **results_dict)
+#harm_class.inv_objective_fun(dcv_results.kaiser_filter, current_time))
+#"voltages": dcv_results["experiment_voltage"]
