@@ -13,7 +13,7 @@ path=("/").join([dir_path , Electrode])
 files=os.listdir(path)#
 file_numbers=[]
 counter=1
-cols=["fixed"]
+cols=["low"]
 rows=[str(x) for x in range(1,8)]
 #fig, ax=plt.subplots(len(rows),len(cols))
 optim_list=['E0_mean', "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2", "gamma", "omega","phase", "cap_phase", "alpha"]
@@ -25,11 +25,12 @@ counter=0
 for lcv_1 in range(0, len(cols)):
     for lcv_2 in range(0, len(rows)):
         #dot_idx=names.index(".")
-        filename=("_").join(["Noramp", rows[lcv_2], "cv", cols[lcv_1], "ru"])+".fixed_alpha"
+        filename=("_").join(["Noramp", rows[lcv_2], "cv", cols[lcv_1], "ru"])+".constrained_ts"
 
         #file_numbers.append(names[names.index(".")-1])
         result=single_electron(path+"/"+filename)
         result.simulation_options["dispersion_bins"]=30
+
         #for i in range(0, len(self.save_dict[params])):
         #if lcv_2==0:
         #    ax[lcv_2, lcv_1].set_title(cols[lcv_1]+ " Resistance ")

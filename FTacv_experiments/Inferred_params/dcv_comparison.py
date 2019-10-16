@@ -41,6 +41,7 @@ for names in filename_1:
     param_results.append([result.save_dict["params"][0][result.save_dict["optim_list"].index(key)] if  (key in result.save_dict["optim_list"]) else result.dim_dict[key] for key in master_optim_list])
 exp_currents=[]
 blank_currents=[]
+exp_names=[]
 for i in range(1, 4):
     for j in range(1, 4):
         #plt.subplot(2,3,i)
@@ -48,8 +49,9 @@ for i in range(1, 4):
         dcv_blank=("_").join(["Blank", Electrode, "Electrode", "Direct_CV", str(i), str(j)])
         exp_results=find(dcv_results, one_above, Electrode,1)
         blank_results=find(dcv_blank, one_above, Electrode,1)
-        blank_currents.append(blank_results[:,2])
+        blank_currents.append(exp_results[:,2])
         exp_currents.append(exp_results[:,2]-blank_results[:,2])
+        exp_names.append(("_").join([Electrode, "DCV", str(i), str(j)]))
 voltages=exp_results[:,1]
 
 dcv_params={
@@ -85,7 +87,7 @@ dcv_params={
 simulation_options_dcv={
     "no_transient":False,
     "numerical_debugging": False,
-    "experimental_fitting":False,
+    "experimental_fitting":True,
     "dispersion":False,
     "dispersion_bins":20,
     "test": False,
@@ -103,15 +105,15 @@ dcv_other_values={
     "experiment_current":exp_currents[4], #noramp_startup.current_results["GC4_1_cv"],
     "experiment_voltage":exp_results[:,1],#noramp_startup.voltage_results["GC4_1_cv"],
     "bounds_val":20,
-    "signal_length":400,
+    "signal_length":len(exp_results[:,1]),
 }
 dcv_results=single_electron(None, dcv_params, simulation_options_dcv, dcv_other_values, result.param_bounds)
 dcv_results.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
 time_results=dcv_results.other_values["experiment_time"]
 current_results=dcv_results.other_values["experiment_current"]
 voltage_results=dcv_results.other_values["experiment_voltage"]
-voltage_results=dcv_results.define_voltages()
-voltages=(voltage_results*dcv_results.nd_param.c_E0)[5:]
+#voltage_results=dcv_results.define_voltages()
+voltages=voltage_results*dcv_results.nd_param.c_E0
 #f1=np.fft.fftfreq(len(current_results), time_results[1]-time_results[0])
 #f2=np.fft.fftfreq(len(stored_current), stored_time[2]-stored_time[0])
 #plt.plot(f1, np.fft.fft(current_results))
@@ -119,8 +121,9 @@ voltages=(voltage_results*dcv_results.nd_param.c_E0)[5:]
 #plt.show()
 #results_dict={"1_experimental": current_results}
 results_dict={}
-for i in range(0, len(param_results)):
-
+for i in range(3, 6):
+    current_results=exp_currents[i]
+    """
     cdl_0=copy.deepcopy(param_results[i])
     for j in range(0, len(dcv_results.optim_list)):
         if "CdlE1" in dcv_results.optim_list[j]:
@@ -134,43 +137,45 @@ for i in range(0, len(param_results)):
             print cdl_0[j]
     print cdl_0
     true_time_series=dcv_results.test_vals(cdl_0, "timeseries")
-    true_time_series=true_time_series[5:]
-    time_series=time_series[5:]
-    voltage_results=voltage_results[5:]
+    """
+    #true_time_series=true_time_series[5:]
+    #time_series=time_series[5:]
+    #voltage_results=voltage_results[5:]
 
     #print dcv_results.dim_dict["Cdl"]
-    cdl_idx=tuple(np.where((voltages<0.15) | (voltages>0.38)))
-    farad_idx=tuple(np.where((voltages>0.15) & (voltages<0.38)))
-    cdl_only=copy.deepcopy(time_series)
-    times=dcv_results.time_vec[5:]
-    #inter=np.interp(times[0::4], times, cdl_only)
-    #plt.subplot(1,2,1)
-    #plt.plot(times, time_series)
-    #plt.subplot(1,2,2)
-    #plt.plot(times[cdl_idx], cdl_only[cdl_idx])
-    #plt.show()
+    cdl_idx=tuple(np.where((voltages<0.05) | (voltages>0.48)))
+    farad_idx=tuple(np.where((voltages>0.05) & (voltages<0.48)))
+    cdl_only=copy.deepcopy(current_results)
+    times=time_results
     cdl_times=times[cdl_idx]
     cdl_current=cdl_only[cdl_idx]
+    cdl_voltage=voltages[cdl_idx]
     #halfway=np.where(voltages==max(voltages))
-    plt.subplot(1,3,1)
-    plt.plot(times, time_series)
-    plt.plot(cdl_times[0::2], cdl_current[0::2])
+    #plt.subplot(1,3,1)
+    #plt.plot(voltages, current_results)
+    #plt.plot(cdl_voltage, cdl_current)
     #plt.show()
-
-    cs=scipy.interpolate.CubicSpline(cdl_times[0::2], cdl_current[0::2])
-    cs_results=cs(times)
-    plt.subplot(1,3,2)
-    plt.plot(times, cs_results)
-    plt.plot(cdl_times, cdl_current)
-    plt.plot(times, time_series)
-    plt.subplot(1,3,3)
-    inter1=np.interp(times, times, cs_results)
     inter2=np.interp(times, cdl_times, cdl_current)
-    plt.plot(np.subtract(time_series, inter1))
-    plt.plot(np.subtract(time_series, inter2))
-    plt.plot(true_time_series)
+    #cs=scipy.interpolate.CubicSpline(times[0::8], inter2[0::8])
+    #cs_results=cs(times)
+    #plt.subplot(1,3,2)
+    #plt.plot(voltages, cs_results)
+    #plt.plot(voltages, inter2)
+    #plt.plot(voltages, current_results)
+    #plt.subplot(1,3,3)
 
-    plt.show()
+    #plt.plot(voltages, np.subtract(current_results, cs_results))
+    #plt.subplot(1,2,1)
+    plt.subplot(1,2,1)
+    plt.plot(voltages, blank_currents[i], label=exp_names[i])
+    plt.legend()
+    plt.subplot(1,2,2)
+    plt.plot(voltages, np.subtract(current_results, inter2), label=exp_names[i] + " interpolated")
+    #plt.subplot(1,2,2)
+    plt.plot(voltages, current_results, label=exp_names[i] + " background subtracted")
+    #plt.plot(true_time_series)
+plt.legend()
+plt.show()
     #plt.plot(half_time[0::32], cdl_part_1-cs_results)
     #plt.show()
 
