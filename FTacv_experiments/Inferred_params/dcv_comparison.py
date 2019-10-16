@@ -85,7 +85,7 @@ dcv_params={
 simulation_options_dcv={
     "no_transient":False,
     "numerical_debugging": False,
-    "experimental_fitting":True,
+    "experimental_fitting":False,
     "dispersion":False,
     "dispersion_bins":20,
     "test": False,
@@ -103,15 +103,15 @@ dcv_other_values={
     "experiment_current":exp_currents[4], #noramp_startup.current_results["GC4_1_cv"],
     "experiment_voltage":exp_results[:,1],#noramp_startup.voltage_results["GC4_1_cv"],
     "bounds_val":20,
-    "signal_length":len(exp_results[:,0]),
+    "signal_length":400,
 }
 dcv_results=single_electron(None, dcv_params, simulation_options_dcv, dcv_other_values, result.param_bounds)
 dcv_results.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
 time_results=dcv_results.other_values["experiment_time"]
 current_results=dcv_results.other_values["experiment_current"]
 voltage_results=dcv_results.other_values["experiment_voltage"]
-voltages2=dcv_results.define_voltages()
-
+voltage_results=dcv_results.define_voltages()
+voltages=(voltage_results*dcv_results.nd_param.c_E0)[5:]
 #f1=np.fft.fftfreq(len(current_results), time_results[1]-time_results[0])
 #f2=np.fft.fftfreq(len(stored_current), stored_time[2]-stored_time[0])
 #plt.plot(f1, np.fft.fft(current_results))
@@ -120,36 +120,61 @@ voltages2=dcv_results.define_voltages()
 #results_dict={"1_experimental": current_results}
 results_dict={}
 for i in range(0, len(param_results)):
+
     cdl_0=copy.deepcopy(param_results[i])
     for j in range(0, len(dcv_results.optim_list)):
-        if "Cdl" in dcv_results.optim_list[j]:
-            cdl_0[j]=0
+        if "CdlE1" in dcv_results.optim_list[j]:
+            cdl_0[j]=0.01
     time_series=dcv_results.test_vals(cdl_0, "timeseries")
-    print dcv_results.dim_dict["Cdl"]
-    cdl_idx=tuple(np.where((voltages<0.16) | (voltages>0.38)))
-    farad_idx=tuple(np.where((voltages>0.16) & (voltages<0.38)))
-    cdl_only=copy.deepcopy(current_results)
-    cdl_only[farad_idx]=0
-    inter=np.interp(time_results[farad_idx], time_results, current_results)
-    plt.plot(inter)
-    plt.show()
-    halfway=np.where(voltages==max(voltages))
+    for j in range(0, len(dcv_results.optim_list)):
+        if "CdlE1" in dcv_results.optim_list[j]:
+            cdl_0[j-1]=0
+            cdl_0[j]=0
+            cdl_0[j+1]=0
+            print cdl_0[j]
+    print cdl_0
+    true_time_series=dcv_results.test_vals(cdl_0, "timeseries")
+    true_time_series=true_time_series[5:]
+    time_series=time_series[5:]
+    voltage_results=voltage_results[5:]
 
+    #print dcv_results.dim_dict["Cdl"]
+    cdl_idx=tuple(np.where((voltages<0.15) | (voltages>0.38)))
+    farad_idx=tuple(np.where((voltages>0.15) & (voltages<0.38)))
+    cdl_only=copy.deepcopy(time_series)
+    times=dcv_results.time_vec[5:]
+    #inter=np.interp(times[0::4], times, cdl_only)
+    #plt.subplot(1,2,1)
+    #plt.plot(times, time_series)
+    #plt.subplot(1,2,2)
+    #plt.plot(times[cdl_idx], cdl_only[cdl_idx])
+    #plt.show()
+    cdl_times=times[cdl_idx]
+    cdl_current=cdl_only[cdl_idx]
+    #halfway=np.where(voltages==max(voltages))
+    plt.subplot(1,3,1)
+    plt.plot(times, time_series)
+    plt.plot(cdl_times[0::2], cdl_current[0::2])
+    #plt.show()
 
-    cdl_part_1=cdl_only[:halfway[0][0]]
-    cdl_part_2=cdl_only[halfway[0][0]:]
-    cs=scipy.interpolate.CubicSpline(half_time[0::32], cdl_part_1[0::32])
-    cs_results=cs(half_time[0::32])
-    cs_results=np.interp(half_time, half_time[0::32], cs_results)
-    plt.plot(cs_results)
+    cs=scipy.interpolate.CubicSpline(cdl_times[0::2], cdl_current[0::2])
+    cs_results=cs(times)
+    plt.subplot(1,3,2)
+    plt.plot(times, cs_results)
+    plt.plot(cdl_times, cdl_current)
+    plt.plot(times, time_series)
+    plt.subplot(1,3,3)
+    inter1=np.interp(times, times, cs_results)
+    inter2=np.interp(times, cdl_times, cdl_current)
+    plt.plot(np.subtract(time_series, inter1))
+    plt.plot(np.subtract(time_series, inter2))
+    plt.plot(true_time_series)
+
     plt.show()
-    plt.plot(half_time[0::32], cdl_part_1-cs_results)
-    plt.show()
+    #plt.plot(half_time[0::32], cdl_part_1-cs_results)
+    #plt.show()
 
     #cdl_only=np.interp(farad_idx, range(0, len(cdl_only)), cdl_only)
-    plt.plot(cdl_part_1)
-    plt.plot(cdl_part_2)
-plt.show()
     #plt.plot(voltages[5:], time_series[5:])
 
 #plt.plot(voltages,current_results)
