@@ -243,7 +243,7 @@ py::object brent_current_solver(py::dict params, std::vector<double> t, std::str
               dE = dEdt(omega, cap_phase,delta_E , t1+0.5*dt);
               cap_E=et(E_start, omega, cap_phase,delta_E ,t1+dt);
             }
-            else if (input ==1){
+            else if (input ==0){
               E = c_et( E_start, E_reverse, tr, omega,  phase,  v,  delta_E, t1);
               dE = c_dEdt(tr,  omega,  cap_phase,  v,  delta_E, t1+0.5*dt);
               cap_E= c_et( E_start, E_reverse, tr, omega,  cap_phase,  v,  delta_E, t1);

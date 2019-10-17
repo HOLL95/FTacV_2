@@ -419,7 +419,7 @@ plt.plot(voltage_results, current_results)
 plt.plot(voltage_results, cmaes_time)
 plt.show()
 #error=np.std(np.subtract(cmaes_prediction, likelihood_func))
-
+master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","cap_phase","phase","alpha"]
 error=np.std(np.subtract(cmaes_time, current_results))
 mcmc_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
 #mcmc_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)

@@ -67,6 +67,10 @@ class single_electron:
             self.simulation_options["dispersion"]=True
         else:
             self.simulation_options["dispersion"]=False
+        if "phase" in optim_list and "cap_phase" not in optim_list:
+            self.phase_only=True
+        else:
+            self.phase_only=False
     def normalise(self, norm, boundaries):
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
     def un_normalise(self, norm, boundaries):
@@ -319,6 +323,8 @@ class single_electron:
             normed_params=copy.deepcopy(parameters)
         for i in range(0, len(self.optim_list)):
             self.dim_dict[self.optim_list[i]]=normed_params[i]
+        if self.phase_only==True:
+            self.dim_dict["cap_phase"]=self.dim_dict["phase"]
         self.nd_param=params(self.dim_dict)
         if self.simulation_options["numerical_method"]=="Bisect":
             solver=isolver_martin_bisect.martin_surface_bisect

@@ -1,7 +1,5 @@
-import isolver_noramp
 import isolver_martin_brent
 import isolver_martin_NR
-import isolver_brent
 from scipy.stats import norm, lognorm
 import math
 import numpy as np
@@ -106,6 +104,10 @@ class single_electron:
                 if e0params.issubset(set(self.optim_list))==False:
                     missing_param=e0params-(e0params & set(self.optim_list))
                     raise ValueError("Missing the following thermodynamic dispersion parameters: " + (", ").join([str(x) for x in missing_param]))
+        if "phase" in optim_list and "cap_phase" not in optim_list:
+            self.phase_only=True
+        else:
+            self.phase_only=False
     def normalise(self, norm, boundaries):
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
     def un_normalise(self, norm, boundaries):
@@ -415,6 +417,8 @@ class single_electron:
             normed_params=copy.deepcopy(parameters)
         for i in range(0, len(self.optim_list)):
             self.dim_dict[self.optim_list[i]]=normed_params[i]
+        if self.phase_only==True:
+            self.dim_dict["cap_phase"]=self.dim_dict["phase"]
         self.nd_param=params(self.dim_dict)
         self.nd_param_dict=self.nd_param.nd_param_dict
         if self.simulation_options["numerical_method"]=="Brent minimisation":

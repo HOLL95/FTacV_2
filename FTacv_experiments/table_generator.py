@@ -50,12 +50,10 @@ fancy_names={
     "":"Experiment",
     "error":"Error",
 }
-optim_list=["",'E0_mean', "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2", "gamma", "omega","phase", "cap_phase", "alpha", "error"]
+optim_list=["",'E0_mean', "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2", "gamma","phase", "cap_phase", "alpha"]
 name_list=[fancy_names[x] for x in optim_list]
-with open("alice_yellow_params.pkl", "rb") as f:
-    my_list=pickle.load(f)
-names=my_list[0]
-values=my_list[1:][0]
+values=[[0.23238700571881385, 0.049551518548422144, 115.05221454733167, 65, 7.618955326361026e-05, 0.008505818667880971, -0.0007155635298508722, 8.768552294174988e-11, 4.220784514175496, 4.8275937272117835, 0.5], [0.20577567177631131, 0.062479806282236386, 128.8459667852348, 195.33266794539094, 1.11443470348505e-05, -0.04999999906315923, 0.009999999940122661, 6.763627615826423e-11, 6.283185307170834, 6.283185306767232, 0.5999999982019539], [0.22571662943838539, 0.02493906225072903, 79.58827176810736, 639.9132040714545, 7.571223157005296e-05, 0.006402229706228689, -0.0005824039425956027, 8.140433631811794e-11, 4.381472254429238, 5.098795186930785, 0.5998761440565236]]
+names=["Pinned parameters", "Ramped inference", "Fourier objective"]
 
 #names=my_list[0]
 f =open("image_tex_test.tex", "r")
@@ -118,7 +116,7 @@ for line in f:
 f.close()
 table_file.close()
 filename=""
-filename="alice_yellow_params_"
+filename="alice_yellow_3_params_"
 filename=filename+"table.png"
 os.system("pdflatex image_tex_edited.tex")
 os.system("convert -density 300 -trim image_tex_edited.pdf -quality 100 " + filename)

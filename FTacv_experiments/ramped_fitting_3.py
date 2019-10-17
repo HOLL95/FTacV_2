@@ -13,11 +13,11 @@ types=["current", "voltage"]
 exp="Experimental-120919"
 bla="Blank-110919"
 resistances=["high_ru", "low_ru", "fixed_ru"]
-ru_upper_bound=[700, 85, 50]
+ru_upper_bound=[1e4, 85, 50]
 ru_pick=0
 resistance_type=resistances[ru_pick]
 print resistance_type
-exp_type=exp
+exp_type=bla
 if exp_type==bla:
     extra="Blank/"
 else:
@@ -26,11 +26,12 @@ data_path="/experiment_data_2/"+exp_type
 Electrode="Yellow"
 folder="Ramped"
 
-Method ="3_cv"
+Method ="3dec_cv"
 type="current"
 type2="voltage"
 path=("/").join([dir_path, data_path, folder, Electrode])
 files= os.listdir(path)
+print files
 for data in files:
     if (Method in data)  and (type in data):
         results=np.loadtxt(path+"/"+data)
@@ -91,7 +92,7 @@ simulation_options={
     "dispersion_bins":16,
     "test": False,
     "method": "ramped",
-    "likelihood":likelihood_options[1],
+    "likelihood":likelihood_options[0],
     "numerical_method": solver_list[1],
     "label": "MCMC",
     "optim_list":[]
@@ -133,7 +134,9 @@ voltage_results=ramp_fit.other_values["experiment_voltage"]
 plt.plot(time_results, voltage_results)
 plt.plot(ramp_fit.time_vec, sim_volts)
 plt.show()
-ramp_fit.def_optim_list(["E0_mean","E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
+#ramp_fit.def_optim_list(["E0_mean","E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
+ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2","CdlE3",'omega',"phase"])
+ramp_fit.dim_dict["gamma"]=0
 #ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])
 #ramp_fit.dim_dict["gamma"]=0
 if ru_pick==2:
@@ -170,9 +173,10 @@ for i in range(0, num_runs):
     cmaes_fourier=ramp_fit.test_vals(cmaes_results, likelihood="fourier", test=False)
     param_mat[i,:]=cmaes_results
     score_vec[i]=found_value
-    #plt.plot(voltage_results, true_data)
-    #plt.plot(voltage_results, cmaes_time)
-    #plt.show()
+    plt.plot(time_results, cmaes_time)
+    plt.plot(time_results, true_data, alpha=0.5)
+    plt.plot(time_results, np.subtract(true_data, cmaes_time))
+    plt.show()
 idx=[i[0] for i in sorted(enumerate(score_vec), key=lambda y:y[1])]
 save_params=param_mat[idx[0:3], :]
 Electrode_save=extra+Electrode
@@ -180,7 +184,7 @@ if "k0_shape" in ramp_fit.optim_list:
     sim_options=resistance_type+"_"+"k0_disp"
 else:
     sim_options=resistance_type
-filename=("_").join([folder,Method, sim_options])+".ts"
+filename=("_").join([folder,Method, sim_options])+".blank"
 filepath=("/").join([dir_path, "Inferred_params", Electrode_save])
 ramp_fit.save_state(results_dict, filepath, filename, save_params)
 best_idx=np.where(score_vec==min(score_vec))

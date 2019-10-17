@@ -13,8 +13,8 @@ path=("/").join([dir_path , Electrode])
 files=os.listdir(path)#
 file_numbers=[]
 counter=1
-cols=["low"]
-rows=[str(x) for x in range(1,8)]
+cols=["fixed"]
+rows=[str(x) for x in range(1,11)]
 #fig, ax=plt.subplots(len(rows),len(cols))
 optim_list=['E0_mean', "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2", "gamma", "omega","phase", "cap_phase", "alpha"]
 def RMSE(vec1, vec2):
@@ -25,7 +25,7 @@ counter=0
 for lcv_1 in range(0, len(cols)):
     for lcv_2 in range(0, len(rows)):
         #dot_idx=names.index(".")
-        filename=("_").join(["Noramp", rows[lcv_2], "cv", cols[lcv_1], "ru"])+".constrained_ts"
+        filename=("_").join(["Noramp", rows[lcv_2], "cv", cols[lcv_1], "ru"])+".fixed_alpha"
 
         #file_numbers.append(names[names.index(".")-1])
         result=single_electron(path+"/"+filename)

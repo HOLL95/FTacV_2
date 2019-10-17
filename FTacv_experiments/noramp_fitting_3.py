@@ -14,7 +14,7 @@ exp="Experimental-120919"
 bla="Blank-110919"
 resistances=["high_ru", "low_ru", "fixed_ru"]
 ru_upper_bound=[700, 85, 50]
-ru_pick=2
+ru_pick=0
 resistance_type=resistances[ru_pick]
 print resistance_type
 exp_type=exp
@@ -25,7 +25,7 @@ else:
 data_path="/experiment_data_2/"+exp_type
 Electrode="Yellow"
 folder="Noramp"
-for lcv_1 in range(1, 11):
+for lcv_1 in range(3, 4):
     Method =str(lcv_1)+"_cv"
     type="current"
     type2="voltage"
@@ -115,7 +115,7 @@ for lcv_1 in range(1, 11):
         'k_0': [10, 1e3], #(reaction rate s-1)
         'alpha': [0.4, 0.6],
         "cap_phase":[0, 2*math.pi],
-        "E0_mean":[0.15, 0.3],
+        "E0_mean":[0.19, 0.208],
         "E0_std": [0.001, 0.2],
         "k0_shape":[0,2],
         "k0_loc":[0, 1e3],
@@ -176,7 +176,7 @@ for lcv_1 in range(1, 11):
         sim_options=resistance_type+"_"+"k0_disp"
     else:
         sim_options=resistance_type
-    filename=("_").join([folder,Method, sim_options])+".fixed_alpha2"
+    filename=("_").join([folder,Method, sim_options])+".fixede0"
     filepath=("/").join([dir_path, "Inferred_params", Electrode_save])
     noramp_fit.save_state(results_dict, filepath, filename, save_params)
     best_idx=np.where(score_vec==min(score_vec))

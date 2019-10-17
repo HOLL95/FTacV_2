@@ -115,21 +115,29 @@ param_list=[]
 for i in range(0, len(class_list)):
     result=class_list[i]
     param_list.append([result.save_dict["params"][0][result.save_dict["optim_list"].index(key)] if  (key in result.save_dict["optim_list"]) else result.dim_dict[key] for key in master_optim_list])
+for i in range(0, len(param_list)):
+    print param_list
 for i in range(0, len(simulation_classes)):
     simulation_classes[i].def_optim_list(master_optim_list)
+
 noramp_simulation_list=[]
 ramped_simulation_list=[]
 dcv_simulation_list=[]
 noramp_ts_class.dim_dict["omega"]=8.940641321267664
 ramped_class.dim_dict["omega"]=8.884904955014296
+ramp_harm=harmonics(range(2, 6), ramped_class.nd_param.omega, 0.1)
+noramp_harm=harmonics(range(2, 6), noramp_ts_class.nd_param.omega, 0.1)
 for i in range(0, len(param_list)):
     dcv_params=change_param(copy.deepcopy(param_list[i]), master_optim_list, "Cdl", 0)
     if i==1:
         param_list[i]=change_param(param_list[i], master_optim_list, "cap_phase", 3*math.pi/2)
         param_list[i]=change_param(param_list[i], master_optim_list, "phase", 3*math.pi/2)
+
     noramp_simulation_list.append(noramp_ts_class.i_nondim(noramp_ts_class.test_vals(param_list[i], "timeseries")))
-    ramped_simulation_list.append(noramp_ts_class.i_nondim(ramped_class.test_vals(param_list[i], "timeseries")))
-    dcv_simulation_list.append(noramp_ts_class.i_nondim(dcv_class.test_vals(dcv_params, "timeseries")))
+    ramped_simulation_list.append(ramped_class.i_nondim(ramped_class.test_vals(param_list[i], "timeseries")))
+    dcv_simulation_list.append(dcv_class.i_nondim(dcv_class.test_vals(dcv_params, "timeseries")))
+
+
 num_harmonics=4
 plot_width=3
 num_runs=3
@@ -152,12 +160,45 @@ for i in range(0, num_runs):
 for i in range(0, num_runs):
     for j in range(0, num_harmonics):
         sinusoidal_harm_axes.append(plt.subplot2grid((rows, cols), (harm_idx[0]+j, i*(seperation+plot_width)), rowspan=1, colspan=plot_width))
+        print harm_idx[0]+j, i*(seperation+plot_width)
         ramped_harm_axes.append(plt.subplot2grid((rows, cols), (harm_idx[1]+j, i*(seperation+plot_width)), rowspan=1, colspan=plot_width))
+noramp_harmonics=[]
+noramp_data_harms=noramp_harm.generate_harmonics(noramp_time, noramp_current)
+ramped_harmonics=[]
+ramped_data_harms=ramp_harm.generate_harmonics(ramped_time, ramped_current)
 for i in range(0, num_runs):
+    noramp_harmonics.append(noramp_harm.generate_harmonics(noramp_time, noramp_simulation_list[i]))
+    ramped_harmonics.append(ramp_harm.generate_harmonics(ramped_time, ramped_simulation_list[i]))
+    if i==1:
+        ramped_simulation_list[i]=np.append(np.fft.ifft(ramped_class.kaiser_filter(ramped_simulation_list[i])), [0,0])
+        #ramp_harm.inv_objective_fun(ramped_class.kaiser_filter, ramped_simulation_list[i])
+        #noramp_simulation_list[i]=ramp_harm.inv_objective_fun(noramp_ts_class.kaiser_filter, noramp_simulation_list[i])
+
+
     sinusoidal_axes[i].plot(noramp_voltage, noramp_simulation_list[i])
     sinusoidal_axes[i].plot(noramp_voltage, noramp_current, alpha=0.5)
-    ramped_axes[i].plot(ramped_time, ramped_current, alpha=0.5)
     ramped_axes[i].plot(ramped_time, ramped_simulation_list[i])
-    dcv_axes[i].plot(dcv_voltages, dcv_data, alpha=0.5)
+    if i==1:
+        ramped_axes[i].plot(ramped_time, np.append(np.fft.ifft(ramped_class.kaiser_filter(ramped_current)), [0,0]), alpha=0.5)
+    else:
+        ramped_axes[i].plot(ramped_time, ramped_current, alpha=0.5)
     dcv_axes[i].plot(dcv_voltages[5:], dcv_simulation_list[i][5:])
+    dcv_axes[i].plot(dcv_voltages, dcv_data, alpha=0.5)
+counter=0
+for i in range(0, len(noramp_harmonics)):
+    for j in range(0, num_harmonics):
+        sinusoidal_harm_axes[counter].plot(noramp_time, noramp_harmonics[i][j,:])
+        sinusoidal_harm_axes[counter].plot(noramp_time, noramp_data_harms[j,:])
+        ramped_harm_axes[counter].plot(ramped_time, abs(ramped_harmonics[i][j,:]))
+        ramped_harm_axes[counter].plot(ramped_time, abs(ramped_data_harms[j,:]))
+        counter+=1
+plt.show()
+results_dict={}
+results_dict["experimental"]=ramped_current
+results_dict["simulation"]=ramped_simulation_list[1]
+ramp_harm.harmonics_plus("Yellow2", "abs",ramped_time, **results_dict)
+for i in range(0,4):
+    plt.subplot(2,2, i+1)
+    plt.plot(abs(ramped_harmonics[1][i,:]))
+    plt.plot(abs(ramped_data_harms[i,:]))
 plt.show()
