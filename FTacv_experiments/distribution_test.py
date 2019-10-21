@@ -29,7 +29,7 @@ for i in np.arange(1, 1e4, 1000):
         k0[0]=lognorm.cdf(k0_val_range[0], s, loc=j, scale=i)
         for k in range(1, len(k0)):
             k0[k]=lognorm.cdf(k0_val_range[k], s, loc=i, scale=j)#-lognorm.cdf(k0_val_range[k-1], s, loc=i, scale=j)
-        print "S", s,"location",i, "scale",j, np.sum(k0)
+        print("S", s,"location",i, "scale",j, np.sum(k0))
         plt.plot(k0_val_range, k0, label=np.sum(k0))
     #plt.legend()
     plt.show()

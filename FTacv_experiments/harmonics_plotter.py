@@ -8,7 +8,7 @@ class harmonics:
         self.num_harmonics=len(harmonics)
         self.input_frequency=input_frequency
         self.filter_val=filter_val
-        print "initialised!"
+        print("initialised!")
     def reorder(list, order):
         return [list[i] for i in order]
     def generate_harmonics(self, times, data):
@@ -70,7 +70,7 @@ class harmonics:
             a=self.empty
         harmonics_list=[]
         harmonics_labels=[]
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             harmonics_list.append(value)
             harmonics_labels.append(key)
         fig, ax=plt.subplots(self.num_harmonics,1)
@@ -91,7 +91,7 @@ class harmonics:
             a=self.empty
         time_list=[]
         titles=[]
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if key=="voltage":
                 large_plot_xaxis=voltages
                 continue
@@ -100,13 +100,13 @@ class harmonics:
 
         title_lower=[x.lower() for x in titles]
         exp_idx=title_lower.index("experimental")
-        new_order=range(0, len(titles))
+        new_order=list(range(0, len(titles)))
         new_order[0]=exp_idx
         new_order[exp_idx]=0
         titles=[titles[x] for x in new_order]
         time_list=[time_list[x] for x in new_order]
         harmonics_list=[]
-        print "~"*50
+        print("~"*50)
         for i in range(0, len(time_list)):
             harms=self.generate_harmonics(times, time_list[i])
             harmonics_list.append(harms)

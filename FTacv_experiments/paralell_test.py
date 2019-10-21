@@ -75,7 +75,7 @@ class someClass(object):
       p = mp.Pool(4)
       for i in range(4):
         sc = p.apply_async(self, args=i)
-      print sc
+      print(sc)
 
    def __call__(self, x):
      return self.f(x)

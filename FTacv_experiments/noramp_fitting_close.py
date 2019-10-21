@@ -23,7 +23,7 @@ files= os.listdir(path)
 for data in files:
     if (Method in data)  and (type in data):
         results=np.loadtxt(path+"/"+data)
-        print data
+        print(data)
 length_list=[3e4]
 dec_list=[8, 16, 32]
 
@@ -94,7 +94,7 @@ dummy_times=np.linspace(0, 1, len(likelihood_func))
 score = pints.SumOfSquaresError(cmaes_problem)
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(param_boundaries[0]))], [np.ones(len(param_boundaries[0]))])
 x0=abs(np.random.rand(len(param_boundaries[0])))#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
-print len(x0), len(noramp_fit.optim_list)
+print(len(x0), len(noramp_fit.optim_list))
 if de_novo==True:
     for i in range(0, 1):
         #x0=[0.82436186, 0.0016398,  0.6221449,  0.14726903, 0.89704962]
@@ -104,7 +104,7 @@ if de_novo==True:
                                                     boundaries=CMAES_boundaries,
                                                     method=pints.CMAES
                                                     )
-    print found_parameters
+    print(found_parameters)
     cmaes_time=noramp_fit.simulate(found_parameters,frequencies, "optimise", "timeseries", "yes" )
     hann=np.hanning(len(cmaes_time))
     f=np.fft.fftfreq(len(time_results), time_results[1]-time_results[0])
@@ -149,12 +149,12 @@ chains=mcmc.run()
 pints.plot.trace(chains)
 plt.show()
 means=[np.mean(chains[:, 5000:, x]) for x in np.arange(0, len(noramp_fit.optim_list))]
-print means
-print str(folder)
+print(means)
+print(str(folder))
 mcmc_times=noramp_fit.simulate(means, time_results, "no", "timeseries", "no")
 mcmc_harmonics=harm_class.generate_harmonics(time_results, mcmc_times)
 harm_class.plot_harmonics(time_results, mcmc_harmonics, data_harmonics)
-open_query=raw_input("save?")
+open_query=input("save?")
 if open_query=="y":
     filename=str(desired_length)+"_"+str(dec_amount)+"_"+str(lcv_3)+".red"
     f=open(filename, "w")

@@ -92,8 +92,8 @@ updated_ub=np.append(cmaes_params*1.5, [max(likelihood_func)])#found_parameters[
 updated_boundaries=[updated_lb, updated_ub]
 updated_boundaries=np.sort(updated_boundaries, 0)
 noramp_fit.define_boundaries(updated_boundaries)
-print cmaes_params
-print updated_boundaries
+print(cmaes_params)
+print(updated_boundaries)
 log_liklihood=pints.UnknownNoiseLogLikelihood(mcmc_problem)
 log_prior=pints.UniformLogPrior(updated_boundaries[0],
                                 updated_boundaries[1])

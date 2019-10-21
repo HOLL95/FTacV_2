@@ -16,7 +16,7 @@ class FTACV_initialisation:
         voltage_results={}
         time_results={}
         current_results={}
-        experiments=file_dict.keys()
+        experiments=list(file_dict.keys())
         for data in files:
             for keys in experiments:
                 Method=keys

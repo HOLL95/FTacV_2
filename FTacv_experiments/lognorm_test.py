@@ -16,5 +16,5 @@ for j in [20**x for x in range(1, 4)]:
         k0_weights[k]=lognorm.cdf(k0_vals[k], shape, loc, scale=scale)-lognorm.cdf(k0_vals[k-1], shape, loc, scale=scale)
 
     plt.plot(k0_vals, k0_weights)
-    print sum(k0_weights)
+    print(sum(k0_weights))
 plt.show()

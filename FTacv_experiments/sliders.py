@@ -17,7 +17,7 @@ def update(val):
     for i in range(0, len(ramp_fit.optim_list)):
         params[i]=slider_ax_element[i].val
     cdl_idx=ramp_fit.optim_list.index("E_0")
-    print params[cdl_idx]
+    print(params[cdl_idx])
     l.set_ydata(ramp_fit.simulate(params,frequencies, "yes", "timeseries", "no" ))
     fig.canvas.draw_idle()
 
@@ -36,7 +36,7 @@ button = Button(resetax, 'Reset', color=axcolor, hovercolor='0.975')
 
 plt.show()
 ramp_fit.bounds_val=1e5
-print means[0:3]
+print(means[0:3])
 
 plt.plot(test*-1)
 plt.plot(current_results)

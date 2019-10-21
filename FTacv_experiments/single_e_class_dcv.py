@@ -8,7 +8,7 @@ import copy
 import time
 class single_electron:
     def __init__(self, dim_paramater_dictionary, optim_list, harmonic_range, filter_val):
-        key_list=dim_paramater_dictionary.keys()
+        key_list=list(dim_paramater_dictionary.keys())
         self.dim_dict=dim_paramater_dictionary
         self.nd_param=params(self.dim_dict)
         self.optim_list=optim_list
@@ -105,7 +105,7 @@ class single_electron:
                 normed_params[i]=self.un_normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         elif method=="norm":
             for i in range(0,len(param_list)):
-                print normed_params[i], self.optim_list[i],[self.boundaries[0][i],self.boundaries[1][i]]
+                print(normed_params[i], self.optim_list[i],[self.boundaries[0][i],self.boundaries[1][i]])
                 normed_params[i]=self.normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         return normed_params
     def define_voltages(self):
@@ -115,9 +115,9 @@ class single_electron:
         return voltages
     def variable_returner(self):
         variables=vars(self.nd_param)
-        for key in variables.keys():
+        for key in list(variables.keys()):
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
-                print key, variables[key], type(variables[key])
+                print(key, variables[key], type(variables[key]))
     def transient_remover(self, start_time, times, current):
         time_idx=np.where(times>start_time)
         self.time_idx=time_idx
@@ -141,8 +141,8 @@ class single_electron:
         #self.time_vec=[]
         var_list=vars(self)
         if len(parameters)!= len(self.optim_list):
-            print len(parameters), len(self.optim_list)
-            print self.optim_list
+            print(len(parameters), len(self.optim_list))
+            print(self.optim_list)
             raise ValueError('Wrong number of parameters')
         if flag=='optimise' and self.label=="cmaes":
             normed_params=self.change_norm_group(parameters, "un_norm")

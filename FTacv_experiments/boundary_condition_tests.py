@@ -50,7 +50,7 @@ simulation_options={
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(3,9,1),
+    "harmonic_range":list(range(3,9,1)),
     "bounds_val":2000,
     "signal_length":int(2e4),
 }

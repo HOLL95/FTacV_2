@@ -35,12 +35,12 @@ mcmc_problem=pints.SingleOutputProblem(noramp_results, fit_times, fit_data)
 updated_lb=np.append(np.multiply(param_vals, 0.75),0.75*error)
 updated_ub=np.append(np.multiply(param_vals, 1.25), 1.25*error)
 for i in range(0, len(updated_lb)-1):
-    print updated_lb[i],param_vals[i], updated_ub[i]
+    print(updated_lb[i],param_vals[i], updated_ub[i])
 updated_b=[updated_lb, updated_ub]
 updated_b=np.sort(updated_b, axis=0)
 log_liklihood=pints.UnknownNoiseLogLikelihood(mcmc_problem)
 log_prior=pints.UniformLogPrior(updated_b[0], updated_b[1])
-print updated_b
+print(updated_b)
 log_posterior=pints.LogPosterior(log_liklihood, log_prior)
 mcmc_parameters=np.append(param_vals, error)
 xs=[mcmc_parameters,

@@ -7,4 +7,4 @@ ymin=min(data_2)
 ymax=max(data_2)
 xx, yy = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
 positions = np.vstack([xx.ravel(), yy.ravel()])
-print positions
+print(positions)

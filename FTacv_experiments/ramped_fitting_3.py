@@ -16,7 +16,7 @@ resistances=["high_ru", "low_ru", "fixed_ru"]
 ru_upper_bound=[200, 85, 50]
 ru_pick=0
 resistance_type=resistances[ru_pick]
-print resistance_type
+print(resistance_type)
 exp_type=bla
 if exp_type==bla:
     extra="Blank/"
@@ -31,11 +31,11 @@ type="current"
 type2="voltage"
 path=("/").join([dir_path, data_path, folder, Electrode])
 files= os.listdir(path)
-print files
+print(files)
 for data in files:
     if (Method in data)  and (type in data):
         results=np.loadtxt(path+"/"+data)
-        print data
+        print(data)
     elif (Method in data)  and (type2 in data):
         voltages=np.loadtxt(path+"/"+data)
 
@@ -99,7 +99,7 @@ simulation_options={
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(3,9,1),
+    "harmonic_range":list(range(3,9,1)),
     "experiment_time": time_results1,
     "experiment_current": current_results1,
     "experiment_voltage":voltage_results1,
@@ -172,7 +172,7 @@ param_mat=np.zeros((num_runs,len(ramp_fit.optim_list)))
 score_vec=np.zeros(num_runs)
 for i in range(0, num_runs):
     x0=abs(np.random.rand(ramp_fit.n_parameters()))#ramp_fit.change_norm_group(gc4_3_low_ru, "norm")
-    print ramp_fit.change_norm_group(x0, "un_norm")
+    print(ramp_fit.change_norm_group(x0, "un_norm"))
     cmaes_fitting=pints.Optimisation(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
     cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
     if "E0_mean" in ramp_fit.optim_list and "k0_loc" in ramp_fit.optim_list:
@@ -181,8 +181,8 @@ for i in range(0, num_runs):
         cmaes_fitting.set_parallel(True)
     found_parameters, found_value=cmaes_fitting.run()
     cmaes_results=ramp_fit.change_norm_group(found_parameters, "un_norm")
-    print list(cmaes_results)
-    print ramp_fit.dim_dict["phase"]
+    print(list(cmaes_results))
+    print(ramp_fit.dim_dict["phase"])
     cmaes_time=ramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
     cmaes_fourier=ramp_fit.test_vals(cmaes_results, likelihood="fourier", test=False)
     param_mat[i,:]=cmaes_results
@@ -204,5 +204,5 @@ ramp_fit.save_state(results_dict, filepath, filename, save_params)
 best_idx=np.where(score_vec==min(score_vec))
 best_idx=best_idx[0][0]
 cmaes_results=param_mat[best_idx,:]
-print list(cmaes_results)
+print(list(cmaes_results))
 cmaes_time=ramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)

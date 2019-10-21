@@ -74,7 +74,7 @@ simulation_options={
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(1,9,1),
+    "harmonic_range":list(range(1,9,1)),
     "experiment_time": time_results,
     "experiment_current": current_results,
     "experiment_voltage":voltage_results,
@@ -101,7 +101,7 @@ param_ranges={
 "CdlE3_range":[-0.01, -0.005,0, 0.005, 0.01],
 "alpha_range":[0.1, 0.2,0.5, 0.7, 0.9],
 }
-param_keys=param_ranges.keys()
+param_keys=list(param_ranges.keys())
 true_params=['E_0', 'k_0', 'Ru','Cdl', 'CdlE1','CdlE2','CdlE3','alpha']
 start=time.time()
 end=np.where(noramp_fit.time_vec>0.01)

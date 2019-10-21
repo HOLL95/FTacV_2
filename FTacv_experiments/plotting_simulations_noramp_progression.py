@@ -21,7 +21,7 @@ simulation_options={
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(1,9,1),
+    "harmonic_range":list(range(1,9,1)),
     "experiment_time": startup.time_results["GC4_1_cv"],
     "experiment_current": startup.current_results["GC4_1_cv"],
     "experiment_voltage":startup.voltage_results["GC4_1_cv"],
@@ -80,7 +80,7 @@ num_plots=len(plot_array)
 positions=[6,7,8,4,9,14,10]
 title_pos=[6,7,8,4,10]
 titles=["Initial attempt", "Higher order capacitance", "Independent capacitance phase", "Thermodynamic dispersion","Final fit"]
-pos=zip(title_pos, titles)
+pos=list(zip(title_pos, titles))
 pos_idx=0
 plt.rcParams.update({'font.size': 10})
 volts=noramp_simulations.e_nondim(noramp_simulations.other_values["experiment_voltage"]*1e3)

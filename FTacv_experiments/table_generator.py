@@ -80,7 +80,7 @@ for i in range(0, len(names)):
             end_str="\\\\\n"
         else:
             end_str=" & "
-        print names[i]
+        print(names[i])
         if abs(values[i][j])>1e-2:
 
             row_n=row_n+(str(round(values[i][j],3))+ end_str)

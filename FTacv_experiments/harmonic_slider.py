@@ -40,7 +40,7 @@ button = Button(resetax, 'Reset', color=axcolor, hovercolor='0.975')
 
 plt.show()
 ramp_fit.bounds_val=1e5
-print means[0:3]
+print(means[0:3])
 
 plt.plot(test*-1)
 plt.plot(current_results)

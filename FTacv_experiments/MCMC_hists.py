@@ -97,7 +97,7 @@ chains=np.load('GC4_MCMC_1_high_ru')
 chains2=np.load('GC4_MCMC_1_low_ru')
 def plot_params(titles, set_chain):
     for i in range(0, len(titles)):
-        print i
+        print(i)
         axes=plt.subplot(3,5,i+1)
         plot_chain=chain_appender(set_chain, i)
         if abs(np.mean(plot_chain))<0.001:
@@ -125,7 +125,7 @@ optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', "omega","phase", "
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 plt.show()
 for i in range(0, len(titles)):
-    print titles[i]
+    print(titles[i])
 
     axes=plt.subplot(3,5,i+1)
     if optim_list[i]=="alpha":

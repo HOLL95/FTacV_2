@@ -60,7 +60,7 @@ ramp_fit=single_electron(param_list, params_for_opt, harmonic_range, 1.0)
 ramp_fit.label="cmaes"
 ramp_fit.voltages=voltages[0::dec_amount, 1]/ramp_fit.nd_param.c_E0
 time_results=time_results/ramp_fit.nd_param.c_T0
-print time_results
+print(time_results)
 current_results=current_results/ramp_fit.nd_param.c_I0
 #plt.plot(time_results, current_results, label="data")
 ramp_fit.time_vec=time_results

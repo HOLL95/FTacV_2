@@ -94,7 +94,7 @@ simulation_options={
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(2,7,1),
+    "harmonic_range":list(range(2,7,1)),
     "experiment_time": time_results,
     "experiment_current": current_results,
     "experiment_voltage":voltage_results,
@@ -292,7 +292,7 @@ def update(val):
     params=np.zeros(len(ramp_fit.optim_list))
     for i in range(0, len(ramp_fit.optim_list)):
         params[i]=slider_ax_element[i].val
-    print list(params)
+    print(list(params))
     test=ramp_fit.test_vals(params, likelihood="timeseries", test=False)
     #test_harmonics=harm_class.generate_harmonics(time_results, test)
     #line_elements[0].set_ydata(test*-1)
@@ -362,11 +362,11 @@ for i in range(0, 1):
                                                 method=pints.CMAES
                                                 )
 #    print found_parameters
-print folder
+print(folder)
 cmaes_results=ramp_fit.change_norm_group(found_parameters, "un_norm")
-print list(cmaes_results)
+print(list(cmaes_results))
 cmaes_time=ramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
-print "TIME"
+print("TIME")
 plt.plot(cmaes_time)
 plt.plot(current_results)
 plt.show()

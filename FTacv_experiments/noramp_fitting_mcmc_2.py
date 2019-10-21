@@ -82,7 +82,7 @@ for i in range(0, 1):
                                                 method=pints.CMAES
                                                 )
     x0=found_parameters
-    print found_parameters
+    print(found_parameters)
 cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
 noramp_fit.simulate(found_parameters,frequencies, "optimise", "timeseries", "yes" )
 cmaes_prediction=noramp_fit.simulate(found_parameters,frequencies, "optimise", "fourier", "yes" )

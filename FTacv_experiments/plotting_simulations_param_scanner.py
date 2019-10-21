@@ -7,12 +7,12 @@ from single_e_class_unified import single_electron, paralell_class
 from ramped_setup import FTACV_initialisation
 from harmonics_plotter import harmonics
 import isolver_martin_brent
-print "import", time.time()-start
+print("import", time.time()-start)
 types=["current", "voltage"]
 start=time.time()
 noramp_startup=FTACV_initialisation(experimental_fitting=False, file_dict={"GC4_1_cv":types, "GC4_2_cv":types, "GC4_3_cv":types}, dec_amount=4)
 ramp_startup=FTACV_initialisation(experimental_fitting=False, file_dict={"GC4_1_ramp_cv":types,}, dec_amount=64)
-print "read", time.time()-start
+print("read", time.time()-start)
 simulation_options={
     "no_transient":False,
     "numerical_debugging": False,
@@ -29,7 +29,7 @@ simulation_options={
 
 noramp_other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(3,7,1),
+    "harmonic_range":list(range(3,7,1)),
     "experiment_time": False,#noramp_startup.time_results["GC4_1_cv"],
     "experiment_current":False, #noramp_startup.current_results["GC4_1_cv"],
     "experiment_voltage":False,#noramp_startup.voltage_results["GC4_1_cv"],

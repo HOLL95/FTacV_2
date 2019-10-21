@@ -15,7 +15,7 @@ def file_opener(files, file_path, file_dict, dec_amount):
     voltage_results={}
     time_results={}
     current_results={}
-    experiments=file_dict.keys()
+    experiments=list(file_dict.keys())
     for data in files:
         for keys in experiments:
             Method=keys
@@ -104,7 +104,7 @@ simulation_options={
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(1,9,1),
+    "harmonic_range":list(range(1,9,1)),
     "experiment_time": times[file],
     "experiment_current": currents[file],
     "experiment_voltage":voltages[file],
@@ -250,8 +250,8 @@ nondim_times=noramp_fit.t_nondim(time_results)
 
 gc_results=[np.multiply(gc_results[i], noramp_fit.nd_param.c_I0*1000) for i in range(0,len(gc_results))]
 gc_dicta=[np.multiply(gc_alternate[i], noramp_fit.nd_param.c_I0*1000) for i in range(0,len(gc_alternate))]
-gc_dict=dict(zip(filenames, gc_results))
-gc_alternate=dict(zip(filenames, gc_dicta))
+gc_dict=dict(list(zip(filenames, gc_results)))
+gc_alternate=dict(list(zip(filenames, gc_dicta)))
 def RMSE(data, sim):
     data=data*1000
     error=1.0/len(data)*np.sqrt(np.sum((np.power(np.subtract(data, sim),2))))
@@ -265,7 +265,7 @@ for i in range(0, len(filenames)):
     plt.plot(voltages[filenames[i]], np.multiply(currents[filenames[i]], 1000),label="Data", color=colors[1])
     plt.plot(voltages[filenames[i]], gc_dict[filenames[i]], label="Low resistance", color=colors[0])
     plt.plot(voltages[filenames[i]], gc_alternate[filenames[i]], label="High Resistance", color=colors[2])
-    print filenames[i], RMSE(np.multiply(currents[filenames[i]], 1000), gc_dict[filenames[i]]), RMSE(np.multiply(currents[filenames[i]], 1000), gc_alternate[filenames[i]])
+    print(filenames[i], RMSE(np.multiply(currents[filenames[i]], 1000), gc_dict[filenames[i]]), RMSE(np.multiply(currents[filenames[i]], 1000), gc_alternate[filenames[i]]))
     plt.title(filenames[i])
     plt.xlabel("Voltages(V)")
     plt.ylabel("Current(mA)")
@@ -280,7 +280,7 @@ for i in range(0, len(filenames)):
     plt.xlabel("Time(s)")
     plt.legend()
     error=np.sum(np.power(np.subtract(np.multiply(currents[filenames[i]], 1000), gc_dict[filenames[i]]),2))
-    print error
+    print(error)
 plt.show()
 
 disped1_harmonics=harm_class.generate_harmonic  (time_results, disped_1)
@@ -364,25 +364,25 @@ score = pints.SumOfSquaresError(cmaes_problem)#[4.56725844e-01, 4.44532637e-05, 
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(noramp_fit.optim_list))], [np.ones(len(noramp_fit.optim_list))])
 noramp_fit.simulation_options["label"]="cmaes"
 x0=abs(np.random.rand(noramp_fit.n_parameters()))
-print x0
-print len(x0), noramp_fit.n_parameters()
+print(x0)
+print(len(x0), noramp_fit.n_parameters())
 num_runs=1
 score_mat=np.zeros(num_runs)
 noramp_fit.variable_returner()
 param_mat=np.zeros((num_runs,len(noramp_fit.optim_list)))
 score_vec=np.zeros(num_runs)
-print file
+print(file)
 for i in range(0, num_runs):
     x0=abs(np.random.rand(noramp_fit.n_parameters()))#noramp_fit.change_norm_group(gc4_3_low_ru, "norm")
-    print noramp_fit.change_norm_group(x0, "un_norm")
+    print(noramp_fit.change_norm_group(x0, "un_norm"))
     cmaes_fitting=pints.Optimisation(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
     cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
     found_parameters, found_value=cmaes_fitting.run()
     cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
-    print list(cmaes_results)
+    print(list(cmaes_results))
     cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
     #plt.subplot(3,5,i+1)
-    print list(cmaes_results)
+    print(list(cmaes_results))
     #noramp_fit.simulate(found_parameters,time_results, normalise=True, likelihood="fourier", test=True )
     cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
     cmaes_fourier=noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=False)
@@ -401,19 +401,19 @@ for i in range(0, num_runs):
     #plt.plot(fourier_data)
     #plt.plot(results)
     #plt.show()
-print file
-print "low_Ru"
+print(file)
+print("low_Ru")
 for i in range(0, len(param_mat)):
-    print i
-    print param_mat[i,:]
-    print score_vec[i]
-    print "---" *10
+    print(i)
+    print(param_mat[i,:])
+    print(score_vec[i])
+    print("---" *10)
 #best_idx=np.where(score_vec==min(score_vec))
 #best_idx=best_idx[0][0]
 cmaes_results=gc4_1_alternate#param_mat[i,:]
 #cmaes_results=np.array([0.2507124585192858, 0.012810161448688611, 81.25609725526283,100, 3.4455963089647964e-05, 0.08570032724521258, -0.0026762829980299324, 1.4591816196158548e-10, 8.940730783653084, 4.965641139765749, 4.375333040247454, 0.7811192097028208])#[0.2546334543150689, 0.03323126819215362, 116.24098132960108,144.78687238133318,3.4422425270083556e-05, 0.09197677289665342, -0.002971108200729257, 1.4130483196036997e-10,8.94090414236465, 4.947246577563367, 4.361083156674927, 0.5])#param_mat[best_idx, :]
 #high alpha disped [0.2507124585192858, 0.012810161448688611, 81.25609725526283,100, 3.4455963089647964e-05, 0.08570032724521258, -0.0026762829980299324, 1.4591816196158548e-10, 8.940730783653084, 4.965641139765749, 4.375333040247454, 0.7811192097028208]
-print list(cmaes_results)
+print(list(cmaes_results))
 cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
 plt.plot(voltage_results, current_results)
 plt.plot(voltage_results, cmaes_time)

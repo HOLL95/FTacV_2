@@ -6,13 +6,13 @@ start=time.time()
 from single_e_class_unified import single_electron
 from ramped_setup import FTACV_initialisation
 from harmonics_plotter import harmonics
-print "import", time.time()-start
+print("import", time.time()-start)
 types=["current", "voltage"]
 start=time.time()
 noramp_startup=FTACV_initialisation(experimental_fitting=True, file_dict={"GC4_1_cv":types, "GC4_2_cv":types, "GC4_3_cv":types}, dec_amount=4)
 ramp_startup=FTACV_initialisation(experimental_fitting=True, file_dict={"GC4_1_ramp_cv":types,}, dec_amount=64)
-print ramp_startup.current_results
-print "read", time.time()-start
+print(ramp_startup.current_results)
+print("read", time.time()-start)
 simulation_options={
     "no_transient":False,
     "numerical_debugging": False,
@@ -41,7 +41,7 @@ ramped_simulation_options={
 }
 noramp_other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(3,7,1),
+    "harmonic_range":list(range(3,7,1)),
     "experiment_time": noramp_startup.time_results["GC4_1_cv"],
     "experiment_current":noramp_startup.current_results["GC4_1_cv"],
     "experiment_voltage":noramp_startup.voltage_results["GC4_1_cv"],
@@ -51,7 +51,7 @@ noramp_other_values={
 
 ramped_other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(1,9,1),
+    "harmonic_range":list(range(1,9,1)),
     "experiment_time": ramp_startup.time_results["GC4_1_ramp_cv"],
     "experiment_current": ramp_startup.current_results["GC4_1_ramp_cv"],
     "experiment_voltage":ramp_startup.voltage_results["GC4_1_ramp_cv"],

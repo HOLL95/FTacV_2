@@ -16,7 +16,7 @@ noises=[0.05, 0.01, 0.02]
 points=[5e5]
 for lcv_1 in range(0, len(noises)):
     for lcv_2 in range(0, len(points)):
-        print points[lcv_2]
+        print(points[lcv_2])
         filename="Convergence_results_"
         points_range=int(points[lcv_2])
         params_for_opt=['E_0', 'k_0', 'Ru', 'Cdl']
@@ -82,13 +82,13 @@ for lcv_1 in range(0, len(noises)):
         updated_boundaries=[updated_lb, updated_ub]
         updated_boundaries=np.sort(updated_boundaries, 0)
         noramp.define_boundaries(updated_boundaries)
-        print updated_boundaries
+        print(updated_boundaries)
         log_liklihood=pints.UnknownNoiseLogLikelihood(mcmc_problem)
         log_prior=pints.UniformLogPrior(updated_boundaries[0],
                                         updated_boundaries[1])
         log_posterior=pints.LogPosterior(log_liklihood, log_prior)
         found_parameters=np.append(found_parameters, np.std(error)*1.5)
-        print found_parameters
+        print(found_parameters)
         xs=[found_parameters,
             found_parameters,
             found_parameters

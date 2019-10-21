@@ -25,7 +25,7 @@ class single_electron:
         else:
             self.file_init=False
 
-        key_list=dim_paramater_dictionary.keys()
+        key_list=list(dim_paramater_dictionary.keys())
         #for i in range(0, len(key_list)):
         #    self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
         self.nd_param=params(dim_paramater_dictionary)
@@ -73,7 +73,7 @@ class single_electron:
     def define_boundaries(self, param_bounds):
         self.param_bounds=param_bounds
     def def_optim_list(self, optim_list):
-        keys=self.dim_dict.keys()
+        keys=list(self.dim_dict.keys())
         for i in range(0, len(optim_list)):
             if optim_list[i] in keys:
                 continue
@@ -82,7 +82,7 @@ class single_electron:
         self.optim_list=optim_list
         param_boundaries=np.zeros((2, self.n_parameters()))
         check_for_bounds=vars(self)
-        if "param_bounds" in check_for_bounds.keys():
+        if "param_bounds" in list(check_for_bounds.keys()):
             for i in range(0, self.n_parameters()):
                     param_boundaries[0][i]=self.param_bounds[self.optim_list[i]][0]
                     param_boundaries[1][i]=self.param_bounds[self.optim_list[i]][1]
@@ -222,14 +222,14 @@ class single_electron:
                 normed_params[i]=self.un_normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         elif method=="norm":
             for i in range(0,len(param_list)):
-                print normed_params[i], self.optim_list[i],[self.boundaries[0][i],self.boundaries[1][i]]
+                print(normed_params[i], self.optim_list[i],[self.boundaries[0][i],self.boundaries[1][i]])
                 normed_params[i]=self.normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         return normed_params
     def variable_returner(self):
         variables=vars(self.nd_param)
-        for key in variables.keys():
+        for key in list(variables.keys()):
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
-                print key, variables[key]
+                print(key, variables[key])
     def pick_paramaters(self, param_vals, desired_params):
         if len(desired_params)>len(param_vals):
             raise ValueError("Too many parameters")
@@ -237,7 +237,7 @@ class single_electron:
         params=np.zeros(num_params)
         for i in range(0,num_params):
             idx=self.optim_list.index(desired_params[i])
-            print desired_params[i], idx
+            print(desired_params[i], idx)
             params[i]=param_vals[idx]
         return params
     def param_scanner(self, param_list, unit_dict, title, num_scans, param_vals=[], pc=0):
@@ -270,7 +270,7 @@ class single_electron:
                 ax.axes.get_xaxis().set_ticks([])
             true_val=param_vals[i]
             plt.title(param_list[i])
-            print param_list[i]
+            print(param_list[i])
             if pc_shift==True:
                 var_vals=np.multiply(true_val, pc_change)
             else:
@@ -311,10 +311,10 @@ class single_electron:
             e0_vals, e0_disp=self.therm_dispersion()
             k0_vals, k0_disp=self.kinetic_dispersion()
             values=list(itertools.product(e0_vals, k0_vals))
-            flags=zip(["E_0"]*len(values), ["k_0"]*len(values))
+            flags=list(zip(["E_0"]*len(values), ["k_0"]*len(values)))
             weights=list(itertools.product(e0_disp, k0_disp))
             weights=[weights[i][0]*weights[i][1] for i in range(len(weights))]
-            weight_val_tuple=zip(flags, values, weights)
+            weight_val_tuple=list(zip(flags, values, weights))
             paralell=paralell_class(self.nd_param_dict, self.time_vec, "sinusoidal", self.bounds_val, isolver_martin_brent.brent_current_solver)
             time_series=paralell.paralell_dispersion(weight_val_tuple)
 
@@ -408,8 +408,8 @@ class single_electron:
 
     def simulate(self,parameters, frequencies):
         if len(parameters)!= len(self.optim_list):
-            print self.optim_list
-            print parameters
+            print(self.optim_list)
+            print(parameters)
             raise ValueError('Wrong number of parameters')
         if self.simulation_options["label"]=="cmaes":
             normed_params=self.change_norm_group(parameters, "un_norm")

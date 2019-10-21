@@ -14,7 +14,7 @@ import copy
 import time
 class single_electron:
     def __init__(self, dim_paramater_dictionary, simulation_options, other_values):
-        key_list=dim_paramater_dictionary.keys()
+        key_list=list(dim_paramater_dictionary.keys())
         #for i in range(0, len(key_list)):
         #    self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
         self.nd_param=params(dim_paramater_dictionary)
@@ -49,7 +49,7 @@ class single_electron:
     def define_boundaries(self, param_bounds):
         self.param_bounds=param_bounds
     def def_optim_list(self, optim_list):
-        keys=self.dim_dict.keys()
+        keys=list(self.dim_dict.keys())
         for i in range(0, len(optim_list)):
             if optim_list[i] in keys:
                 continue
@@ -166,14 +166,14 @@ class single_electron:
                 normed_params[i]=self.un_normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         elif method=="norm":
             for i in range(0,len(param_list)):
-                print normed_params[i], self.optim_list[i],[self.boundaries[0][i],self.boundaries[1][i]]
+                print(normed_params[i], self.optim_list[i],[self.boundaries[0][i],self.boundaries[1][i]])
                 normed_params[i]=self.normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         return normed_params
     def variable_returner(self):
         variables=vars(self.nd_param)
-        for key in variables.keys():
+        for key in list(variables.keys()):
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
-                print key, variables[key]
+                print(key, variables[key])
     def pick_paramaters(self, param_vals, desired_params):
         if len(desired_params)>len(param_vals):
             raise ValueError("Too many parameters")
@@ -181,7 +181,7 @@ class single_electron:
         params=np.zeros(num_params)
         for i in range(0,num_params):
             idx=self.optim_list.index(desired_params[i])
-            print desired_params[i], idx
+            print(desired_params[i], idx)
             params[i]=param_vals[idx]
         return params
     def param_scanner(self, param_vals, param_list, unit_dict,percent, title, boundaries=False):
@@ -215,7 +215,7 @@ class single_electron:
             else:
                 var_vals=[self.param_bounds[param_list[i]][0], true_val, self.param_bounds[param_list[i]][1]]
             for j in range(0,3):
-                print var_vals
+                print(var_vals)
                 param_vals[i]=var_vals[j]
                 time_series=self.test_vals(param_vals, "timeseries", test=False)
                 voltages=self.define_voltages()
@@ -314,8 +314,8 @@ class single_electron:
 
     def simulate(self,parameters, frequencies, test=False):
         if len(parameters)!= len(self.optim_list):
-            print self.optim_list
-            print parameters
+            print(self.optim_list)
+            print(parameters)
             raise ValueError('Wrong number of parameters')
         if self.simulation_options["label"]=="cmaes":
             normed_params=self.change_norm_group(parameters, "un_norm")
@@ -345,7 +345,7 @@ class single_electron:
 
                     k0_vals, k0_disp=self.kinetic_dispersion()
                     weights=self.weight_matrix(e0_disp, k0_disp)
-                    print sum(k0_disp)
+                    print(sum(k0_disp))
                     for i in range(0, bins):
                         for j in range(0, bins):
                             time_series_current=solver(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[i], k0_vals[j],self.nd_param.cap_phase,self.time_vec[-1], self.time_vec, -1, self.bounds_val)

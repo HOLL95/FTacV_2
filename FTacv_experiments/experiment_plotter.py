@@ -9,7 +9,7 @@ import pints.plot
 import os
 import matplotlib.ticker as ticker
 plt.rcParams.update({'font.size': 10})
-harm_class=harmonics(range(1, 6), 8.94, 0.05)
+harm_class=harmonics(list(range(1, 6)), 8.94, 0.05)
 harmonic_no=4
 max_harm=8
 time_list=[]
@@ -81,7 +81,7 @@ for i in range(0, len(names)):
     v_array.append(voltage_results)
     c_array.append(current_results)
     t_array.append(time_results)
-    print len(current_results), len(voltage_results), len(time_results)
+    print(len(current_results), len(voltage_results), len(time_results))
 
 
 

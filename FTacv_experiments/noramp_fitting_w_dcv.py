@@ -21,7 +21,7 @@ type="current"
 type2="voltage"
 path=dir_path+data_path+folder
 files= os.listdir(path)
-print files
+print(files)
 for data in files:
     if (Method in data)  and (type in data):
         results=np.loadtxt(path+"/"+data)
@@ -36,11 +36,11 @@ Method ="PostScan"
 type="asA_3"
 path=dir_path+data_path+folder
 files= os.listdir(path)
-print files
+print(files)
 for data in files:
-    print data
+    print(data)
     if (Method in data)  and (type in data):
-        print Method
+        print(Method)
         file=open(path+"/"+data)
         results=np.loadtxt(file, skiprows=1)
 
@@ -99,7 +99,7 @@ simulation_options={
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(1,9,1),
+    "harmonic_range":list(range(1,9,1)),
     "experiment_time": time_results,
     "experiment_current": current_results,
     "experiment_voltage":voltage_results,
@@ -180,7 +180,7 @@ plt.ylabel("current")
 plt.plot(dim_voltage(dcv_voltage), dim_current(test_dcv), label="DCV")
 plt.plot(dim_voltage(noramp_voltages), dim_current(test5), label="Sinusoidal")
 plt.legend()
-print (noramp_fit.nd_param.E_reverse-noramp_fit.nd_param.E_start)
+print((noramp_fit.nd_param.E_reverse-noramp_fit.nd_param.E_start))
 plt.show()
 
 
@@ -279,7 +279,7 @@ fourier_test1=noramp_fit.kaiser_filter(synthetic_data)
 test_data=np.fft.ifft(likelihood_func)
 fourier_test=np.fft.ifft(fourier_test1)
 L=len(test)
-time_len=range(0, len(time_results))
+time_len=list(range(0, len(time_results)))
 f_len=np.linspace(0, time_results[-1], len(fourier_test))
 time_plot=np.interp(f_len, time_len, time_results)
 hann=np.hanning(L)
@@ -313,7 +313,7 @@ score = pints.SumOfSquaresError(cmaes_problem)
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(noramp_fit.optim_list))], [np.ones(len(noramp_fit.optim_list))])
 noramp_fit.simulation_options["label"]="cmaes"
 x0=abs(np.random.rand(noramp_fit.n_parameters()))#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
-print len(x0), noramp_fit.n_parameters()
+print(len(x0), noramp_fit.n_parameters())
 for i in range(0, 1):
     found_parameters, found_value=pints.optimise(
                                                 score,
@@ -322,7 +322,7 @@ for i in range(0, 1):
                                                 method=pints.CMAES
                                                 )
 cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
-print list(cmaes_results)
+print(list(cmaes_results))
 #noramp_fit.simulate(found_parameters,time_results, normalise=True, likelihood="fourier", test=True )
 cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=True)
 gamma_idx=noramp_fit.optim_list.index("gamma")
@@ -339,8 +339,8 @@ harm_class.peak_plots(time_results,voltage_results, current_results,noramp_fit.n
 plt.show()
 
 #noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=True)
-print folder
-print Method
+print(folder)
+print(Method)
 #plt.plot(time_results, true_data)
 plt.plot(time_results, cdl_time)
 plt.plot(time_results, gamma_time)
@@ -373,7 +373,7 @@ harm_class.harmonics_and_voltages(np.multiply(time_results, noramp_fit.nd_param.
 harm_class.plot_harmonics(time_results, cmaes_harmonics, data_harmonics,"phased", "numerical", "data")
 cmaes_prediction=noramp_fit.simulate(found_parameters,frequencies, normalise=True, likelihood="timeseries", test=True )
 
-print cmaes_results
+print(cmaes_results)
 
 #error=np.std(np.subtract(cmaes_prediction, likelihood_func))
 """

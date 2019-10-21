@@ -6,12 +6,12 @@ start=time.time()
 from single_e_class_unified import single_electron
 from ramped_setup import FTACV_initialisation
 from harmonics_plotter import harmonics
-print "import", time.time()-start
+print("import", time.time()-start)
 types=["current", "voltage"]
 start=time.time()
 noramp_startup=FTACV_initialisation(experimental_fitting=False, file_dict={"GC4_1_cv":types, "GC4_2_cv":types, "GC4_3_cv":types}, dec_amount=4)
 ramp_startup=FTACV_initialisation(experimental_fitting=False, file_dict={"GC4_1_ramp_cv":types,}, dec_amount=64)
-print "read", time.time()-start
+print("read", time.time()-start)
 simulation_options={
     "no_transient":False,
     "numerical_debugging": False,
@@ -40,7 +40,7 @@ ramped_simulation_options={
 }
 noramp_other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(3,7,1),
+    "harmonic_range":list(range(3,7,1)),
     "experiment_time": False,#noramp_startup.time_results["GC4_1_cv"],
     "experiment_current":False, #noramp_startup.current_results["GC4_1_cv"],
     "experiment_voltage":False,#noramp_startup.voltage_results["GC4_1_cv"],
@@ -50,7 +50,7 @@ noramp_other_values={
 
 ramped_other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(1,9,1),
+    "harmonic_range":list(range(1,9,1)),
     "experiment_time":False, #ramp_startup.time_results["GC4_1_ramp_cv"],
     "experiment_current":False, #ramp_startup.current_results["GC4_1_ramp_cv"],
     "experiment_voltage":False,#ramp_startup.voltage_results["GC4_1_ramp_cv"],
@@ -101,11 +101,11 @@ letter_counter=-1
 harm_letters=["D", "H"]
 for j in [0,1]:
     for i in range(0, harm_class.num_harmonics):
-        print (1+harm_class.num_harmonics)*normal_plots+i*2
+        print((1+harm_class.num_harmonics)*normal_plots+i*2)
         harm_axes.append(plt.subplot2grid((1+spacing+normal_plots+harm_class.num_harmonics*total_plots*plot_height,cols), ((normal_plots*(plot_height*harm_class.num_harmonics+spacing))+(i*plot_height),j), rowspan=plot_height, colspan=1))
 
         if i==0:
-            print "hey"
+            print("hey")
             letter_counter+=1
             harm_axes[counter].text(-0.1, 1.15, harm_letters[letter_counter], transform=harm_axes[counter].transAxes,
               fontsize=14, fontweight='bold', va='top', ha='right')
@@ -152,7 +152,7 @@ for i in range(0, len(ramp_harm)):
     harm_axes[harm_counter].set_ylabel(str(harm_class.harmonics[i]), rotation=0)
 
     locs=harm_axes[harm_counter].get_yticks()
-    print locs
+    print(locs)
     new_locs=np.linspace(locs[0], locs[-1], 5),2
     new_locs=[round(x,2) for x in new_locs[0]]
     harm_axes[harm_counter].set_yticks(new_locs[1:3])

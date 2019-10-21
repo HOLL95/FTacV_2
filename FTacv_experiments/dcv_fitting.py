@@ -16,7 +16,7 @@ def file_opener(files, file_path, file_dict):
     voltage_results={}
     time_results={}
     current_results={}
-    experiments=file_dict.keys()
+    experiments=list(file_dict.keys())
     for data in files:
         for keys in experiments:
             Method=keys
@@ -39,7 +39,7 @@ path=dir_path+data_path+folder
 files= os.listdir(path)
 file_dict={"PostSinusoidal":"asA_4", "IntScan":"asA_4", "PostLinearRamp":"asA_4"}
 voltages, currents, times=file_opener(files, path, file_dict)
-for files in file_dict.keys():
+for files in list(file_dict.keys()):
     plt.plot(voltages[files], currents[files], label=files)
 plt.legend()
 plt.show()
@@ -110,7 +110,7 @@ time_idx=np.where(voltage_results==max(voltage_results))
 #current_results=current_results[:time_idx[0][0]]
 dcv_fit.voltages=voltage_results
 dcv_fit.initial_val=current_results[0]
-print time_results[1]-time_results[0]
+print(time_results[1]-time_results[0])
 dcv_fit.time_vec=time_results
 signal_length=len(current_results)
 dcv_fit.num_points=signal_length
@@ -172,7 +172,7 @@ for i in range(0, len(scan_params)):
     param_range=np.linspace(param_bounds[scan_params[i]][0], param_bounds[scan_params[i]][1], 4)
     dcv_fit.optim_list=[scan_params[i]]
     for j in range(0, 4):
-        print dcv_fit.nd_param.CdlE1
+        print(dcv_fit.nd_param.CdlE1)
         test=dcv_fit.simulate([param_range[j]],frequencies, "yes", "timeseries", "no" )
         plt.plot(dcv_fit.e_nondim(voltage_results), dcv_fit.i_nondim(test), label=param_range[j])
     plt.plot(dcv_fit.e_nondim(voltage_results),dcv_fit.i_nondim(current_results), color="black")
@@ -194,7 +194,7 @@ score = pints.SumOfSquaresError(cmaes_problem)
 dcv_fit.label="cmaes"
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(dcv_fit.optim_list))], [np.ones(len(dcv_fit.optim_list))])
 x0=abs(np.random.rand(dcv_fit.n_parameters()))#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
-print len(x0), dcv_fit.n_parameters()
+print(len(x0), dcv_fit.n_parameters())
 
 found_parameters, found_value=pints.optimise(
                                             score,
@@ -206,7 +206,7 @@ cmaes_results=dcv_fit.change_norm_group(found_parameters, "un_norm")
 
 test1=dcv_fit.simulate(cmaes_results,frequencies, "no", "timeseries", "no" )
 #dcv_fit.simulate(found_parameters,time_results, normalise=True, likelihood="fourier", test=True )
-print list(cmaes_results)
+print(list(cmaes_results))
 plt.plot(dcv_fit.e_nondim(dcv_fit.voltages), dcv_fit.i_nondim(current_results), label="Data")
 plt.plot(dcv_fit.e_nondim(dcv_fit.voltages), dcv_fit.i_nondim(test1), label="Simulation")
 plt.legend()

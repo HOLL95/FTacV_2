@@ -25,7 +25,7 @@ files= os.listdir(path)
 for data in files:
     if (Method in data)  and (type in data):
         results=np.loadtxt(path+"/"+data)
-        print data
+        print(data)
 length_list=[2e4, 3e4, 4e4]
 dec_list=[8,16, 32]
 repeat_num=2
@@ -73,7 +73,7 @@ noramp_fit.throw_error=True
 #plt.show()
 noramp_fit.experimental_times=time_results
 noramp_fit.time_vec=time_results#np.arange(0, noramp_fit.nd_param.sampling_freq*5000, noramp_fit.nd_param.sampling_freq)#
-print noramp_fit.nd_param.sampling_freq
+print(noramp_fit.nd_param.sampling_freq)
 signal_length=len(current_results)
 noramp_fit.num_points=signal_length
 frequencies=np.fft.fftfreq(signal_length, noramp_fit.time_vec[1]-noramp_fit.time_vec[0])
@@ -98,7 +98,7 @@ e0_vals=np.linspace(estart, ereverse, num_vals)
 phase_vals=np.linspace(0, 2*math.pi, num_vals)
 error_mat=np.zeros((num_vals, num_vals))
 bounds_vals=np.arange(1, 20, 2)
-print param_list['E_0']
+print(param_list['E_0'])
 means=[0.15880181408980204, 649.8257646670029, 1000.1079207626844, 0.057824979417721606e-6, 6.110952927721241e-10, 8.856800099582946]
 
 

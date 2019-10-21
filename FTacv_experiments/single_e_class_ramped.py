@@ -9,7 +9,7 @@ import copy
 import time
 class single_electron:
     def __init__(self, dim_paramater_dictionary, simulation_options, other_values):
-        key_list=dim_paramater_dictionary.keys()
+        key_list=list(dim_paramater_dictionary.keys())
         self.nd_param=params(dim_paramater_dictionary)
         #for i in range(0, len(key_list)):
         #    self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
@@ -25,7 +25,7 @@ class single_electron:
         if simulation_options["no_transient"]!=False:
             self.no_transient=simulation_options["no_transient"]
         if self.simulation_options["experimental_fitting"]==True:
-            print "changing this"
+            print("changing this")
             other_values["experiment_time"]=other_values["experiment_time"][:other_values["signal_length"]]/self.nd_param.c_T0
             other_values["experiment_current"]=other_values["experiment_current"][:other_values["signal_length"]]/self.nd_param.c_I0
             other_values["experiment_voltage"]=other_values["experiment_voltage"][:other_values["signal_length"]]/self.nd_param.c_E0
@@ -120,14 +120,14 @@ class single_electron:
                 normed_params[i]=self.un_normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         elif method=="norm":
             for i in range(0,len(param_list)):
-                print normed_params[i], self.optim_list[i],[self.boundaries[0][i],self.boundaries[1][i]]
+                print(normed_params[i], self.optim_list[i],[self.boundaries[0][i],self.boundaries[1][i]])
                 normed_params[i]=self.normalise(normed_params[i], [self.boundaries[0][i],self.boundaries[1][i]])
         return normed_params
     def variable_returner(self):
         variables=vars(self.nd_param)
-        for key in variables.keys():
+        for key in list(variables.keys()):
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
-                print key, variables[key], type(variables[key])
+                print(key, variables[key], type(variables[key]))
     def transient_remover(self, start_time, times, current):
         time_idx=np.where(times>start_time)
         self.time_idx=time_idx
@@ -172,8 +172,8 @@ class single_electron:
         return results
     def simulate(self,parameters, frequencies, test=False):
         if len(parameters)!= len(self.optim_list):
-            print parameters
-            print self.optim_list
+            print(parameters)
+            print(self.optim_list)
             raise ValueError('Wrong number of parameters')
         if self.simulation_options["label"]=="cmaes":
             normed_params=self.change_norm_group(parameters, "un_norm")
@@ -198,7 +198,7 @@ class single_electron:
             for j in range(0, len(e0_vals)):
                     time_series_current=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase,  self.nd_param.cap_phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,e0_vals[j], self.nd_param.k_0,self.time_vec)
                     time_series=np.add(time_series, np.multiply(time_series_current,e0_disp[j]))
-            print np.sum(e0_disp), "TIME"
+            print(np.sum(e0_disp), "TIME")
         else:
             time_series=isolver_ramped.e_surface(self.nd_param.Cdl, self.nd_param.CdlE1, self.nd_param.CdlE2,self.nd_param.CdlE3, self.nd_param.nd_omega, self.nd_param.phase, self.nd_param.cap_phase, math.pi,self.nd_param.alpha, self.nd_param.E_start,  self.nd_param.E_reverse, self.nd_param.d_E, self.nd_param.Ru, self.nd_param.gamma,self.nd_param.E_0, self.nd_param.k_0, self.time_vec)
         if self.simulation_options["no_transient"]==True:

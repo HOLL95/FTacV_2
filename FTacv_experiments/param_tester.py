@@ -74,7 +74,7 @@ simulation_options={
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(1,9,1),
+    "harmonic_range":list(range(1,9,1)),
     "experiment_time": None,
     "experiment_current": None,
     "experiment_voltage":None,
@@ -98,7 +98,7 @@ param_ranges={
 "CdlE3_range":[-0.01, -0.005,0, 0.005, 0.01],
 "alpha_range":[0.1, 0.2,0.5, 0.7, 0.9],
 }
-param_keys=param_ranges.keys()
+param_keys=list(param_ranges.keys())
 true_params=['E_0', 'k_0', 'Ru','Cdl', 'CdlE1','CdlE2','CdlE3','alpha']
 start=time.time()
 end=np.where(noramp_params.time_vec>0.01)
@@ -125,7 +125,7 @@ if surfaces ==True:
 else:
     time_idx=[1]
 init_vals=np.linspace(-10, 10, 8)
-print init_vals
+print(init_vals)
 means=[0.217740555023939, 357.3609131669447, 382.2055036116924, 5.440677575193328e-05, 0, 1.9319598326712751e-10, 8.94098189688349, 1.406746302896052, 0.9000000005558953]
 
 list1=['E_0', 'k_0', 'Ru','Cdl', 'CdlE1','gamma','omega', 'phase','alpha']
@@ -185,11 +185,11 @@ for i in range(0, 8): #len(param_keys)
         plt.subplot(2,4,position+1)
         plt.title(parameter_name)
         #plt.plot(voltage_results, current_results)
-        print noramp_params.simulation_options["numerical_method"]
+        print(noramp_params.simulation_options["numerical_method"])
         for k in range(0, num_params):
             for q in range(0, len(list1)):
                 params_1[q]=noramp_params.dim_dict[list1[q]]
-            print list(params_1)
+            print(list(params_1))
             parameter_val=param_ranges[param_keys[i]][k]
             time_series=noramp_params.test_vals([parameter_val, 8.94], "timeseries", test=False)
             time_series=time_series[end]
