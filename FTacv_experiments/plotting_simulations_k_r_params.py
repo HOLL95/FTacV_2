@@ -83,29 +83,26 @@ noramp_simulations=single_electron(None, noramp_startup.generic_noramp_params, s
 #noramp_simulations=single_electron(ramp_startup.generic_ramped_params, ramped_simulation_options, ramped_other_values)
 harm_class=harmonics(noramp_other_values["harmonic_range"],noramp_simulations.nd_param.omega, 0.2)
 noramp_simulations.def_optim_list(["k_0", "omega"])
-omegas=[math.pi*x for x in [2, 4, 8, 32, 64]]
-k_s=[50, 100, 150, 300, 600]
-k_s2=[1000, 2000, 4000, 8000, 16000]
-#
+Rus=[50, 100, 150, 200]
+k_s=[75, 100, 125, 150]
+#k_s2=[1000, 2000, 4000, 8000, 16000]
+
+random_linestyles=["-.", "-", "--", ":"]
+random_colours=["b","g", "r", "c" ]
 #k_s=np.linspace(0.1, 0.3, 5)
-fig, ax =plt.subplots(2, len(omegas))
-for i in range(0, len(omegas)):
+#fig, ax =plt.subplots(1, len(Rus))
+for i in range(0, len(Rus)):
     for j in range(0, len(k_s)):
-        noramp_startup.generic_noramp_params["omega"]=omegas[i]
-        noramp_simulations=single_electron(None, noramp_startup.generic_noramp_params, simulation_options, noramp_other_values, param_bounds)
-        noramp_simulations.def_optim_list(["k_0", "omega"])
-        time_series1=noramp_simulations.test_vals([k_s[j], omegas[i]], "timeseries")
-        time_series2=noramp_simulations.test_vals([k_s2[j], omegas[i]], "timeseries")
+        #noramp_startup.generic_noramp_params["omega"]=omegas[i]
+        #noramp_simulations=single_electron(None, noramp_startup.generic_noramp_params, simulation_options, noramp_other_values, param_bounds)
+        noramp_simulations.def_optim_list(["k_0", "Ru"])
+        time_series1=noramp_simulations.test_vals([k_s[j], Rus[i]], "timeseries")
         voltages=noramp_simulations.define_voltages()
         #ax[i].plot(noramp_simulations.time_vec, voltages)
-        ax[0,i].plot(voltages[val:], time_series1, label="$k^0=$"+str(k_s[j]))
-        ax[1,i].plot(voltages[val:], time_series2, label="$k^0=$"+str(k_s2[j]))
-    ax[0,i].set_title('$\\omega$='+ str(omegas[i]/math.pi)+"$\pi$")
-    ax[0,i].set_xlabel("Voltage(V)")
-    ax[0,i].set_ylabel("Current(mA)")
-    ax[0,i].legend()
-    ax[1,i].set_title('$\\omega$='+ str(omegas[i]/math.pi)+"$\pi$")
-    ax[1,i].set_xlabel("Voltage(V)")
-    ax[1,i].set_ylabel("Current(mA)")
-    ax[1,i].legend()
+        plt.plot(voltages[val:], time_series1, label=str(k_s[j])+"_"+str(Rus[i]), linestyle=random_linestyles[i], color=random_colours[j])
+    #ax[i].set_title('Ru='+ str(Rus[i]))
+    #ax[i].set_xlabel("Voltage(V)")
+    #ax[i].set_ylabel("Current(mA)")
+    #ax[i].legend()
+plt.legend()
 plt.show()

@@ -5,9 +5,9 @@ import pints.plot
 import os
 import matplotlib.ticker as ticker
 def chain_appender(chains, param):
-    new_chain=chains[0, 5000:, param]
+    new_chain=chains[0, :, param]
     for i in range(1, len(chains)):
-        new_chain=np.append(new_chain, chains[i, 5000:, param])
+        new_chain=np.append(new_chain, chains[i, :, param])
     return new_chain
 def plot_params(titles, set_chain):
     for i in range(0, len(titles)):
@@ -118,13 +118,15 @@ num_params=len(optim_list)
 electrode="Yellow"
 folder="MCMC_runs"
 for i in range(1, 6):
-    filename="Noramp_3_fourier_MCMC_"+str(i)
+    filename="Noramp_3_fourier_MCMC_"+str(i)#+"_run2"
     chains=np.load(("/").join([electrode, folder, filename]))
 #chains2=np.load('GC4_MCMC_1_low_ru')
     pints.plot.trace(chains)
-    #plot_params(titles,chains)
+    #
     #plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.30, hspace=0.33)
 #plot_params(titles, chains2)
+    plt.show()
+    plot_params(titles,chains[1:, 30000:, :])
     plt.show()
 """
 optim_list=['E_0','k_0', 'Ru',"Cdl","CdlE1", "CdlE2",'gamma', "omega","phase", "cap_phase", "alpha","noise"]

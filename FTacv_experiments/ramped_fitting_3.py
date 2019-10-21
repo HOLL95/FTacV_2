@@ -13,7 +13,7 @@ types=["current", "voltage"]
 exp="Experimental-120919"
 bla="Blank-110919"
 resistances=["high_ru", "low_ru", "fixed_ru"]
-ru_upper_bound=[1e4, 85, 50]
+ru_upper_bound=[200, 85, 50]
 ru_pick=0
 resistance_type=resistances[ru_pick]
 print resistance_type
@@ -26,7 +26,7 @@ data_path="/experiment_data_2/"+exp_type
 Electrode="Yellow"
 folder="Ramped"
 
-Method ="3dec_cv"
+Method ="2dec_cv"
 type="current"
 type2="voltage"
 path=("/").join([dir_path, data_path, folder, Electrode])
@@ -131,12 +131,23 @@ sim_volts=ramp_fit.define_voltages()
 time_results=ramp_fit.other_values["experiment_time"]
 current_results=ramp_fit.other_values["experiment_current"]
 voltage_results=ramp_fit.other_values["experiment_voltage"]
-plt.plot(time_results, voltage_results)
-plt.plot(ramp_fit.time_vec, sim_volts)
-plt.show()
+
 #ramp_fit.def_optim_list(["E0_mean","E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
-ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2","CdlE3",'omega',"phase"])
+ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2","CdlE3",'omega'])
 ramp_fit.dim_dict["gamma"]=0
+blank_params=[[4.935278186731851, 6.53922500129266e-05, -0.010027952214194474, -0.000120463926091368, 1.6440371959129674e-05, 8.828862457999545],
+            [1735.848562286573, 7.387153313864618e-05, -0.010118667659211301, -0.00027396481928436064, 2.3648787718632755e-05, 8.828834554751786]]
+
+
+
+#sim_time=ramp_fit.test_vals(blank_params, "timeseries")
+#plt.plot(time_results1, sim_time, label="Simulations")
+#plt.plot(time_results1, current_results, alpha=0.5, label="Data")
+#plt.plot(time_results1, np.subtract(current_results, sim_time), label="Residual")
+#plt.legend()
+#plt.xlabel("Nondim time")
+#plt.ylabel("Nondim current")
+#plt.show()
 #ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])
 #ramp_fit.dim_dict["gamma"]=0
 if ru_pick==2:
@@ -144,6 +155,8 @@ if ru_pick==2:
     ramp_fit.dim_dict["Ru"]=65
     #ramp_fit.dim_dict["alpha"]=0.5
 true_data=current_results
+ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2","CdlE3",'omega'])
+ramp_fit.dim_dict["phase"]=0
 fourier_arg=ramp_fit.kaiser_filter(current_results)
 if simulation_options["likelihood"]=="timeseries":
     cmaes_problem=pints.SingleOutputProblem(ramp_fit, time_results, true_data)
@@ -169,6 +182,7 @@ for i in range(0, num_runs):
     found_parameters, found_value=cmaes_fitting.run()
     cmaes_results=ramp_fit.change_norm_group(found_parameters, "un_norm")
     print list(cmaes_results)
+    print ramp_fit.dim_dict["phase"]
     cmaes_time=ramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
     cmaes_fourier=ramp_fit.test_vals(cmaes_results, likelihood="fourier", test=False)
     param_mat[i,:]=cmaes_results
