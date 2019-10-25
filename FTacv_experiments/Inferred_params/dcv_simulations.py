@@ -6,26 +6,6 @@ import scipy
 import copy
 import pints
 import pints.plot
-def chain_appender(chains, param):
-    new_chain=chains[0, :, param]
-    for i in range(1, len(chains)):
-        new_chain=np.append(new_chain, chains[i, :, param])
-    return new_chain
-def plot_params(titles, set_chain):
-    for i in range(0, len(titles)):
-        print(i)
-        axes=plt.subplot(3,5,i+1)
-        plot_chain=chain_appender(set_chain, i)
-        if abs(np.mean(plot_chain))<0.001:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3e'))
-        else:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
-        axes.hist(plot_chain, alpha=0.4,bins=20, stacked=True, edgecolor='black')
-        lb, ub = axes.get_xlim( )
-        axes.set_xticks(np.linspace(lb, ub, 4))
-        axes.set_xlabel(titles[i])
-        axes.set_ylabel('frequency')
-        axes.set_title(graph_titles[i])
 dir_path = os.path.dirname(os.path.realpath(__file__))
 slash_idx=[i for i in range(len(dir_path)) if dir_path[i]=="/"]
 one_above=dir_path[:slash_idx[-1]]
@@ -197,7 +177,7 @@ dcv_results.def_optim_list(["E0_mean", "E0_std","k_0","gamma","Ru","alpha"])#, "
 dcv_results.simulation_options["likelihood"]="timeseries"
 dcv_results.simulation_options["label"]="cmaes"
 dcv_results.simulation_options["test"]=False
-"""
+
 cmaes_problem=pints.SingleOutputProblem(dcv_results, dcv_results.other_values["experiment_time"], objective_func)
 score = pints.SumOfSquaresError(cmaes_problem)
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(dcv_results.optim_list))], [np.ones(len(dcv_results.optim_list))])
@@ -213,8 +193,7 @@ print(list(cmaes_results))
 cmaes_time=dcv_results.test_vals(cmaes_results, "timeseries")
 plt.plot(dcv_results.other_values["experiment_time"], dcv_results.other_values["experiment_current"], label="data")
 plt.plot(dcv_results.other_values["experiment_time"], objective_func, label="objective function")
-plt.plot(dcv_results.other_values["experiment_time"], cmaes_time, label="simulation")
-plt.legend()
+plt.plot(dcv_results.other_values["experiment_time"], cmaes_time, label="simulations")
 plt.show()
 dcv_results.simulation_options["label"]="MCMC"
 mcmc_problem=cmaes_problem=pints.SingleOutputProblem(dcv_results, dcv_results.other_values["experiment_time"], objective_func)
@@ -238,10 +217,6 @@ mcmc.set_max_iterations(15000)
 chains=mcmc.run()
 pints.plot.trace(chains)
 plt.show()
-"""
-save_file="DCV_MCMC_2_1"
-chains=np.load(("/").join([dir_path,Electrode,"DCV", "MCMC_runs", save_file]), "r")
-
 inferred_params=np.zeros(len(dcv_results.optim_list))
 for i in range(0, len(dcv_results.optim_list)):
     inferred_params[i]=np.mean(chains[:, 5000:, i])
@@ -250,7 +225,7 @@ print(list(inferred_params))
 plt.plot(times, mcmc_results)
 plt.plot(times, objective_func)
 plt.show()
-
+save_file="DCV_MCMC_2_1"
 f=open(("/").join([dir_path,Electrode,"DCV", "MCMC_runs", save_file]), "wb")
 np.save(f, chains)
 f.close()

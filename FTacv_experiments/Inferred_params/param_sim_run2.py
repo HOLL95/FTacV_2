@@ -9,7 +9,8 @@ one_above=dir_path[:slash_idx[-1]]
 sys.path.insert(1, one_above)
 from single_e_class_unified import single_electron
 Electrode="Yellow"
-path=("/").join([dir_path , Electrode])
+run="Run_2"
+path=("/").join([dir_path , Electrode, run])
 files=os.listdir(path)#
 file_numbers=[]
 counter=1
@@ -52,6 +53,6 @@ for lcv_1 in range(0, len(cols)):
 #fig.text(0.05, 0.5, 'Nondim current', ha='center', va='center', rotation='vertical')
 plt.show()
 for i in range(0, len(results_array)):
-    print results_array[i]
+    print(results_array[i])
 #with open("alice_yellow_params.pkl", "wb") as f:
 #    pickle.dump([name_list, results_array], f)

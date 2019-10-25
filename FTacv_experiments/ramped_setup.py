@@ -46,7 +46,7 @@ class FTACV_initialisation:
             'v': 10.36e-3,   #       (scan rate s^-1)
             'area': 0.07, #(electrode surface area cm^2)
             'Ru': 1.0,  #     (uncompensated resistance ohms)
-            'Cdl': 1e-5, #(capacitance parameters)
+            'Cdl': 0, #(capacitance parameters)
             'CdlE1': 0,#0.000653657774506,
             'CdlE2': 0,#0.000245772700637,
             'CdlE3': 0,#1.10053945995e-06,
@@ -61,10 +61,10 @@ class FTACV_initialisation:
             "k0_scale":50,
             "k0_range":1e3,
             "cap_phase":3*(math.pi/2),
-            'sampling_freq' : (1.0/200),
+            'sampling_freq' : (1.0/50000),
             'phase' : 3*(math.pi/2),
             "time_end": None,
-            'num_peaks': 10
+            'num_peaks': 5
         }
         self.generic_ramped_params={
             "E_0":0.25,

@@ -15,8 +15,8 @@ class single_electron:
     def __init__(self,file_name="", dim_paramater_dictionary={}, simulation_options={}, other_values={}, param_bounds={}):
         if len(dim_paramater_dictionary)==0 and len(simulation_options)==0 and len(other_values)==0:
             self.file_init=True
-            file=open(file_name, "r")
-            save_dict=pickle.load(file)
+            file=open(file_name, "rb")
+            save_dict=pickle.load(file, encoding="latin1")
             dim_paramater_dictionary=save_dict["param_dict"]
             simulation_options=save_dict["simulation_opts"]
             other_values=save_dict["other_vals"]
@@ -59,7 +59,7 @@ class single_electron:
                 self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.nd_omega)*2*math.pi
             else:
                 self.nd_param.time_end=2*(self.nd_param.E_reverse-self.nd_param.E_start)
-            self.times(other_values["signal_length"])
+            self.times()
         frequencies=np.fft.fftfreq(len(self.time_vec), self.time_vec[1]-self.time_vec[0])
         self.frequencies=frequencies[np.where(frequencies>0)]
         last_point= (self.harmonic_range[-1]*self.nd_param.omega)+(self.nd_param.omega*self.filter_val)
@@ -211,10 +211,9 @@ class single_electron:
                     "params":params, "optim_list":self.optim_list}
         pickle.dump(save_dict, file, pickle.HIGHEST_PROTOCOL)
         file.close()
-    def times(self, num_points):
-        self.num_points=num_points
-        #self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
-        self.time_vec=np.linspace(0, self.nd_param.time_end, num_points)
+    def times(self):
+        self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
+        #self.time_vec=np.linspace(0, self.nd_param.time_end, num_points)
     def change_norm_group(self, param_list, method):
         normed_params=copy.deepcopy(param_list)
         if method=="un_norm":
@@ -415,11 +414,13 @@ class single_electron:
             normed_params=self.change_norm_group(parameters, "un_norm")
         else:
             normed_params=copy.deepcopy(parameters)
+        #print(list(normed_params))
         for i in range(0, len(self.optim_list)):
             self.dim_dict[self.optim_list[i]]=normed_params[i]
         if self.phase_only==True:
             self.dim_dict["cap_phase"]=self.dim_dict["phase"]
         self.nd_param=params(self.dim_dict)
+        #print(self.dim_dict["Ru"])
         self.nd_param_dict=self.nd_param.nd_param_dict
         if self.simulation_options["numerical_method"]=="Brent minimisation":
             solver=isolver_martin_brent.brent_current_solver
@@ -433,6 +434,7 @@ class single_electron:
             self.numerical_plots(solver)
         else:
             if self.simulation_options["dispersion"]==True:
+                #print("dispersion")
                 time_series=self.paralell_disperse(solver)
             else:
                 time_series=solver(self.nd_param_dict, self.time_vec, self.simulation_options["method"],-1, self.bounds_val)

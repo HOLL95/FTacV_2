@@ -144,7 +144,7 @@ for lcv_1 in range(3, 4):
         dummy_times=np.linspace(0, 1, len(fourier_arg))
         cmaes_problem=pints.SingleOutputProblem(noramp_fit, dummy_times, fourier_arg)
     score = pints.SumOfSquaresError(cmaes_problem)#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
-    CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(noramp_fit.optim_list))], [np.ones(len(noramp_fit.optim_list))])
+    CMAES_boundaries=pints.RectangularBoundaries(list([np.zeros(len(noramp_fit.optim_list))]), list([np.ones(len(noramp_fit.optim_list))]))
     noramp_fit.simulation_options["label"]="cmaes"
     #noramp_fit.simulation_options["test"]=True
     num_runs=10
@@ -154,7 +154,7 @@ for lcv_1 in range(3, 4):
         x0=abs(np.random.rand(noramp_fit.n_parameters()))#noramp_fit.change_norm_group(gc4_3_low_ru, "norm")
         print(noramp_fit.change_norm_group(x0, "un_norm"))
         cmaes_fitting=pints.Optimisation(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
-        cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
+        #cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
         if "E0_mean" in noramp_fit.optim_list and "k0_loc" in noramp_fit.optim_list:
             cmaes_fitting.set_parallel(False)
         else:

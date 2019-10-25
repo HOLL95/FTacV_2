@@ -23,13 +23,13 @@ def find(name, path, Electrode):
         if Electrode in dirs:
             files=os.listdir(root+"/"+Electrode)
             if name in files:
-                print name
+                print(name)
                 return np.loadtxt(root+"/"+Electrode+"/"+name)
 param_dict={}
 for lcv_1 in range(0, len(cols)):
     for lcv_2 in range(0, len(rows)):
         filename=("_").join(["Noramp", rows[lcv_2], "cv", cols[lcv_1], "ru"])+"."
-        print filename
+        print(filename)
         result=single_electron(path+"/"+filename)
         param_dict[rows[lcv_2]+"_"+cols[lcv_1]]=result.save_dict["params"][0]
 voltage_results=find(ramped_voltage, one_above, Electrode)
@@ -82,7 +82,7 @@ simulation_options_ramped={
 
 ramp_other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(2,6,1),
+    "harmonic_range":list(range(2,6,1)),
     "experiment_time": time_results,
     "experiment_current":current_results, #noramp_startup.current_results["GC4_1_cv"],
     "experiment_voltage":voltage_results[:,1],#noramp_startup.voltage_results["GC4_1_cv"],
@@ -96,7 +96,7 @@ current_results=ramped_results.other_values["experiment_current"]
 harm_class=harmonics(ramped_results.other_values["harmonic_range"], ramped_results.nd_param.omega*ramped_results.nd_param.c_T0, 0.05)
 #results_dict={"1_experimental": current_results}
 results_dict={}
-for keys in param_dict.keys():
+for keys in list(param_dict.keys()):
     if "fixed" in keys:
         ramped_results.def_optim_list(["E0_mean", "E0_std","k_0","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
         ramped_results.dim_dict["Ru"]=65
@@ -110,11 +110,11 @@ plot_dict_0={
     "experimental_harmonics":ramped_results.i_nondim(data_harmonics),
     "experimental_time_series":ramped_results.i_nondim(current_results),
 }
-print ramped_results.dim_dict["phase"]
-for keys in results_dict.keys():
+print(ramped_results.dim_dict["phase"])
+for keys in list(results_dict.keys()):
 
     current_time=results_dict[keys]
-    print len(current_time)
+    print(len(current_time))
     plot_dict_0[keys[keys.index("_")+1:]+"zresistace_harmonics"]=ramped_results.i_nondim(harm_class.generate_harmonics(time_results, current_time))
     plot_dict_0[keys[keys.index("_")+1:]+"zresistace_time_series"]=ramped_results.i_nondim(current_time)
 harm_class.harmonics_and_time(ramped_results.t_nondim(time_results),"Yellow2", "abs", **plot_dict_0)

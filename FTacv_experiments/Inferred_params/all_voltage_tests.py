@@ -21,7 +21,7 @@ def find(name, path, Electrode, skiprows=0):
         if Electrode in dirs:
             files=os.listdir(root+"/"+Electrode)
             if name in files:
-                print name
+                print(name)
                 return np.loadtxt(root+"/"+Electrode+"/"+name, skiprows=skiprows)
 def change_param(params, optim_list, parameter, value):
     param_list=copy.deepcopy(params)
@@ -91,7 +91,7 @@ simulation_options_dcv={
 }
 dcv_other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(2,6,1),
+    "harmonic_range":list(range(2,6,1)),
     "experiment_time": dcv_times,
     "experiment_current":dcv_data, #noramp_startup.current_results["GC4_1_cv"],
     "experiment_voltage":dcv_voltages,#noramp_startup.voltage_results["GC4_1_cv"],
@@ -116,7 +116,7 @@ for i in range(0, len(class_list)):
     result=class_list[i]
     param_list.append([result.save_dict["params"][0][result.save_dict["optim_list"].index(key)] if  (key in result.save_dict["optim_list"]) else result.dim_dict[key] for key in master_optim_list])
 for i in range(0, len(param_list)):
-    print param_list
+    print(param_list)
 for i in range(0, len(simulation_classes)):
     simulation_classes[i].def_optim_list(master_optim_list)
 
@@ -125,8 +125,8 @@ ramped_simulation_list=[]
 dcv_simulation_list=[]
 noramp_ts_class.dim_dict["omega"]=8.940641321267664
 ramped_class.dim_dict["omega"]=8.884904955014296
-ramp_harm=harmonics(range(2, 6), ramped_class.nd_param.omega, 0.1)
-noramp_harm=harmonics(range(2, 6), noramp_ts_class.nd_param.omega, 0.1)
+ramp_harm=harmonics(list(range(2, 6)), ramped_class.nd_param.omega, 0.1)
+noramp_harm=harmonics(list(range(2, 6)), noramp_ts_class.nd_param.omega, 0.1)
 for i in range(0, len(param_list)):
     dcv_params=change_param(copy.deepcopy(param_list[i]), master_optim_list, "Cdl", 0)
     if i==1:
@@ -145,8 +145,8 @@ num_plots=5
 seperation=1
 rows=num_plots*num_harmonics+(num_plots-1)
 cols=plot_width*num_runs+(num_runs-1)
-ts_row_idx=np.multiply(range(0, 3),((num_harmonics+seperation)*2))
-harm_idx=np.multiply(range(1, 4, 2), (num_harmonics+seperation))
+ts_row_idx=np.multiply(list(range(0, 3)),((num_harmonics+seperation)*2))
+harm_idx=np.multiply(list(range(1, 4, 2)), (num_harmonics+seperation))
 sinusoidal_axes=[]
 ramped_axes=[]
 dcv_axes=[]
@@ -160,7 +160,7 @@ for i in range(0, num_runs):
 for i in range(0, num_runs):
     for j in range(0, num_harmonics):
         sinusoidal_harm_axes.append(plt.subplot2grid((rows, cols), (harm_idx[0]+j, i*(seperation+plot_width)), rowspan=1, colspan=plot_width))
-        print harm_idx[0]+j, i*(seperation+plot_width)
+        print(harm_idx[0]+j, i*(seperation+plot_width))
         ramped_harm_axes.append(plt.subplot2grid((rows, cols), (harm_idx[1]+j, i*(seperation+plot_width)), rowspan=1, colspan=plot_width))
 noramp_harmonics=[]
 noramp_data_harms=noramp_harm.generate_harmonics(noramp_time, noramp_current)

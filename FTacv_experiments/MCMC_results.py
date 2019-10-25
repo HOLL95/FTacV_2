@@ -10,14 +10,18 @@ Electrode="Yellow"
 run="Run_2"
 file="Noramp_3_cv_fixed_ru.fixed_alpha"
 
-master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","cap_phase","phase","alpha"]
+master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","cap_phase","phase"]
 noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run, file]))
 param_vals=([noramp_results.save_dict["params"][0][noramp_results.save_dict["optim_list"].index(key)] if  (key in noramp_results.save_dict["optim_list"]) else noramp_results.dim_dict[key] for key in master_optim_list])
+
 noramp_results.def_optim_list(master_optim_list)
 method="timeseries"
-
+noramp_results.dim_dict["alpha"]=0.5
+noramp_results.param_bounds["k_0"]=[0, 1e4]
+noramp_results.param_bounds["Ru"]=[0, 400]
 cmaes_time=noramp_results.test_vals(param_vals, method)
 noramp_results.simulation_options["likelihood"]=method
+noramp_results.simulation_options["dispersion_bins"]=20
 current_results=noramp_results.other_values["experiment_current"]
 voltage_results=noramp_results.other_values["experiment_voltage"]
 time_results=noramp_results.other_values["experiment_time"]
@@ -32,8 +36,8 @@ mcmc_problem=pints.SingleOutputProblem(noramp_results, fit_times, fit_data)
 
 #updated_lb=np.append([noramp_results.param_bounds[key][0] for key in master_optim_list],0.75*error)
 #updated_ub=np.append([noramp_results.param_bounds[key][1] for key in master_optim_list], 1.25*error)
-updated_lb=np.append(np.multiply(param_vals, 0.75),0.75*error)
-updated_ub=np.append(np.multiply(param_vals, 1.25), 1.25*error)
+updated_lb=np.append([noramp_results.param_bounds[x][0] for x in master_optim_list],0.5*error)
+updated_ub=np.append([noramp_results.param_bounds[x][1] for x in master_optim_list], 1.5*error)
 for i in range(0, len(updated_lb)-1):
     print(updated_lb[i],param_vals[i], updated_ub[i])
 updated_b=[updated_lb, updated_ub]
@@ -48,7 +52,7 @@ xs=[mcmc_parameters,
     mcmc_parameters
     ]
 noramp_results.simulation_options["label"]="MCMC"
-for i in range(0,8):
+for i in range(0,5):
     mcmc = pints.MCMCSampling(log_posterior, 3, xs,method=pints.AdaptiveCovarianceMCMC)
     mcmc.set_parallel(True)
     mcmc.set_max_iterations(50000)
@@ -56,7 +60,7 @@ for i in range(0,8):
     #pints.plot.trace(chains)
     #print file
     #plt.show()
-    save_file="Noramp_3_"+method+"MCMC_"+str(i+1)+"_run2"
-    f=open(("/").join([dir_path, results_dict,Electrode, "MCMC_runs", save_file]), "w")
+    save_file="Noramp_3_"+method+"MCMC_"+str(i+1)+"_run8"
+    f=open(("/").join([dir_path, results_dict,Electrode, "MCMC_runs", save_file]), "wb")
     np.save(f, chains)
     f.close()

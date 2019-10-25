@@ -54,7 +54,7 @@ optim_list=["",'E0_mean', "E0_std","k_0","Ru", "Cdl","CdlE1","CdlE2", "gamma", "
 name_list=[fancy_names[x] for x in optim_list]
 with open("alice_yellow_params.pkl", "rb") as f:
     my_list=pickle.load(f)
-print my_list[0]
+print(my_list[0])
 values=my_list[1:]
 names=my_list[0]
 f =open("image_tex_test.tex", "r")

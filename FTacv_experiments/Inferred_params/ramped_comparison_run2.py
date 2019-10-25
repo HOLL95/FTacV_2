@@ -23,7 +23,7 @@ def find(name, path, Electrode):
         if Electrode in dirs:
             files=os.listdir(root+"/"+Electrode)
             if name in files:
-                print name
+                print(name)
                 return np.loadtxt(root+"/"+Electrode+"/"+name)
 param_dict={}
 filename_1=["Ramped_3_cv_high_ru.ts"]
@@ -88,7 +88,7 @@ simulation_options_ramped={
 
 ramp_other_values={
     "filter_val": 0.5,
-    "harmonic_range":range(2,6,1),
+    "harmonic_range":list(range(2,6,1)),
     "experiment_time": time_results,
     "experiment_current":current_results, #noramp_startup.current_results["GC4_1_cv"],
     "experiment_voltage":voltage_results[:,1],#noramp_startup.voltage_results["GC4_1_cv"],
@@ -109,7 +109,7 @@ harm_class=harmonics(ramped_results.other_values["harmonic_range"], ramped_resul
 #results_dict={"1_experimental": current_results}
 results_dict={}
 
-file_keys=optim_dict.keys()
+file_keys=list(optim_dict.keys())
 
 for keys in file_keys:
     counter=-1
@@ -121,10 +121,10 @@ for keys in file_keys:
     #optim_dict[keys][ramped_results.optim_list.index("cap_phase")]=0
     #optim_dict[keys][ramped_results.optim_list.index("phase")]=0
     #optim_dict[keys][ramped_results.optim_list.index("omega")]=8.89
-    print keys
+    print(keys)
     time_series=ramped_results.test_vals(optim_dict[keys], "timeseries")
-    print label
-    print optim_dict[keys]
+    print(label)
+    print(optim_dict[keys])
 
     results_dict[label]=ramped_results.i_nondim(time_series)
     data_harms=harm_class.generate_harmonics(time_results, time_series)

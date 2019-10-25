@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import scipy
 import copy
 import pints
@@ -14,7 +15,7 @@ def chain_appender(chains, param):
 def plot_params(titles, set_chain):
     for i in range(0, len(titles)):
         print(i)
-        axes=plt.subplot(3,5,i+1)
+        axes=plt.subplot(2,4,i+1)
         plot_chain=chain_appender(set_chain, i)
         if abs(np.mean(plot_chain))<0.001:
             axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3e'))
@@ -189,7 +190,6 @@ print(dcv_results.param_bounds)
 fitted_blank=np.append(fitted1(time1), fitted2(time2))
 objective_func=np.subtract(current_results, fitted_blank)
 
-
 #dcv_results=single_electron(None, dcv_params, simulation_options_dcv, dcv_other_values, result.param_bounds)
 dcv_results.param_bounds["k_0"]=[0, 1e4]
 dcv_results.param_bounds["Ru"]=[0, 1e4]
@@ -197,7 +197,7 @@ dcv_results.def_optim_list(["E0_mean", "E0_std","k_0","gamma","Ru","alpha"])#, "
 dcv_results.simulation_options["likelihood"]="timeseries"
 dcv_results.simulation_options["label"]="cmaes"
 dcv_results.simulation_options["test"]=False
-"""
+
 cmaes_problem=pints.SingleOutputProblem(dcv_results, dcv_results.other_values["experiment_time"], objective_func)
 score = pints.SumOfSquaresError(cmaes_problem)
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(dcv_results.optim_list))], [np.ones(len(dcv_results.optim_list))])
@@ -238,17 +238,92 @@ mcmc.set_max_iterations(15000)
 chains=mcmc.run()
 pints.plot.trace(chains)
 plt.show()
-"""
-save_file="DCV_MCMC_2_1"
-chains=np.load(("/").join([dir_path,Electrode,"DCV", "MCMC_runs", save_file]), "r")
+
 
 inferred_params=np.zeros(len(dcv_results.optim_list))
 for i in range(0, len(dcv_results.optim_list)):
     inferred_params[i]=np.mean(chains[:, 5000:, i])
 mcmc_results=dcv_results.test_vals(inferred_params, "timeseries")
+Titles={
+    'omega':'Input frequency',#8.88480830076,  #    (frequency Hz)
+    'd_E': "Amplitude",   #(ac voltage amplitude - V) freq_range[j],#
+    'v': "Scan rate",   #       (scan rate s^-1)
+    'area': "Area", #(electrode surface area cm^2)
+    'Ru': "Uncompensated resistance",  #     (uncompensated resistance ohms)
+    'Cdl': "Linear capacitance", #(capacitance parameters)
+    'CdlE1': "First order capacitance",#0.000653657774506,
+    'CdlE2': "Second order capacitance",#0.000245772700637,
+    'CdlE3': "Third order capacitance",#1.10053945995e-06,
+    'gamma': 'Surface coverage',
+    'k_0': 'Rate constant', #(reaction rate s-1)
+    'alpha': "Symmetry factor",
+    "E0_mean":"Themodynamic mean",
+    "E0_std": "Thermodynamic standard deviation",
+    "cap_phase":"Capacitance phase",
+    'phase' : "Phase",
+    "":"Experiment",
+    "noise":"Noise",
+}
+unit_dict={
+    "E_0": "V",
+    'E_start': "V", #(starting dc voltage - V)
+    'E_reverse': "V",
+    'omega':"Hz",#8.88480830076,  #    (frequency Hz)
+    'd_E': "V",   #(ac voltage amplitude - V) freq_range[j],#
+    'v': '$s^{-1}$',   #       (scan rate s^-1)
+    'area': '$cm^{2}$', #(electrode surface area cm^2)
+    'Ru': "$\\Omega$",  #     (uncompensated resistance ohms)
+    'Cdl': "F", #(capacitance parameters)
+    'CdlE1': "",#0.000653657774506,
+    'CdlE2': "",#0.000245772700637,
+    'CdlE3': "",#1.10053945995e-06,
+    'gamma': 'mol cm^{-2}$',
+    'k_0': 's^{-1}$', #(reaction rate s-1)
+    'alpha': "",
+    "E0_mean":"V",
+    "E0_std": "V",
+    "k0_shape":"",
+    "k0_loc":"",
+    "k0_scale":"",
+    "cap_phase":"rads",
+    'phase' : "rads",
+    "":"",
+    "noise":"",
+}
+fancy_names={
+    "E_0": '$E^0$',
+    'E_start': '$E_{start}$', #(starting dc voltage - V)
+    'E_reverse': '$E_{reverse}$',
+    'omega':'$\\omega$',#8.88480830076,  #    (frequency Hz)
+    'd_E': "$\\Delta E$",   #(ac voltage amplitude - V) freq_range[j],#
+    'v': "v",   #       (scan rate s^-1)
+    'area': "Area", #(electrode surface area cm^2)
+    'Ru': "Ru",  #     (uncompensated resistance ohms)
+    'Cdl': "$C_{dl}$", #(capacitance parameters)
+    'CdlE1': "$C_{dlE1}$",#0.000653657774506,
+    'CdlE2': "$C_{dlE2}$",#0.000245772700637,
+    'CdlE3': "$C_{dlE3}$",#1.10053945995e-06,
+    'gamma': '$\\Gamma',
+    'k_0': '$k_0', #(reaction rate s-1)
+    'alpha': "$\\alpha$",
+    "E0_mean":"$E^0 \\mu$",
+    "E0_std": "$E^0 \\sigma$",
+    "cap_phase":"Capacitance phase",
+    'phase' : "Phase",
+    "":"Experiment",
+    "noise":"$\sigma$",
+}
+#f=open(filename, "r")
+optim_list=['E0_mean',"E0_std",'k_0','gamma',"Ru", "alpha", "noise"]
+titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
+graph_titles=[Titles[x] for x in optim_list]
+plot_params(titles, chains[:, 5000:, :])
+plt.show()
 print(list(inferred_params))
 plt.plot(times, mcmc_results)
 plt.plot(times, objective_func)
+plt.xlabel("Nondim Current")
+plt.ylabel("Nondim Time")
 plt.show()
 
 f=open(("/").join([dir_path,Electrode,"DCV", "MCMC_runs", save_file]), "wb")

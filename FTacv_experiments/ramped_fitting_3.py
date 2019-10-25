@@ -133,21 +133,27 @@ current_results=ramp_fit.other_values["experiment_current"]
 voltage_results=ramp_fit.other_values["experiment_voltage"]
 
 #ramp_fit.def_optim_list(["E0_mean","E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
-ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2","CdlE3",'omega'])
+ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2","CdlE3",'omega', "phase"])
 ramp_fit.dim_dict["gamma"]=0
-blank_params=[[4.935278186731851, 6.53922500129266e-05, -0.010027952214194474, -0.000120463926091368, 1.6440371959129674e-05, 8.828862457999545],
-            [1735.848562286573, 7.387153313864618e-05, -0.010118667659211301, -0.00027396481928436064, 2.3648787718632755e-05, 8.828834554751786]]
+blank_params=[[4.935278186731851, 6.53922500129266e-05, -0.010027952214194474, -0.000120463926091368, 1.6440371959129674e-05, 8.828862457999545, 5.846494748996116],
+            [1735.848562286573, 7.387153313864618e-05, -0.010118667659211301, -0.00027396481928436064, 2.3648787718632755e-05, 8.828834554751786, 0]]
 
-
-
-#sim_time=ramp_fit.test_vals(blank_params, "timeseries")
-#plt.plot(time_results1, sim_time, label="Simulations")
-#plt.plot(time_results1, current_results, alpha=0.5, label="Data")
-#plt.plot(time_results1, np.subtract(current_results, sim_time), label="Residual")
-#plt.legend()
-#plt.xlabel("Nondim time")
-#plt.ylabel("Nondim current")
-#plt.show()
+plt.subplot(1,3,1)
+plt.plot(time_results, current_results,label="Data")
+plt.xlabel("Nondim time")
+plt.ylabel("Nondim current")
+plt.legend()
+for i in range(0, len(blank_params)):
+    plt.subplot(1,3,i+2)
+    sim_time=ramp_fit.test_vals(blank_params[i], "timeseries")
+    plt.plot(time_results, sim_time, label="Simulations")
+    plt.plot(time_results, current_results, alpha=0.5, label="Data")
+    plt.plot(time_results, np.subtract(current_results, sim_time), label="Residual")
+    plt.legend()
+    plt.title("$R_u$="+str(ramp_fit.dim_dict["Ru"]))
+    plt.xlabel("Nondim time")
+    plt.ylabel("Nondim current")
+plt.show()
 #ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])
 #ramp_fit.dim_dict["gamma"]=0
 if ru_pick==2:
@@ -173,7 +179,7 @@ score_vec=np.zeros(num_runs)
 for i in range(0, num_runs):
     x0=abs(np.random.rand(ramp_fit.n_parameters()))#ramp_fit.change_norm_group(gc4_3_low_ru, "norm")
     print(ramp_fit.change_norm_group(x0, "un_norm"))
-    cmaes_fitting=pints.Optimisation(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
+    cmaes_fitting=pints.OptimisationController(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
     cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
     if "E0_mean" in ramp_fit.optim_list and "k0_loc" in ramp_fit.optim_list:
         cmaes_fitting.set_parallel(False)

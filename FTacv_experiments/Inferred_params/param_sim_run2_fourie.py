@@ -34,7 +34,7 @@ for lcv_1 in range(0, len(cols)):
         voltage_results=result.other_values["experiment_voltage"]
         current_results=result.other_values["experiment_current"]
         time_results=result.other_values["experiment_time"]
-        harm_class=harmonics(range(3, 9,1), result.dim_dict["omega"], 0.1)
+        harm_class=harmonics(list(range(3, 9,1)), result.dim_dict["omega"], 0.1)
         likelihood_func=result.kaiser_filter(current_results)
         #for i in range(0, len(self.save_dict[params])):
         #if lcv_2==0:
@@ -73,6 +73,6 @@ for lcv_1 in range(0, len(cols)):
 #fig.text(0.05, 0.5, 'Nondim current', ha='center', va='center', rotation='vertical')
 plt.show()
 for i in range(0, len(results_array)):
-    print results_array[i]
+    print(results_array[i])
 #with open("alice_yellow_params.pkl", "wb") as f:
 #    pickle.dump([name_list, results_array], f)
