@@ -1,5 +1,0 @@
-./filenames.txt
-./Kinda_successful_AC_0.05.txt
-./AC_kinda_correct_0.02.txt
-./AC_kinda_successful_4_param_0.01.txt
-./Successful_AC_0.txt

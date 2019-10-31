@@ -218,7 +218,7 @@ Titles={
     "noise":"Noise",
 }
 #f=open(filename, "r")
-optim_list=['E0_mean',"E0_std",'k_0',"Ru","Cdl","CdlE1", "CdlE2",'gamma', "cap_phase","phase", "alpha", "noise"]
+optim_list=['E0_mean',"E0_std",'k_0',"Ru","Cdl","CdlE1", "CdlE2",'gamma', "cap_phase","phase", "noise"]
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 graph_titles=[Titles[x] for x in optim_list]
 true_params=[-0.4, 1e1, 0.000134*1e4,20.0]
@@ -234,7 +234,7 @@ num_params=len(optim_list)
 electrode="Yellow"
 folder="MCMC_runs"
 for i in range(1, 9):
-    filename="Noramp_3_timeseriesMCMC_"+str(i)  +"_run8" 
+    filename="Noramp_3_timeseriesMCMC_"+str(i)  +"_run1"
     #Run4 - Constrained K0 and Ru, Run three fixed Ru, Alpha (not timeseries) has constrained Ru and unconstrained k, Run 6 has fixed ru and unconstrained k, run 5 has unconstrained both
     chains=np.load(("/").join([electrode, folder, filename]))
 #chains2=np.load('GC4_MCMC_1_low_ru')
@@ -247,7 +247,7 @@ for i in range(1, 9):
     #plt.show()
     params=np.zeros(len(optim_list)-1)
     for i in range(0, len(optim_list)-1):
-        params[i]=np.mean(chains[:, 30000:, i])
+        params[i]=np.mean(chains[0, 30000:, i])
     noramp_class.def_optim_list(optim_list[:-1])
     print(list(params))
     test=noramp_class.test_vals(params, "timeseries")

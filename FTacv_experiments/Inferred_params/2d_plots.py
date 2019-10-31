@@ -62,15 +62,15 @@ def chain_appender(chains, param):
     for i in range(1, len(chains)):
         new_chain=np.append(new_chain, chains[i, 30000:, param])
     return new_chain
-all_params=['E0_mean', "E0_std",'k_0',"Ru","Cdl", "CdlE1", "CdlE2",'gamma',"omega", "phase","cap_phase","alpha",]
-optim_list=['E0_mean', "E0_std", 'k_0',"Ru"]
+all_params=['E0_mean', "E0_std",'k_0',"Ru","Cdl", "CdlE1", "CdlE2",'gamma',"omega", "phase","cap_phase"]
+optim_list=['E0_mean', "E0_std",'k_0',"Ru","Cdl", "CdlE1", "CdlE2",'gamma',"omega", "phase","cap_phase"]
 positions=[all_params.index(x) for x in optim_list]
 #positions[-1]=positions[-1]-1
 plt.rcParams.update({'font.size': 12})
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 n_param=len(titles)
-chains=np.load(("/").join([dir_path, "Yellow", "MCMC_runs","Noramp_3_timeseriesMCMC_1_run8"]))
-chains=chains[:2, :, :]
+chains=np.load(("/").join([dir_path, "Yellow", "MCMC_runs","Noramp_3_timeseriesMCMC_1_run1"]))
+chains=chains[:, :, :]
 fig_size=(12,12)
 fig, ax=plt.subplots(n_param, n_param)
 def plot_kde_1d(x, ax):
