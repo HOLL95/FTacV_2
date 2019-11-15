@@ -57,7 +57,7 @@ for lcv_1 in range(3, 4):
         'v': 10.36e-3,   #       (scan rate s^-1)
         'area': 0.07, #(electrode surface area cm^2)
         'Ru': 1.0,  #     (uncompensated resistance ohms)
-        'Cdl': 1e-6, #(capacitance parameters)
+        'Cdl': 1e-5, #(capacitance parameters)
         'CdlE1': 0,#0.000653657774506,
         'CdlE2': 0,#0.000245772700637,
         'CdlE3': 0,#1.10053945995e-06,

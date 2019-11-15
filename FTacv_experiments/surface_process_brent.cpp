@@ -271,7 +271,7 @@ py::object brent_current_solver(py::dict params, std::vector<double> t, std::str
             u1n0 = bc.u1n1;
             t1 += dt;
         }
-        Itot[n_out] = (Itot1-Itot0)*(t[n_out]-t1+dt)/dt + Itot0;
+        Itot[n_out] =(Itot1-Itot0)*(t[n_out]-t1+dt)/dt + Itot0;
     }
     return py::cast(Itot);
 }

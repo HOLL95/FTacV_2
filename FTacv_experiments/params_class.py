@@ -117,7 +117,6 @@ class params:
         self.alpha=param_dict['alpha']
         self.Ru=param_dict['Ru']
         self.gamma=param_dict['gamma']
-        self.v=param_dict['v']
         self.sampling_freq=param_dict['sampling_freq']
         self.area=param_dict['area']
         self.phase=param_dict['phase']
@@ -144,6 +143,7 @@ class params:
         self.F=96485.3328959
         self.R=8.314459848
         self.c_E0=(self.R*self.T)/self.F
+        self.v=self.c_E0*self.omega
         self.c_T0=abs(self.c_E0/self.v)
         self.c_I0=(self.F*self.area*self.c_Gamma)/self.c_T0
 

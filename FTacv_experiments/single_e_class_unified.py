@@ -38,16 +38,20 @@ class single_electron:
         self.num_harmonics=len(self.harmonic_range)
         self.filter_val=other_values["filter_val"]
         self.bounds_val=other_values["bounds_val"]
-        if simulation_options["no_transient"]!=False:
-            self.time_idx=simulation_options["no_transient"]
-        else:
-            self.time_idx=0
         if self.simulation_options["experimental_fitting"]==True:
-            #if self.file_init==False:
-            self.time_vec=other_values["experiment_time"][:other_values["signal_length"]]/self.nd_param.c_T0
-            other_values["experiment_time"]=other_values["experiment_time"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_T0
-            other_values["experiment_current"]=other_values["experiment_current"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_I0
-            other_values["experiment_voltage"]=other_values["experiment_voltage"][self.time_idx:other_values["signal_length"]]/self.nd_param.c_E0
+            time_end=(self.nd_param.num_peaks/self.nd_param.omega)
+            if simulation_options["no_transient"]!=False:
+                desired_idx=tuple(np.where((other_values["experiment_time"]<time_end) & (other_values["experiment_time"]>simulation_options["no_transient"])))
+                time_idx=tuple(np.where(other_values["experiment_time"]<time_end))
+                self.time_idx=desired_idx[0][0]
+            else:
+                desired_idx=tuple(np.where(other_values["experiment_time"]<time_end))
+                time_idx=desired_idx
+                self.time_idx=0
+            self.time_vec=other_values["experiment_time"][time_idx]/self.nd_param.c_T0
+            other_values["experiment_time"]=other_values["experiment_time"][desired_idx]/self.nd_param.c_T0
+            other_values["experiment_current"]=other_values["experiment_current"][desired_idx]/self.nd_param.c_I0
+            other_values["experiment_voltage"]=other_values["experiment_voltage"][desired_idx]/self.nd_param.c_E0
             #else:
             #    sf=other_values["experiment_time"][1]-other_values["experiment_time"][0]
             #    self.time_vec=np.arange(0, other_values["experiment_time"][-1], sf)
@@ -56,10 +60,16 @@ class single_electron:
 
         else:
             if simulation_options["method"]=="sinusoidal":
-                self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.nd_omega)*2*math.pi
+                self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.omega)
             else:
                 self.nd_param.time_end=2*(self.nd_param.E_reverse-self.nd_param.E_start)
             self.times()
+            if simulation_options["no_transient"]!=False:
+                    transient_time=self.i_nondim(self.time_vec)
+                    start_idx=np.where(transient_time>simulation_options["no_transient"])
+                    self.time_idx=start_idx[0][0]
+            else:
+                    self.time_idx=0
         frequencies=np.fft.fftfreq(len(self.time_vec), self.time_vec[1]-self.time_vec[0])
         self.frequencies=frequencies[np.where(frequencies>0)]
         last_point= (self.harmonic_range[-1]*self.nd_param.omega)+(self.nd_param.omega*self.filter_val)
@@ -211,6 +221,22 @@ class single_electron:
                     "params":params, "optim_list":self.optim_list}
         pickle.dump(save_dict, file, pickle.HIGHEST_PROTOCOL)
         file.close()
+    def calc_theta(self, current):
+        voltages=self.define_voltages()
+        if self.simulation_options["no_transient"]!=True:
+            voltages=voltages[self.time_idx:]
+        theta=np.zeros(len(current))
+        theta[0]=0
+        dt=self.nd_param.sampling_freq
+        for i in range(1, len(current)):
+            Er=voltages[i]-self.nd_param.Ru*current[i]
+            expval1=Er-self.nd_param.E_0
+            exp11=np.exp((1-self.nd_param.alpha)*expval1)
+            exp12=np.exp((-self.nd_param.alpha)*expval1)
+            u1n1_top=dt*self.nd_param.k_0*exp11 + theta[i-1]
+            denom = ((dt*self.nd_param.k_0*exp11) +(dt*self.nd_param.k_0*exp12) + 1)
+            theta[i]=u1n1_top/denom
+        return theta
     def times(self):
         self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
         #self.time_vec=np.linspace(0, self.nd_param.time_end, num_points)
@@ -417,10 +443,9 @@ class single_electron:
         #print(list(normed_params))
         for i in range(0, len(self.optim_list)):
             self.dim_dict[self.optim_list[i]]=normed_params[i]
-        if self.phase_only==True:
+        if self.simulation_options["phase_only"]==True:
             self.dim_dict["cap_phase"]=self.dim_dict["phase"]
         self.nd_param=params(self.dim_dict)
-        #print(self.dim_dict["Ru"])
         self.nd_param_dict=self.nd_param.nd_param_dict
         if self.simulation_options["numerical_method"]=="Brent minimisation":
             solver=isolver_martin_brent.brent_current_solver
