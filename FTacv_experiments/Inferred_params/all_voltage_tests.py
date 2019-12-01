@@ -99,7 +99,7 @@ dcv_other_values={
     "signal_length":len(dcv_voltages),
 }
 
-param_names=["Noramp_3_cv_fixed_ru.fixed_alpha", "Ramped_3_cv_high_ru.ts", "Noramp_3_cv_high_ru.fourier"]
+param_names=["Run_3/Noramp_3_cv_high_ru.run3", "Run_2/Ramped_3_cv_high_ru.ts", "Run_3/Noramp_3_cv_low_ru.run3"]
 ramped_class=single_electron(path+"/"+param_names[1])
 noramp_ts_class=single_electron(path+"/"+param_names[0])
 noramp_f_class=single_electron(path+"/"+param_names[2])
@@ -115,18 +115,45 @@ param_list=[]
 for i in range(0, len(class_list)):
     result=class_list[i]
     param_list.append([result.save_dict["params"][0][result.save_dict["optim_list"].index(key)] if  (key in result.save_dict["optim_list"]) else result.dim_dict[key] for key in master_optim_list])
-for i in range(0, len(param_list)):
-    print(param_list)
+
 for i in range(0, len(simulation_classes)):
     simulation_classes[i].def_optim_list(master_optim_list)
 
 noramp_simulation_list=[]
 ramped_simulation_list=[]
 dcv_simulation_list=[]
-noramp_ts_class.dim_dict["omega"]=8.940641321267664
-ramped_class.dim_dict["omega"]=8.884904955014296
-ramp_harm=harmonics(list(range(2, 6)), ramped_class.nd_param.omega, 0.1)
-noramp_harm=harmonics(list(range(2, 6)), noramp_ts_class.nd_param.omega, 0.1)
+ramp_harm=harmonics(list(range(2, 6)), ramped_class.nd_param.omega, 0.05)
+noramp_harm=harmonics(list(range(2, 6)), noramp_ts_class.nd_param.omega, 0.05)
+ramped_class.dim_dict["v_nondim"]=True
+print(ramped_class.dim_dict["E_reverse"], ramped_class.dim_dict["E_start"])
+print(ramped_class.nd_param.E_reverse, ramped_class.nd_param.E_start)
+print(ramped_class.time_vec[-1], 2*(ramped_class.nd_param.E_reverse-ramped_class.nd_param.E_start))
+ramped_class.dim_dict["original_omega"]=8.94
+print(ramped_class.t_nondim(ramped_class.other_values["experiment_time"])[-1])
+print(param_list[0])
+#param_list[0][0]=0.2
+param_list[0][0]=0.23363378517047495
+param_list[0][1]=0.03481010462713212
+param_list[0][2]=125.2418680556816
+param_list[0][3]=630.0772611187369
+param_list[0][7]=7.476933579891946e-11
+[0.23363378517047495, 0.03481010462713212, 125.2418680556816, 630.0772611187369, 7.694171200331618e-05, 0.003209611999861764, -0.0004263185805571494, 7.476933579891946e-11, 8.940473342512918, 4.384420736979492, 5.02832295276801, 0.5999996422725197]
+
+#param_list[0][-2]=0
+#param_list[0][-3]=0
+ramped_class.dim_dict["omega"]=8.95
+ramped_class.simulation_options["dispersion_bins"]=50
+time_series=(ramped_class.test_vals(param_list[0], "timeseries"))
+ramped_class.simulation_options["dispersion_bins"]=120
+time_series2=(ramped_class.test_vals(param_list[0], "timeseries"))
+#plt.plot(ramped_class.time_vec, ramped_class.define_voltages())
+#plt.plot(ramped_class.other_values["experiment_time"],ramped_class.other_values["experiment_voltage"])
+#plt.show()
+#plt.plot(ramped_class.other_values["experiment_time"], ramped_class.e_nondim(ramped_class.other_values["experiment_voltage"]))
+#plt.plot(ramped_class.e_nondim(ramped_class.define_voltages()), ramped_class.i_nondim(time_series))
+#plt.plot(ramped_class.other_values["experiment_voltage"],(ramped_class.other_values["experiment_current"]), alpha=0.5)
+#plt.show()
+
 for i in range(0, len(param_list)):
     dcv_params=change_param(copy.deepcopy(param_list[i]), master_optim_list, "Cdl", 0)
     if i==1:
@@ -137,7 +164,33 @@ for i in range(0, len(param_list)):
     ramped_simulation_list.append(ramped_class.i_nondim(ramped_class.test_vals(param_list[i], "timeseries")))
     dcv_simulation_list.append(dcv_class.i_nondim(dcv_class.test_vals(dcv_params, "timeseries")))
 
+noramp_harmonics=[]
+noramp_data_harms=noramp_harm.generate_harmonics(noramp_time, noramp_current)
+ramped_harmonics=[]
+ramped_data_harms=ramp_harm.generate_harmonics(ramped_class.other_values["experiment_time"], ramped_current)
 
+exp_harmonics=noramp_harm.generate_harmonics(ramped_class.t_nondim(ramped_class.time_vec),ramped_class.i_nondim(time_series))
+exp_harmonics2=noramp_harm.generate_harmonics(ramped_class.t_nondim(ramped_class.time_vec),ramped_class.i_nondim(time_series2))
+ramped_class.simulation_options["method"]="dcv"
+dcv_plot=np.interp(ramped_class.other_values["experiment_time"], ramped_class.t_nondim(ramped_class.time_vec), ramped_class.e_nondim(ramped_class.define_voltages()))
+plt.plot(ramped_class.other_values["experiment_time"], ramped_voltage, label="FTACV input")
+plt.plot(ramped_class.other_values["experiment_time"], dcv_plot, label="Linear ramp")
+plt.legend()
+plt.ylabel("Voltage(V)")
+plt.xlabel("Time(s)")
+plt.show()
+for i in range(0, len(ramped_data_harms)):
+    plt.subplot(len(ramped_data_harms), 1, i+1)
+    #plt.plot(ramped_class.other_values["experiment_time"],abs(ramped_data_harms[i,:]))
+    ramped_class.simulation_options["method"]="dcv"
+    plt.plot((ramped_class.other_values["experiment_time"]),abs(ramped_data_harms[i,:]), label="data")
+    plt.plot(ramped_class.t_nondim(ramped_class.time_vec),abs(exp_harmonics[i,:]), label="simulation")
+    plt.plot(ramped_class.t_nondim(ramped_class.time_vec),abs(exp_harmonics2[i,:]), label="simulation")
+    plt.xlabel("Voltage(V)")
+    plt.ylabel("Current")
+    #plt.axvline(param_list[0][0], color="black", linestyle="--", label="Inferred $E_0$")
+    plt.legend()
+plt.show()
 num_harmonics=4
 plot_width=3
 num_runs=3
@@ -162,10 +215,7 @@ for i in range(0, num_runs):
         sinusoidal_harm_axes.append(plt.subplot2grid((rows, cols), (harm_idx[0]+j, i*(seperation+plot_width)), rowspan=1, colspan=plot_width))
         print(harm_idx[0]+j, i*(seperation+plot_width))
         ramped_harm_axes.append(plt.subplot2grid((rows, cols), (harm_idx[1]+j, i*(seperation+plot_width)), rowspan=1, colspan=plot_width))
-noramp_harmonics=[]
-noramp_data_harms=noramp_harm.generate_harmonics(noramp_time, noramp_current)
-ramped_harmonics=[]
-ramped_data_harms=ramp_harm.generate_harmonics(ramped_time, ramped_current)
+
 for i in range(0, num_runs):
     noramp_harmonics.append(noramp_harm.generate_harmonics(noramp_time, noramp_simulation_list[i]))
     ramped_harmonics.append(ramp_harm.generate_harmonics(ramped_time, ramped_simulation_list[i]))

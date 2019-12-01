@@ -10,10 +10,10 @@ import pickle
 import pints
 dir_path = os.path.dirname(os.path.realpath(__file__))
 types=["current", "voltage"]
-exp="Experimental-120919"
+exp="Experimental-221119"
 bla="Blank-110919"
 resistances=["high_ru", "low_ru", "fixed_ru"]
-ru_upper_bound=[700, 85, 50]
+ru_upper_bound=[700, 1e4, 50]
 ru_pick=0
 resistance_type=resistances[ru_pick]
 print(resistance_type)
@@ -23,10 +23,10 @@ if exp_type==bla:
 else:
     extra=""
 data_path="/experiment_data_2/"+exp_type
-Electrode="Yellow"
+Electrode=""
 folder="Noramp"
-for lcv_1 in range(3, 4):
-    Method =str(lcv_1)+"_cv"
+for lcv_1 in range(1, 3):
+    Method ="_1e0M_"+str(lcv_1)+"_cv"
     type="current"
     type2="voltage"
     path=("/").join([dir_path, data_path, folder, Electrode])
@@ -38,7 +38,7 @@ for lcv_1 in range(3, 4):
         elif (Method in data)  and (type2 in data):
             voltages=np.loadtxt(path+"/"+data)
 
-    dec_amount=32
+    dec_amount=1
     de=300e-3
     estart=260e-3-de
     ereverse=estart+2*de
@@ -53,6 +53,7 @@ for lcv_1 in range(3, 4):
         'E_start': estart, #(starting dc voltage - V)
         'E_reverse': ereverse,
         'omega':8.94,#8.88480830076,  #    (frequency Hz)
+        "original_omega":8.94,
         'd_E': 300e-3,   #(ac voltage amplitude - V) freq_range[j],#
         'v': 10.36e-3,   #       (scan rate s^-1)
         'area': 0.07, #(electrode surface area cm^2)
@@ -75,20 +76,20 @@ for lcv_1 in range(3, 4):
         'sampling_freq' : (1.0/200),
         'phase' : 3*(math.pi/2),
         "time_end": None,
-        'num_peaks': 50
+        'num_peaks': 25
     }
     solver_list=["Bisect", "Brent minimisation", "Newton-Raphson", "inverted"]
     likelihood_options=["timeseries", "fourier"]
-    time_start=5/(param_list["omega"])
-    start_idx=np.where(time_results1>time_start)
+    time_start=1/(param_list["omega"])
     simulation_options={
-        "no_transient":start_idx[0][0],
+        "no_transient":time_start,
         "numerical_debugging": False,
         "experimental_fitting":True,
         "dispersion":False,
         "dispersion_bins":16,
         "test": False,
         "method": "sinusoidal",
+        "phase_only":False,
         "likelihood":likelihood_options[0],
         "numerical_method": solver_list[1],
         "label": "MCMC",
@@ -106,16 +107,16 @@ for lcv_1 in range(3, 4):
     param_bounds={
         'E_0':[0.2, 0.3],#[param_list['E_start'],param_list['E_reverse']],
         'omega':[0.95*param_list['omega'],1.05*param_list['omega']],#8.88480830076,  #    (frequency Hz)
-        'Ru': [40, ru_upper_bound[ru_pick]],  #     (uncompensated resistance ohms)
+        'Ru': [0, 1e4],  #     (uncompensated resistance ohms)
         'Cdl': [0,1e-4], #(capacitance parameters)
         'CdlE1': [-0.05,0.15],#0.000653657774506,
         'CdlE2': [-0.01,0.01],#0.000245772700637,
         'CdlE3': [-0.01,0.01],#1.10053945995e-06,
         'gamma': [1e-11,1e-9],
         'k_0': [10, 1e3], #(reaction rate s-1)
-        'alpha': [0.4, 0.6],
+        'alpha': [0.3, 0.7],
         "cap_phase":[0, 2*math.pi],
-        "E0_mean":[0.19, 0.208],
+        "E0_mean":[0.19, 0.25],
         "E0_std": [0.001, 0.2],
         "k0_shape":[0,2],
         "k0_loc":[0, 1e3],
@@ -128,15 +129,12 @@ for lcv_1 in range(3, 4):
     time_results=noramp_fit.other_values["experiment_time"]
     current_results=noramp_fit.other_values["experiment_current"]
     voltage_results=noramp_fit.other_values["experiment_voltage"]
-    noramp_fit.def_optim_list(["E0_mean","E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
+    noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha"])
     #noramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])
     #noramp_fit.dim_dict["gamma"]=0
-    if ru_pick==2:
-        noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0" ,"Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase"])
-        noramp_fit.dim_dict["alpha"]=0.5
-        noramp_fit.dim_dict["Ru"]=65
-        #noramp_fit.dim_dict["alpha"]=0.5
     true_data=current_results
+    plt.plot(voltage_results, current_results, alpha=0.5)
+    plt.show()
     fourier_arg=noramp_fit.kaiser_filter(current_results)
     if simulation_options["likelihood"]=="timeseries":
         cmaes_problem=pints.SingleOutputProblem(noramp_fit, time_results, true_data)
@@ -153,8 +151,8 @@ for lcv_1 in range(3, 4):
     for i in range(0, num_runs):
         x0=abs(np.random.rand(noramp_fit.n_parameters()))#noramp_fit.change_norm_group(gc4_3_low_ru, "norm")
         print(noramp_fit.change_norm_group(x0, "un_norm"))
-        cmaes_fitting=pints.Optimisation(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
-        #cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
+        cmaes_fitting=pints.OptimisationController(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
+        cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
         if "E0_mean" in noramp_fit.optim_list and "k0_loc" in noramp_fit.optim_list:
             cmaes_fitting.set_parallel(False)
         else:
@@ -163,24 +161,65 @@ for lcv_1 in range(3, 4):
         cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
         print(list(cmaes_results))
         cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
+        print("omega", noramp_fit.nd_param.nd_omega, noramp_fit.nd_param.omega)
+        #plt.subplot(1,2,1)
+        #plt.plot(voltage_results, cmaes_time)
+        #plt.plot(voltage_results, current_results)
+        #plt.subplot(1,2,2)
+        #plt.plot(time_results, noramp_fit.define_voltages()[noramp_fit.time_idx:])
+        #plt.plot(time_results, voltage_results)
+        #plt.show()
         cmaes_fourier=noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=False)
         param_mat[i,:]=cmaes_results
         score_vec[i]=found_value
-        #plt.plot(voltage_results, true_data)
-        #plt.plot(voltage_results, cmaes_time)
-        #plt.show()
+
     idx=[i[0] for i in sorted(enumerate(score_vec), key=lambda y:y[1])]
     save_params=param_mat[idx[0:3], :]
+    best_idx=np.where(score_vec==min(score_vec))
+    best_idx=best_idx[0][0]
+    cmaes_results=param_mat[best_idx,:]
+    cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
     Electrode_save=extra+Electrode
+    run="Run_3"
     if "k0_shape" in noramp_fit.optim_list:
         sim_options=resistance_type+"_"+"k0_disp"
     else:
         sim_options=resistance_type
-    filename=("_").join([folder,Method, sim_options])+".fixede0"
-    filepath=("/").join([dir_path, "Inferred_params", Electrode_save])
+    filename=("_").join([folder,Method, sim_options])+".run1"
+    filepath=("/").join([dir_path, "Inferred_params", Electrode_save, run])
     noramp_fit.save_state(results_dict, filepath, filename, save_params)
-    best_idx=np.where(score_vec==min(score_vec))
-    best_idx=best_idx[0][0]
-    cmaes_results=param_mat[best_idx,:]
-    print(list(cmaes_results))
-    cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
+    error=np.std(abs(np.subtract(cmaes_time, current_results)))
+    mcmc_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
+    updated_lb=np.append([noramp_fit.param_bounds[x][0] for x in noramp_fit.optim_list],0.01*error)
+    updated_ub=np.append([noramp_fit.param_bounds[x][1] for x in noramp_fit.optim_list],10*error)
+    updated_b=[updated_lb, updated_ub]
+    updated_b=np.sort(updated_b, axis=0)
+    log_liklihood=pints.GaussianLogLikelihood(mcmc_problem)
+    #print(noramp_fit.n_parameters(), len(updated_b[0]))
+    log_prior=pints.UniformLogPrior(updated_b[0], updated_b[1])
+    #print(log_prior.n_parameters(), log_liklihood.n_parameters())
+    log_posterior=pints.LogPosterior(log_liklihood, log_prior)
+    #[(noramp_fit.param_bounds[x][1]+noramp_fit.param_bounds[x][0])/2 for x in noramp_fit.optim_list ]
+    mcmc_parameters=cmaes_results
+    mcmc_parameters=np.append(mcmc_parameters, error)
+    xs=[mcmc_parameters,
+        mcmc_parameters,
+        mcmc_parameters
+        ]
+    noramp_fit.simulation_options["label"]="MCMC"
+    for i in range(0, 10):
+        mcmc = pints.MCMCController(log_posterior, 3, xs,method=pints.HaarioBardenetACMC)
+        mcmc.set_parallel(True)
+        mcmc.set_max_iterations(30000)
+        chains=mcmc.run()
+        rhat_mean=np.mean(pints.rhat_all_params(chains))
+        #pints.plot.trace(chains)
+        #plt.show()
+        if rhat_mean<1.2:
+            run="MCMC_runs/omega_nondim"
+            save_file=filename=("_").join([folder,Method, sim_options, "MCMC"])+".run1"
+            filepath=("/").join([dir_path, "Inferred_params", Electrode_save, run])
+            f=open(filepath+"/"+filename, "wb")
+            np.save(f, chains)
+            f.close()
+            break

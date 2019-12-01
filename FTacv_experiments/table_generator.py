@@ -50,11 +50,11 @@ fancy_names={
     "":"Experiment",
     "error":"Error",
 }
-optim_list=["","Ru","Cdl","CdlE1", "CdlE2","CdlE3",'omega', "phase"]
+optim_list=["","E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega", "alpha"]
 name_list=[fancy_names[x] for x in optim_list]
-values=[[4.935278186731851, 6.53922500129266e-05, -0.010027952214194474, -0.000120463926091368, 1.6440371959129674e-05, 8.828862457999545, 5.846494748996116],
-            [1735.848562286573, 7.387153313864618e-05, -0.010118667659211301, -0.00027396481928436064, 2.3648787718632755e-05, 8.828834554751786, 0]]
-names=["High resistance", "Low resistance"]
+values=[[0.230288480903605996, 0.041226544633855209, 122.16602260400302, 742.0285824092344, 8.212777750912338e-05, 0.00295011584929738, -0.0005139373308230138, 7.330227126430568e-11, 8.885659818458482,0.5146469208293426]]
+
+names=["Ramped\ 2"]
 
 #names=my_list[0]
 f =open("image_tex_test.tex", "r")
@@ -117,7 +117,7 @@ for line in f:
 f.close()
 table_file.close()
 filename=""
-filename="alice_blank_3_params_"
+filename="alice_ramped_params_2_"
 filename=filename+"table.png"
 os.system("pdflatex image_tex_edited.tex")
 os.system("convert -density 300 -trim image_tex_edited.pdf -quality 100 " + filename)

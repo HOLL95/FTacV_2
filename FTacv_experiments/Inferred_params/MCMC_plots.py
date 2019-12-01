@@ -103,16 +103,16 @@ param_list={
 }
 solver_list=["Bisect", "Brent minimisation", "Newton-Raphson", "inverted"]
 likelihood_options=["timeseries", "fourier"]
-time_start=5/(param_list["omega"])
-start_idx=np.where(noramp_time_results>time_start)
+time_start=2/(param_list["omega"])
 simulation_options={
-    "no_transient":start_idx[0][0],
+    "no_transient":time_start,
     "numerical_debugging": False,
     "experimental_fitting":True,
     "dispersion":False,
     "dispersion_bins":30,
     "test": False,
     "method": "sinusoidal",
+    "phase_only": False,
     "likelihood":likelihood_options[0],
     "numerical_method": solver_list[1],
     "label": "MCMC",

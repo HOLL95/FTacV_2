@@ -121,6 +121,14 @@ for i in range(0, len(param_list)):
     print(param_list)
 for i in range(0, len(simulation_classes)):
     simulation_classes[i].def_optim_list(master_optim_list)
+order=ramped_voltage.argsort()
+sorted_voltage=ramped_voltage[order]
+sorted_time=ramped_time[order]
+x=(np.interp(param_list[0][0], sorted_voltage, sorted_time))
+plt.plot(ramped_time, ramped_voltage)
+plt.plot(x, param_list[0][0], "x")
+plt.axhline(param_list[0][0])
+plt.show()
 plt.subplot(1,2,1)
 plt.plot(noramp_voltage, noramp_current, label="Noramp data")#, color="green")
 plt.plot(ramped_voltage[0], ramped_current[0], color="cyan", label="DCV data")
@@ -146,7 +154,7 @@ ax2=ax.twinx()
 ax2.plot(dcv_voltages, dcv_currents, color="cyan")
 ramped_data_harms=ramp_harm.generate_harmonics(ramped_time, ramped_current)
 plt.subplot(1,2,2)
-plt.plot(ramped_time, abs(ramped_data_harms[2, :]), label="Ramped data")
+plt.plot(ramped_time, abs(ramped_data_harms[0, :]), label="Ramped data")
 plt.xlabel("Time(s)")
 plt.ylabel("Current(A)")
 plt.title("4th Harmonic")

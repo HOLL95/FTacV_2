@@ -69,8 +69,9 @@ positions=[all_params.index(x) for x in optim_list]
 plt.rcParams.update({'font.size': 12})
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 n_param=len(titles)
-chains=np.load(("/").join([dir_path, "Yellow", "MCMC_runs","Noramp_3_timeseriesMCMC_1_run1"]))
-chains=chains[:, :, :]
+chains=np.load(("/").join([dir_path, "Yellow", "MCMC_runs","omega_nondim", "Noramp_3_cv_high_ru_MCMC.run3"]))
+pints.plot.trace(chains[1:, 10000:, :])
+plt.show()
 fig_size=(12,12)
 fig, ax=plt.subplots(n_param, n_param)
 def plot_kde_1d(x, ax):

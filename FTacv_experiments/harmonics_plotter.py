@@ -42,7 +42,7 @@ class harmonics:
         obj_func=np.append(func(time_series),0)
         time_domain=(np.fft.ifft(np.append(obj_func,np.flip(obj_func))))
         return time_domain
-    def harmonic_selecter(self, ax, time_series, times):
+    def harmonic_selecter(self, ax, time_series, times, box=True):
         f=np.fft.fftfreq(len(time_series), times[1]-times[0])
         hann=np.hanning(len(time_series))
         time_series=np.multiply(time_series, hann)
@@ -52,16 +52,17 @@ class harmonics:
         frequencies=f[np.where((f>0) & (f<(last_harm+(0.5*self.input_frequency))))]
         fft_plot=abs(Y[np.where((f>0) & (f<(last_harm+(0.5*self.input_frequency))))])
         ax.plot(frequencies, fft_plot)
-        len_freq=np.linspace(0, 100, len(frequencies))
-        longer_len_freq=np.linspace(0, 100, 10000)
-        extended_frequencies=np.interp(longer_len_freq, len_freq, frequencies)
-        box_area=np.zeros(len(extended_frequencies))
-        for i in range(0, self.num_harmonics):
-            true_harm=self.harmonics[i]*self.input_frequency
-            peak_idx=np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))
-            extended_peak_idx=np.where((extended_frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (extended_frequencies>true_harm-(self.input_frequency*self.filter_val)))
-            box_area[extended_peak_idx]=max(fft_plot[peak_idx])
-        ax.plot(extended_frequencies, box_area, color="r", linestyle="--")
+        if box==True:
+            len_freq=np.linspace(0, 100, len(frequencies))
+            longer_len_freq=np.linspace(0, 100, 10000)
+            extended_frequencies=np.interp(longer_len_freq, len_freq, frequencies)
+            box_area=np.zeros(len(extended_frequencies))
+            for i in range(0, self.num_harmonics):
+                true_harm=self.harmonics[i]*self.input_frequency
+                peak_idx=np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))
+                extended_peak_idx=np.where((extended_frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (extended_frequencies>true_harm-(self.input_frequency*self.filter_val)))
+                box_area[extended_peak_idx]=max(fft_plot[peak_idx])
+            ax.plot(extended_frequencies, box_area, color="r", linestyle="--")
 
     def plot_harmonics(self, times, method, **kwargs):
         if method=="abs":

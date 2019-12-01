@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import math
+import warnings
 class params:
     def e0(self, value, flag):
         if flag=='re_dim':
@@ -44,6 +45,7 @@ class params:
             self.omega=value/(2*math.pi*self.c_T0)
         elif flag == 'non_dim':
             self.nd_omega=value*(2*math.pi*self.c_T0)
+
 
     def de(self, value, flag):
         if flag=='re_dim':
@@ -124,6 +126,11 @@ class params:
         self.time_end=param_dict['time_end']
         self.cap_phase=param_dict["cap_phase"]
         self.c_Gamma=param_dict['original_gamma']
+        if "original_omega" in param_dict:
+            self.c_omega=param_dict["original_omega"]
+        else:
+            warnings.warn("original omega undefined")
+            self.c_omega=param_dict["omega"]
         param_dict["nd_omega"]=param_dict["omega"]
         self.nd_omega=param_dict["omega"]
         if self.dispersion==True:
@@ -143,7 +150,12 @@ class params:
         self.F=96485.3328959
         self.R=8.314459848
         self.c_E0=(self.R*self.T)/self.F
-        self.v=self.c_E0*self.omega
+
+        if "v_nondim" in param_dict:
+            print(param_dict["v_nondim"])
+            self.v=param_dict["v"]
+        else:
+            self.v=self.c_E0*self.c_omega
         self.c_T0=abs(self.c_E0/self.v)
         self.c_I0=(self.F*self.area*self.c_Gamma)/self.c_T0
 

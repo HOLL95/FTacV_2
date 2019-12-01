@@ -13,11 +13,11 @@ types=["current", "voltage"]
 exp="Experimental-120919"
 bla="Blank-110919"
 resistances=["high_ru", "low_ru", "fixed_ru"]
-ru_upper_bound=[200, 85, 50]
+ru_upper_bound=[1e4, 85, 50]
 ru_pick=0
 resistance_type=resistances[ru_pick]
 print(resistance_type)
-exp_type=bla
+exp_type=exp
 if exp_type==bla:
     extra="Blank/"
 else:
@@ -26,7 +26,7 @@ data_path="/experiment_data_2/"+exp_type
 Electrode="Yellow"
 folder="Ramped"
 
-Method ="2dec_cv"
+Method ="2_cv"
 type="current"
 type2="voltage"
 path=("/").join([dir_path, data_path, folder, Electrode])
@@ -78,7 +78,8 @@ param_list={
     'sampling_freq' : (1.0/200),
     'phase' : 0,
     "time_end": None,
-    'num_peaks': 50
+    'num_peaks': 50,
+    "v_nondim":True
 }
 solver_list=["Bisect", "Brent minimisation", "Newton-Raphson", "inverted"]
 likelihood_options=["timeseries", "fourier"]
@@ -89,17 +90,18 @@ simulation_options={
     "numerical_debugging": False,
     "experimental_fitting":True,
     "dispersion":False,
-    "dispersion_bins":16,
+    "dispersion_bins":32,
     "test": False,
+    "phase_only":True,
     "method": "ramped",
-    "likelihood":likelihood_options[0],
+    "likelihood":likelihood_options[1],
     "numerical_method": solver_list[1],
     "label": "MCMC",
     "optim_list":[]
 }
 other_values={
     "filter_val": 0.5,
-    "harmonic_range":list(range(3,9,1)),
+    "harmonic_range":list(range(3,7,1)),
     "experiment_time": time_results1,
     "experiment_current": current_results1,
     "experiment_voltage":voltage_results1,
@@ -109,16 +111,16 @@ other_values={
 param_bounds={
     'E_0':[0.2, 0.3],#[param_list['E_start'],param_list['E_reverse']],
     'omega':[0.95*param_list['omega'],1.05*param_list['omega']],#8.88480830076,  #    (frequency Hz)
-    'Ru': [0, ru_upper_bound[ru_pick]],  #     (uncompensated resistance ohms)
+    'Ru': [0, 3000],  #     (uncompensated resistance ohms)
     'Cdl': [0,1e-4], #(capacitance parameters)
     'CdlE1': [-0.05,0.15],#0.000653657774506,
     'CdlE2': [-0.01,0.01],#0.000245772700637,
     'CdlE3': [-0.01,0.01],#1.10053945995e-06,
     'gamma': [1e-11,1e-9],
-    'k_0': [10, 1e3], #(reaction rate s-1)
+    'k_0': [50, 200], #(reaction rate s-1)
     'alpha': [0.4, 0.6],
     "cap_phase":[0, 2*math.pi],
-    "E0_mean":[0.15, 0.3],
+    "E0_mean":[0.21, 0.24],
     "E0_std": [0.001, 0.2],
     "k0_shape":[0,2],
     "k0_loc":[0, 1e3],
@@ -127,42 +129,45 @@ param_bounds={
     'phase' : [0, 2*math.pi]
 }
 ramp_fit=single_electron(None, param_list, simulation_options, other_values, param_bounds)
+ramp_fit=
 sim_volts=ramp_fit.define_voltages()
 time_results=ramp_fit.other_values["experiment_time"]
 current_results=ramp_fit.other_values["experiment_current"]
 voltage_results=ramp_fit.other_values["experiment_voltage"]
-
+ramp_harm=harmonics(list(range(3,7,1)), ramp_fit.nd_param.omega*ramp_fit.nd_param.c_T0, 0.08)
+data_harms=ramp_harm.generate_harmonics(time_results, current_results)
 #ramp_fit.def_optim_list(["E0_mean","E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
-ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2","CdlE3",'omega', "phase"])
-ramp_fit.dim_dict["gamma"]=0
-blank_params=[[4.935278186731851, 6.53922500129266e-05, -0.010027952214194474, -0.000120463926091368, 1.6440371959129674e-05, 8.828862457999545, 5.846494748996116],
-            [1735.848562286573, 7.387153313864618e-05, -0.010118667659211301, -0.00027396481928436064, 2.3648787718632755e-05, 8.828834554751786, 0]]
+ramp_fit.def_optim_list(["E0_mean", "E0_std","k_0" ,"Ru","Cdl","CdlE1", "CdlE2","gamma",'omega'])
+#ramp_fit.dim_dict["gamma"]=0
+noramp_params=[0.23363378517047495, 0.03481010462713212, 125.2418680556816, 630.0772611187369, 7.694171200331618e-05, 0.003209611999861764, -0.0004263185805571494, 7.476933579891946e-11, 8.940473342512918]
+for i in range(0, len(noramp_params)):
+    ramp_fit.param_bounds[ramp_fit.optim_list[i]]=[0.85*noramp_params[i], 1.15*noramp_params[i]]
+ramp_fit.def_optim_list(["E0_mean", "E0_std","k_0" ,"Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"phase", "alpha"])
+inferred_params=[0.21363378517047495, 0.0426544633855209, 122.16602260400302, 742.0285824092344, 8.212777750912338e-05, 0.00295011584929738, -0.0005139373308230138, 7.130227126430568e-11, 8.875659818458482, 0.4274370247643113, 0.5146469208293426]
 
-plt.subplot(1,3,1)
-plt.plot(time_results, current_results,label="Data")
-plt.xlabel("Nondim time")
-plt.ylabel("Nondim current")
-plt.legend()
-for i in range(0, len(blank_params)):
-    plt.subplot(1,3,i+2)
-    sim_time=ramp_fit.test_vals(blank_params[i], "timeseries")
-    plt.plot(time_results, sim_time, label="Simulations")
-    plt.plot(time_results, current_results, alpha=0.5, label="Data")
-    plt.plot(time_results, np.subtract(current_results, sim_time), label="Residual")
-    plt.legend()
-    plt.title("$R_u$="+str(ramp_fit.dim_dict["Ru"]))
-    plt.xlabel("Nondim time")
-    plt.ylabel("Nondim current")
+cmaes_time=ramp_fit.test_vals(inferred_params, likelihood="timeseries", test=False)
+plt.plot(time_results, current_results, alpha=0.6)
+plt.plot(time_results, cmaes_time, alpha=0.6)
 plt.show()
+sim_harms=ramp_harm.generate_harmonics(time_results, cmaes_time)
+for j in range(0, len(data_harms)):
+    plt.subplot(len(data_harms), 1, j+1)
+    plt.plot(time_results, abs(data_harms[j,:]))
+    plt.plot(ramp_fit.time_vec, abs(sim_harms[j,:]))
+plt.show()
+
+
+
+print(ramp_fit.param_bounds)
 #ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])
 #ramp_fit.dim_dict["gamma"]=0
+"""
 if ru_pick==2:
     ramp_fit.def_optim_list(["E0_mean", "E0_std","k_0" ,"Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase", "alpha"])
     ramp_fit.dim_dict["Ru"]=65
+"""
     #ramp_fit.dim_dict["alpha"]=0.5
 true_data=current_results
-ramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2","CdlE3",'omega'])
-ramp_fit.dim_dict["phase"]=0
 fourier_arg=ramp_fit.kaiser_filter(current_results)
 if simulation_options["likelihood"]=="timeseries":
     cmaes_problem=pints.SingleOutputProblem(ramp_fit, time_results, true_data)
@@ -173,11 +178,13 @@ score = pints.SumOfSquaresError(cmaes_problem)#[4.56725844e-01, 4.44532637e-05, 
 CMAES_boundaries=pints.RectangularBoundaries([np.zeros(len(ramp_fit.optim_list))], [np.ones(len(ramp_fit.optim_list))])
 ramp_fit.simulation_options["label"]="cmaes"
 ramp_fit.simulation_options["test"]=False
-num_runs=5
+num_runs=10
 param_mat=np.zeros((num_runs,len(ramp_fit.optim_list)))
 score_vec=np.zeros(num_runs)
 for i in range(0, num_runs):
-    x0=abs(np.random.rand(ramp_fit.n_parameters()))#ramp_fit.change_norm_group(gc4_3_low_ru, "norm")
+    noramp_params=[0.23363378517047495, 0.03481010462713212, 125.2418680556816, 630.0772611187369, 7.694171200331618e-05, 0.003209611999861764, -0.0004263185805571494, 7.476933579891946e-11, 8.940473342512918,0, 0.5999996422725197]
+    x0=ramp_fit.change_norm_group(noramp_params, "norm")#abs(np.random.rand(ramp_fit.n_parameters()))#ramp_fit.change_norm_group(gc4_3_low_ru, "norm")
+    print(x0)
     print(ramp_fit.change_norm_group(x0, "un_norm"))
     cmaes_fitting=pints.OptimisationController(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
     cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
@@ -185,6 +192,7 @@ for i in range(0, num_runs):
         cmaes_fitting.set_parallel(False)
     else:
         cmaes_fitting.set_parallel(True)
+    ramp_fit.simulation_options["test"]=False
     found_parameters, found_value=cmaes_fitting.run()
     cmaes_results=ramp_fit.change_norm_group(found_parameters, "un_norm")
     print(list(cmaes_results))
@@ -193,10 +201,19 @@ for i in range(0, num_runs):
     cmaes_fourier=ramp_fit.test_vals(cmaes_results, likelihood="fourier", test=False)
     param_mat[i,:]=cmaes_results
     score_vec[i]=found_value
-    plt.plot(time_results, cmaes_time)
-    plt.plot(time_results, true_data, alpha=0.5)
-    plt.plot(time_results, np.subtract(true_data, cmaes_time))
+    plt.plot(time_results, current_results, alpha=0.6)
+    plt.plot(time_results, cmaes_time, alpha=0.6)
     plt.show()
+    sim_harms=ramp_harm.generate_harmonics(time_results, cmaes_time)
+    for j in range(0, len(data_harms)):
+        plt.subplot(len(data_harms), 1, j+1)
+        plt.plot(time_results, abs(data_harms[j,:]))
+        plt.plot(ramp_fit.time_vec, abs(sim_harms[j,:]))
+    plt.show()
+    #plt.plot(time_results, cmaes_time)
+    #plt.plot(time_results, true_data, alpha=0.5)
+    #plt.plot(time_results, np.subtract(true_data, cmaes_time))
+    #plt.show()
 idx=[i[0] for i in sorted(enumerate(score_vec), key=lambda y:y[1])]
 save_params=param_mat[idx[0:3], :]
 Electrode_save=extra+Electrode
