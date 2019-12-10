@@ -13,7 +13,7 @@ noramp_startup=FTACV_initialisation(experimental_fitting=False, file_dict={"GC4_
 ramp_startup=FTACV_initialisation(experimental_fitting=False, file_dict={"GC4_1_ramp_cv":types,}, dec_amount=64)
 print("read", time.time()-start)
 simulation_options={
-    "no_transient":False,
+    "no_transient":1/noramp_startup.generic_noramp_params["omega"],
     "numerical_debugging": False,
     "experimental_fitting":False,
     "dispersion":False,
@@ -26,7 +26,7 @@ simulation_options={
     "optim_list":[]
 }
 ramped_simulation_options={
-    "no_transient":False,
+    "no_transient":1/ramp_startup.generic_noramp_params["omega"],
     "numerical_debugging": False,
     "experimental_fitting":False,
     "dispersion":False,
@@ -57,18 +57,23 @@ ramped_other_values={
     "bounds_val":20,
     "signal_length":int(5e5),
 }
-
-noramp_simulations=single_electron(noramp_startup.generic_noramp_params, simulation_options, noramp_other_values)
-ramped_simulations=single_electron(ramp_startup.generic_ramped_params, ramped_simulation_options, ramped_other_values)
-harm_class=harmonics(noramp_other_values["harmonic_range"],noramp_simulations.nd_param.omega, 0.2)
+noramp_startup.generic_noramp_params["k_0"]=100
+ramp_startup.generic_noramp_params["k_0"]=0
+noramp_startup.generic_noramp_params["num_peaks"]=10
+noramp_startup.generic_noramp_params["v_nondim"]=False
+ramp_startup.generic_noramp_params["v_nondim"]=True
+ramp_startup.generic_noramp_params["sampling_freq"]=1/800.0
+noramp_simulations=single_electron("", noramp_startup.generic_noramp_params, simulation_options, noramp_other_values)
+ramped_simulations=single_electron("", ramp_startup.generic_ramped_params, ramped_simulation_options, ramped_other_values)
+harm_class=harmonics(noramp_other_values["harmonic_range"],noramp_simulations.nd_param.omega, 0.05)
 ramp_ts=noramp_simulations.i_nondim(ramped_simulations.test_vals([], "timeseries"))*1e3
 noramp_ts=noramp_simulations.i_nondim(noramp_simulations.test_vals([], "timeseries"))*1e3
 volts_noramp=noramp_simulations.e_nondim(noramp_simulations.define_voltages())                   #noramp_simulations.other_values["experiment_voltage"])
 volts_ramp=ramped_simulations.e_nondim(ramped_simulations.define_voltages())
-volts_ramp=ramped_simulations.e_nondim(ramped_simulations.define_voltages())*1e3
-volts_noramp=noramp_simulations.e_nondim(noramp_simulations.define_voltages())*1e3
-time_noramp=noramp_simulations.t_nondim(noramp_simulations.time_vec)
-time_ramp=ramped_simulations.t_nondim(ramped_simulations.time_vec)
+volts_ramp=ramped_simulations.e_nondim(ramped_simulations.define_voltages()[ramped_simulations.time_idx:])*1e3
+volts_noramp=noramp_simulations.e_nondim(noramp_simulations.define_voltages()[noramp_simulations.time_idx:])*1e3
+time_noramp=noramp_simulations.t_nondim(noramp_simulations.time_vec[noramp_simulations.time_idx:])
+time_ramp=ramped_simulations.t_nondim(ramped_simulations.time_vec[ramped_simulations.time_idx:])
 noramp_harm=harm_class.generate_harmonics(time_noramp, noramp_ts)
 ramp_harm=harm_class.generate_harmonics(time_ramp, ramp_ts)
 harm_len=2

@@ -14,6 +14,8 @@ import pickle
 import warnings
 class single_electron:
     def __init__(self,file_name="", dim_paramater_dictionary={}, simulation_options={}, other_values={}, param_bounds={}, results_flag=True):
+        if type(file_name) is dict:
+            raise TypeError("Need to define a filename - this is currently a dictionary!")
 
         if len(dim_paramater_dictionary)==0 and len(simulation_options)==0 and len(other_values)==0:
             self.file_init=True
@@ -88,7 +90,7 @@ class single_electron:
                 self.nd_param.time_end=2*(self.nd_param.E_reverse-self.nd_param.E_start)
             self.times()
             if simulation_options["no_transient"]!=False:
-                    transient_time=self.i_nondim(self.time_vec)
+                    transient_time=self.t_nondim(self.time_vec)
                     start_idx=np.where(transient_time>simulation_options["no_transient"])
                     self.time_idx=start_idx[0][0]
             else:
@@ -215,6 +217,7 @@ class single_electron:
                 filter_bit=top_hat[index]
                 results[index]=filter_bit
         else:
+            print(self.harmonic_range)
             first_harm=(self.harmonic_range[0]*true_harm)-(self.nd_param.omega*self.filter_val)
             last_harm=(self.harmonic_range[-1]*true_harm)+(self.nd_param.omega*self.filter_val)
             likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
@@ -264,17 +267,8 @@ class single_electron:
             denom = ((dt*self.nd_param.k_0*exp11) +(dt*self.nd_param.k_0*exp12) + 1)
             theta[i]=u1n1_top/denom
         return theta
-    def times(self, sf=False):
-        if sf !=False:
-            self.dim_dict["sampling_freq"]=sf
-            if self.dim_dict["time_end"]==None:
-                warnings.warn("Time end not defined")
-                self.dim_dict["time_end"]=self.nd_param.time_end
-            self.nd_param=params(self.dim_dict)
+    def times(self):
         self.time_vec=np.arange(0, self.nd_param.time_end, self.nd_param.sampling_freq)
-        if self.simulation_options["no_transient"]!=False:
-            times=np.where(self.time_vec>self.simulation_options["no_transient"])
-            self.time_idx=times[0][0]
         #self.time_vec=np.linspace(0, self.nd_param.time_end, num_points)
     def change_norm_group(self, param_list, method):
         normed_params=copy.deepcopy(param_list)
@@ -480,7 +474,7 @@ class single_electron:
         #print(list(normed_params))
         for i in range(0, len(self.optim_list)):
             self.dim_dict[self.optim_list[i]]=normed_params[i]
-        if self.simulation_options["phase_only"]==True:
+        if "phase_only" in self.simulation_options and self.simulation_options["phase_only"]==True:
             self.dim_dict["cap_phase"]=self.dim_dict["phase"]
         self.nd_param=params(self.dim_dict)
         self.nd_param_dict=self.nd_param.nd_param_dict
@@ -503,8 +497,6 @@ class single_electron:
         if self.simulation_options["no_transient"]!=False:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
-        if "interpolant" in self.simulation_options:
-            time_series=np.interp(self.simulation_options["interpolant"], self.time_vec[self.time_idx:], time_series)
         #time_series=self.define_voltages()
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)
@@ -518,13 +510,18 @@ class single_electron:
         elif self.simulation_options["likelihood"]=='timeseries':
             if self.simulation_options["test"]==True:
                 print(list(normed_params))
-                plt.subplot(1,2,1)
-                plt.plot(self.other_values["experiment_voltage"],time_series)
-                plt.plot(self.other_values["experiment_voltage"],self.secret_data_time_series, alpha=0.7)
-                plt.subplot(1,2,2)
-                plt.plot(self.other_values["experiment_time"],time_series)
-                plt.plot(self.other_values["experiment_time"],self.secret_data_time_series, alpha=0.7)
-                plt.show()
+                if self.simulation_options["experimental_fitting"]==True:
+                    plt.subplot(1,2,1)
+                    plt.plot(self.other_values["experiment_voltage"],time_series)
+                    plt.plot(self.other_values["experiment_voltage"],self.secret_data_time_series, alpha=0.7)
+                    plt.subplot(1,2,2)
+                    plt.plot(self.other_values["experiment_time"],time_series)
+                    plt.plot(self.other_values["experiment_time"],self.secret_data_time_series, alpha=0.7)
+                    plt.show()
+                else:
+                    plt.plot(self.time_vec[self.time_idx:], time_series)
+                    plt.plot(self.time_vec[self.time_idx:], self.secret_data_time_series)
+                    plt.show()
             return (time_series)
 class paralell_class:
     def __init__(self, params, times, method, bounds, solver):

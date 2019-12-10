@@ -31,7 +31,7 @@ for lcv_2 in range(0, len(concs)):
     total_voltages=[]
     total_time=[0]
     total_current=[]
-    for lcv_1 in range(1, 3):
+    for lcv_1 in range(1, 4):
         Method =concs[lcv_2]+str(lcv_1)+"_cv"
         type="current"
         type2="voltage"
@@ -147,8 +147,7 @@ for lcv_2 in range(0, len(concs)):
     other_values["experiment_time"]=total_time
     other_values["experiment_voltage"]=total_voltages
     other_values["experiment_current"]=total_current
-    plt.plot(total_time, total_current)
-    plt.show()
+
     noramp_fit.nd_param.time_end=total_time[-1]
     noramp_fit.times()
     noramp_fit.simulation_options["interpolant"]=total_time
@@ -157,7 +156,17 @@ for lcv_2 in range(0, len(concs)):
     #noramp_fit.time_idx=0
     noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha"])
     true_data=total_current
+    inf_params=[0.15000000018944165, 0.10585753483158893, 58.647835768143864, 3086.2298518853395, 5.642632260908315e-05, 0.05396499954590106, -0.00039767166962080894, 3.0365465573369006e-10, 8.944854891819027, 4.248411764775375, 0.18772534522877896, 0.5]
 
+    test=noramp_fit.test_vals(inf_params, "timeseries")
+    test=np.interp(total_time, noramp_fit.time_vec[noramp_fit.time_idx:], test)
+
+    plt.plot(total_time, total_current, label="0.1M NaCl 1-3 concatenated")
+    plt.plot(total_time, test, label="Sim")
+    plt.xlabel("Nondim time")
+    plt.ylabel("Nondim current")
+    plt.legend()
+    plt.show()
     #plt.plot(voltage_results, current_results)
     #plt.show()
     fourier_arg=noramp_fit.kaiser_filter(current_results)

@@ -55,11 +55,11 @@ def plot_params(titles, set_chain, positions=None, label=None):
         if abs(np.mean(plot_chain))<0.001:
             axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3e'))
         else:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
         axes.hist(plot_chain, alpha=0.4,bins=20, stacked=True, label=label)
         axes.legend()
         lb, ub = axes.get_xlim( )
-        axes.set_xticks(np.linspace(lb, ub, 4))
+        axes.set_xticks(np.linspace(lb, ub, 5))
         axes.set_xlabel(titles[i])
         axes.set_ylabel('frequency')
         axes.set_title(graph_titles[i])
@@ -133,7 +133,7 @@ Titles={
     "noise":"Noise",
 }
 #f=open(filename, "r")
-params=(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","omega","gamma","cap_phase","phase","alpha"])
+params=(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma", "omega","cap_phase","phase","alpha", "noise"])
 optim_list=params
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 graph_titles=[Titles[x] for x in optim_list]
@@ -153,17 +153,31 @@ desired_file="Noramp_"
 file_numbers=["8_94","114", "209"]
 #concs=["__{0}__".format(x) for x in file_numbers]
 positions=[params.index(x) for x in optim_list]
-for i in range(0, len(concs)):
-    for filename in files:#
-        print(filename, desired_file+concs[i]+extension)
-        if (concs1[i] in filename): #and (extension in filename) and (desired_file in filename):
-            print(filename, concs[i])
 
-            chains=np.load(("/").join([electrode, folder, filename]))
-            #plot_params(titles, chains[:, 25000:, :], positions=positions, label=concs[i])
-            pints.plot.trace(chains)
-            plt.show()
+for filename in files:#
+    if ("MCMC_2" in filename) and ("1e-1M" in filename): #and (extension in filename) and (desired_file in filename):
+        print(filename)
+        cv_idx=filename.index("cv")
+        number=filename[cv_idx-2]
+
+        chains=np.load(("/").join([electrode, folder, filename]))
+            #print(number, pints.rhat_all_params(chains[:, 40000:, :]), np.mean(pints.rhat_all_params(chains)))
+        plot_params(titles, chains[:, 25000:, :], positions=positions, label="0.1 M NaCl-Scan "+number)
+        #pints.plot.trace(chains)
+        #plt.show()
+    elif ("MCMC_3" in filename) and ("1e0M" in filename): #and (extension in filename) and (desired_file in filename):
+        print(filename)
+        cv_idx=filename.index("cv")
+        number=filename[cv_idx-2]
+
+        chains=np.load(("/").join([electrode, folder, filename]))
+            #print(number, pints.rhat_all_params(chains[:, 40000:, :]), np.mean(pints.rhat_all_params(chains)))
+        plot_params(titles, chains[:, 25000:, :], positions=positions, label="1 M NaCl-Scan "+number)
+        #pints.plot.trace(chains)
+        #plt.show()
 #chains2=np.load('GC4_MCMC_1_low_ru')
+#chains2=np.load('GC4_MCMC_1_low_ru')
+
 plt.show()
     #
     #plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.30, hspace=0.33)

@@ -10,7 +10,7 @@ import pickle
 import pints
 dir_path = os.path.dirname(os.path.realpath(__file__))
 types=["current", "voltage"]
-exp="Experimental-221119"
+exp="Experimental-120919"
 bla="Blank-110919"
 resistances=["high_ru", "low_ru", "fixed_ru"]
 ru_upper_bound=[700, 1e4, 50]
@@ -23,10 +23,10 @@ if exp_type==bla:
 else:
     extra=""
 data_path="/experiment_data_2/"+exp_type
-Electrode=""
+Electrode="Yellow"
 folder="Noramp"
 for lcv_1 in range(1, 3):
-    Method ="_1e0M_"+str(lcv_1)+"_cv"
+    Method =str(lcv_1)+"_cv"
     type="current"
     type2="voltage"
     path=("/").join([dir_path, data_path, folder, Electrode])
@@ -38,7 +38,7 @@ for lcv_1 in range(1, 3):
         elif (Method in data)  and (type2 in data):
             voltages=np.loadtxt(path+"/"+data)
 
-    dec_amount=1
+    dec_amount=32
     de=300e-3
     estart=260e-3-de
     ereverse=estart+2*de
@@ -76,7 +76,7 @@ for lcv_1 in range(1, 3):
         'sampling_freq' : (1.0/200),
         'phase' : 3*(math.pi/2),
         "time_end": None,
-        'num_peaks': 25
+        'num_peaks': 50
     }
     solver_list=["Bisect", "Brent minimisation", "Newton-Raphson", "inverted"]
     likelihood_options=["timeseries", "fourier"]
