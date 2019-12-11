@@ -85,10 +85,11 @@ class single_electron:
 
         else:
             if simulation_options["method"]=="sinusoidal":
-                self.nd_param.time_end=(self.nd_param.num_peaks)#/self.nd_param.omega)
+                self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.omega)/self.nd_param.c_T0
             else:
                 self.nd_param.time_end=2*(self.nd_param.E_reverse-self.nd_param.E_start)
             self.times()
+            print(self.nd_param.time_end, self.time_vec[-1])
             if simulation_options["no_transient"]!=False:
                     transient_time=self.t_nondim(self.time_vec)
                     start_idx=np.where(transient_time>simulation_options["no_transient"])
@@ -489,14 +490,18 @@ class single_electron:
         if self.simulation_options["numerical_debugging"]!=False:
             self.numerical_plots(solver)
         else:
+            start=time.time()
             if self.simulation_options["dispersion"]==True:
                 #print("dispersion")
+
                 time_series=self.paralell_disperse(solver)
+
             else:
                 time_series=solver(self.nd_param_dict, self.time_vec, self.simulation_options["method"],-1, self.bounds_val)
         if self.simulation_options["no_transient"]!=False:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
+        print(time.time()-start)
         #time_series=self.define_voltages()
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)

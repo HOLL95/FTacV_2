@@ -32,8 +32,8 @@ class harmonics:
             freq_idx=np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))
             filter_bit=top_hat[freq_idx]
             #test_hat[freq_idx]=1e5
-            #harmonics[i,np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]=filter_bit
-            harmonics[i, 0:len(filter_bit)]=filter_bit
+            harmonics[i,np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]=filter_bit
+            #harmonics[i, 0:len(filter_bit)]=filter_bit
             harmonics[i,:]=((np.fft.ifft(harmonics[i,:])))
         return harmonics
     def empty(self, arg):

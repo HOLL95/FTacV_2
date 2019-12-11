@@ -53,16 +53,40 @@ def plot_params(titles, set_chain, positions=None, label=None):
         axes=plt.subplot(row,col,i+1)
         plot_chain=chain_appender(set_chain, positions[i])
         if abs(np.mean(plot_chain))<0.001:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3e'))
+            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2e'))
         else:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
+            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
         axes.hist(plot_chain, alpha=0.4,bins=20, stacked=True, label=label)
         axes.legend()
         lb, ub = axes.get_xlim( )
-        axes.set_xticks(np.linspace(lb, ub, 5))
+        axes.set_xticks(np.linspace(lb, ub, 4))
         axes.set_xlabel(titles[i])
         axes.set_ylabel('frequency')
         axes.set_title(graph_titles[i])
+def trace_plots(titles, chains, names, rhat=False):
+    row, col=det_subplots(len(titles))
+    rhat_vals=pints.rhat_all_params(chains[:, 15000:, :])
+    for i in range(0, len(titles)):
+        axes=plt.subplot(row,col,i+1)
+
+        for j in range(0, len(chains)):
+            axes.plot(chains[j, :, i], label="Chain "+str(j), alpha=0.7)
+        if abs(np.mean(chains[j, :, i]))<0.001:
+            axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3e'))
+        else:
+            axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
+        if i==0:
+            axes.legend()
+        #lb, ub = axes.get_xlim( )
+        #axes.set_xticks(np.linspace(lb, ub, 5))
+        if rhat == True:
+            axes.set_title(names[i]+ " (Rhat="+str(round(rhat_vals[i],3))+")")
+        else:
+            axes.set_title(names[i])
+        axes.set_ylabel(titles[i])
+        axes.set_xlabel('Iteration')
+
+
 unit_dict={
     "E_0": "V",
     'E_start': "V", #(starting dc voltage - V)
@@ -153,22 +177,24 @@ desired_file="Noramp_"
 file_numbers=["8_94","114", "209"]
 #concs=["__{0}__".format(x) for x in file_numbers]
 positions=[params.index(x) for x in optim_list]
+oscs=["25", "15", "10"]
 
 for filename in files:#
-    if ("25" in filename):# and ("1e-1M" in filename): #and (extension in filename) and (desired_file in filename):
+    if True in [x in filename for x in oscs]:# and ("1e-1M" in filename): #and (extension in filename) and (desired_file in filename):
         print(filename)
         cv_idx=filename.index("cv")
         number=filename[cv_idx-2]
 
         chains=np.load(("/").join([electrode, folder, filename]))
         print(number, pints.rhat_all_params(chains[:, 20000:, :]), np.mean(pints.rhat_all_params(chains)))
-        plot_params(titles, chains[:, 25000:, :], positions=positions, label="0.1 M NaCl-Scan "+number)
-        #pints.plot.trace(chains)
-        #plt.show()
+        plot_params(titles, chains[:, 25000:, :], positions=positions, label=filename[-2:])
+        #trace_plots(titles, chains, graph_titles, rhat=True)
+
+plt.show()
 #chains2=np.load('GC4_MCMC_1_low_ru')
 #chains2=np.load('GC4_MCMC_1_low_ru')
 
-plt.show()
+#plt.show()
     #
     #plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.30, hspace=0.33)
 #plot_params(titles, chains2)

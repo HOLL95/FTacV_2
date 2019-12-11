@@ -14,7 +14,7 @@ noramp_startup=FTACV_initialisation(experimental_fitting=False, file_dict={"GC4_
 ramp_startup=FTACV_initialisation(experimental_fitting=False, file_dict={"GC4_1_ramp_cv":types,}, dec_amount=64)
 print("read", time.time()-start)
 simulation_options={
-    "no_transient":False,
+    "no_transient":1/5,
     "numerical_debugging": False,
     "experimental_fitting":False,
     "dispersion":False,
@@ -38,7 +38,9 @@ noramp_other_values={
 }
 
 noramp_startup.generic_noramp_params['omega']=5
-noramp_startup.generic_noramp_params['Cdl']=0
+noramp_startup.generic_noramp_params['Cdl']=1e-5
+noramp_startup.generic_noramp_params['num_peaks']=20
+noramp_startup.generic_noramp_params['sampling_freq']=(1.0/400)
 param_bounds={
     'E_0':[0.2, 0.3],#[param_list['E_start'],param_list['E_reverse']],
     'omega':[0.1*noramp_startup.generic_noramp_params['omega'],1.9*noramp_startup.generic_noramp_params['omega']],#8.88480830076,  #    (frequency Hz)
@@ -84,10 +86,15 @@ unit_dict={
     'phase' : "rads",
 }
 noramp_simulations=single_electron(None, noramp_startup.generic_noramp_params, simulation_options, noramp_other_values, param_bounds)
-noramp_simulations.def_optim_list(["E0_mean", "E0_std","k0_scale", "k0_loc", "k0_shape","Ru","alpha", "Cdl"])
+noramp_simulations.def_optim_list(["E_0","k_0","Ru","alpha", "Cdl"])
 #test=paralell_class(noramp_simulations.nd_param_dict, noramp_simulations.time_vec, "sinusoidal", noramp_simulations.bounds_val, isolver_martin_brent.brent_current_solver)
 #noramp_simulations.current_params=noramp_simulations.nd_param_dict
 #test.paralell_dispersion(range(20))
-#noramp_simulations.test_vals([0.2,0.05, 100, 100, 0.1, 1000, 0.5, 0], "timeseries")
+#start=time.time()
+#test=noramp_simulations.test_vals([0.2, 100, 10, 0.5, 0], "timeseries")
+#print(time.time()-start)
+#print(len(test))
+#plt.plot(test)
+#plt.show()
 noramp_simulations.param_scanner(noramp_simulations.optim_list, unit_dict,"Scans", 6)
 #harm_class=harmonics(noramp_other_values["harmonic_range"],noramp_simulations.nd_param.omega, 0.2)

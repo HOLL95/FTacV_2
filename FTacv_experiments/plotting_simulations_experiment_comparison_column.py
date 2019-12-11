@@ -58,20 +58,24 @@ ramped_other_values={
     "signal_length":int(5e5),
 }
 noramp_startup.generic_noramp_params["k_0"]=100
-ramp_startup.generic_noramp_params["k_0"]=0
-noramp_startup.generic_noramp_params["num_peaks"]=10
+ramp_startup.generic_ramped_params["k_0"]=100
+noramp_startup.generic_noramp_params["num_peaks"]=50
 noramp_startup.generic_noramp_params["v_nondim"]=False
-ramp_startup.generic_noramp_params["v_nondim"]=True
-ramp_startup.generic_noramp_params["sampling_freq"]=1/800.0
+noramp_startup.generic_noramp_params["original_omega"]=noramp_startup.generic_noramp_params["omega"]
+ramp_startup.generic_ramped_params["v_nondim"]=True
+ramp_startup.generic_ramped_params["sampling_freq"]=1/800.0
 noramp_simulations=single_electron("", noramp_startup.generic_noramp_params, simulation_options, noramp_other_values)
 ramped_simulations=single_electron("", ramp_startup.generic_ramped_params, ramped_simulation_options, ramped_other_values)
-harm_class=harmonics(noramp_other_values["harmonic_range"],noramp_simulations.nd_param.omega, 0.05)
+harm_class=harmonics(noramp_other_values["harmonic_range"],noramp_simulations.nd_param.omega, 0.1)
 ramp_ts=noramp_simulations.i_nondim(ramped_simulations.test_vals([], "timeseries"))*1e3
 noramp_ts=noramp_simulations.i_nondim(noramp_simulations.test_vals([], "timeseries"))*1e3
 volts_noramp=noramp_simulations.e_nondim(noramp_simulations.define_voltages())                   #noramp_simulations.other_values["experiment_voltage"])
 volts_ramp=ramped_simulations.e_nondim(ramped_simulations.define_voltages())
 volts_ramp=ramped_simulations.e_nondim(ramped_simulations.define_voltages()[ramped_simulations.time_idx:])*1e3
 volts_noramp=noramp_simulations.e_nondim(noramp_simulations.define_voltages()[noramp_simulations.time_idx:])*1e3
+ramped_simulations.simulation_options["method"]="dcv"
+dcv_ramped=ramped_simulations.e_nondim(ramped_simulations.define_voltages()[ramped_simulations.time_idx:])*1e3
+ramped_simulations.simulation_options["method"]="ramped"
 time_noramp=noramp_simulations.t_nondim(noramp_simulations.time_vec[noramp_simulations.time_idx:])
 time_ramp=ramped_simulations.t_nondim(ramped_simulations.time_vec[ramped_simulations.time_idx:])
 noramp_harm=harm_class.generate_harmonics(time_noramp, noramp_ts)
@@ -82,6 +86,7 @@ normal_axes=[]
 harm_axes=[]
 plt.rcParams.update({'font.size': 12})
 xlabels=["Time(s)", "Time(s)", "Frequency(Hz)"]
+xlabels2=["Time(s)", "Voltage(mV)", "Frequency(Hz)"]
 ylabels=["Voltage(mV)", "Current(mA)", "Amplitude"]
 letters=["A", "B", "C", "E", "F", "G"]
 fig=plt.figure()
@@ -94,9 +99,10 @@ for j in [0,1]:
         normal_axes.append(plt.subplot2grid((1+spacing+normal_plots+harm_class.num_harmonics*total_plots*plot_height,cols), (i*((plot_height*harm_class.num_harmonics)+spacing),j), rowspan=harm_class.num_harmonics*plot_height, colspan=1))
         normal_axes[i].text(-0.1, 1.15, letters[i], transform=normal_axes[i].transAxes,
           fontsize=14, fontweight='bold', va='top', ha='right')
-        normal_axes[i].set_xlabel(xlabels[i])
+        normal_axes[i].set_xlabel(xlabels2[i])
         normal_axes[i].set_ylabel(ylabels[i])
 for i in range(0, normal_plots):
+    print(i+normal_plots)
     normal_axes[i+normal_plots].set_xlabel(xlabels[i])
     normal_axes[i+normal_plots].set_ylabel(ylabels[i])
     normal_axes[i+normal_plots].text(-0.1, 1.15, letters[i+normal_plots], transform=normal_axes[i+normal_plots].transAxes,
@@ -122,15 +128,20 @@ for j in [0,1]:
 
 normal_axes[0].plot(time_noramp, volts_noramp)
 #normal_axes[0].set_title("Sinusoidal voltage vs time")
-normal_axes[1].plot(time_noramp, noramp_ts)
+normal_axes[1].plot(volts_noramp, noramp_ts)
 #normal_axes[1].set_title("Sinusoidal current vs time")
 harm_class.harmonic_selecter(normal_axes[2], noramp_ts, time_noramp)
+
+normal_axes[2].set_xticks(range(0, 13*5, 5))
+normal_axes[2].set_xticklabels([str(x)+"$\omega$" for x in range(0, 13)])
 #normal_axes[2].set_title("Sinusoidal absolute Fourier transform")
 normal_axes[3].plot(time_ramp, volts_ramp)
 #normal_axes[3].set_title("Ramped voltage vs time")
 normal_axes[4].plot(time_ramp, ramp_ts)
 #normal_axes[4].set_title("Ramped current vs time")
 harm_class.harmonic_selecter(normal_axes[5], ramp_ts, time_ramp)
+normal_axes[5].set_xticks(range(0, 13*5, 5))
+normal_axes[5].set_xticklabels([str(x)+"$\omega$" for x in range(0, 13)])
 #normal_axes[5].set_title("Ramped absolute Fourier transform")
 harm_counter=0
 #harm_axes[harm_counter].set_title("Sinusoidal harmonics")
@@ -140,11 +151,11 @@ harm_counter=0
 #    fontsize=14, fontweight='bold', va='top', ha='right')
 
 for i in range(0, len(noramp_harm)):
-    harm_axes[harm_counter].plot(time_noramp, noramp_harm[i,:]*1e3)
+    harm_axes[harm_counter].plot(volts_noramp, noramp_harm[i,:]*1e3)
     harm_axes[harm_counter].yaxis.set_label_position("right")
     harm_axes[harm_counter].set_ylabel(str(harm_class.harmonics[i]), rotation=0)
     if (i+1)==len(noramp_harm):
-        harm_axes[harm_counter].set_xlabel("Time(s)")
+        harm_axes[harm_counter].set_xlabel("Voltage(mV)")
     else:
         harm_axes[harm_counter].set_xticks([])
 
@@ -152,7 +163,7 @@ for i in range(0, len(noramp_harm)):
 #harm_axes[harm_counter].set_title("Ramped harmonics")
 
 for i in range(0, len(ramp_harm)):
-    harm_axes[harm_counter].plot(time_ramp, abs(ramp_harm[i,:])*1e3)
+    harm_axes[harm_counter].plot(time_ramp, (ramp_harm[i,:])*1e3)
     harm_axes[harm_counter].yaxis.set_label_position("right")
     harm_axes[harm_counter].set_ylabel(str(harm_class.harmonics[i]), rotation=0)
 

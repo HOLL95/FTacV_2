@@ -55,14 +55,36 @@ def plot_params(titles, set_chain, positions=None, label=None):
         if abs(np.mean(plot_chain))<0.001:
             axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3e'))
         else:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
         axes.hist(plot_chain, alpha=0.4,bins=20, stacked=True, label=label)
         axes.legend()
         lb, ub = axes.get_xlim( )
-        axes.set_xticks(np.linspace(lb, ub, 4))
+        axes.set_xticks(np.linspace(lb, ub, 5))
         axes.set_xlabel(titles[i])
         axes.set_ylabel('frequency')
         axes.set_title(graph_titles[i])
+def trace_plots(titles, chains, names, rhat=False):
+    row, col=det_subplots(len(titles))
+    rhat_vals=pints.rhat_all_params(chains[:, 15000:, :])
+    for i in range(0, len(titles)):
+        axes=plt.subplot(row,col,i+1)
+
+        for j in range(0, len(chains)):
+            axes.plot(chains[j, :, i], label="Chain "+str(j), alpha=0.7)
+        if abs(np.mean(chains[j, :, i]))<0.001:
+            axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2e'))
+        else:
+            axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+        if i==0:
+            axes.legend()
+        #lb, ub = axes.get_xlim( )
+        #axes.set_xticks(np.linspace(lb, ub, 5))
+        if rhat == True:
+            axes.set_title(names[i]+ " (Rhat="+str(round(rhat_vals[i],3))+")")
+        else:
+            axes.set_title(names[i])
+        axes.set_ylabel(titles[i])
+        axes.set_xlabel('Iteration')
 unit_dict={
     "E_0": "V",
     'E_start': "V", #(starting dc voltage - V)
@@ -133,14 +155,15 @@ Titles={
     "noise":"Noise",
 }
 #f=open(filename, "r")
-params=(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","omega","gamma","cap_phase","phase","alpha"])
+params=(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","omega","gamma","cap_phase","phase","alpha", "noise"])
 optim_list=params
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 graph_titles=[Titles[x] for x in optim_list]
-folder="MCMC_runs/omega_nondim"
+folder="MCMC_runs/Steady_state"
 electrode="Yellow"
 path=("/").join([dir_path , electrode, folder])
 files=os.listdir(path)#
+print(files)
 #fig=plt.figure(num=None, figsize=(12,9), dpi=120, facecolor='w', edgecolor='k')
 concs1=["1e-1", "5e-1", "1e0", "15e-1", "3e0"]
 concs=["__{0}__".format(x) for x in concs1]
@@ -153,18 +176,17 @@ desired_file="Noramp_"
 file_numbers=["8_94","114", "209"]
 #concs=["__{0}__".format(x) for x in file_numbers]
 positions=[params.index(x) for x in optim_list]
-for i in range(0, len(concs)):
-    for filename in files:#
-        print(filename, desired_file+concs[i]+extension)
-        if filename==(desired_file+concs[i]+extension):#(concs[i] in filename) and (extension in filename) and (desired_file in filename):
-            print(filename, concs[i])
+#for i in range(0, len(concs)):
+for filename in files:#
+    
+    #if filename==(desired_file+concs[i]+extension):#(concs[i] in filename) and (extension in filename) and (desired_file in filename):
 
-            chains=np.load(("/").join([electrode, folder, filename]))
-            plot_params(titles, chains[:, 25000:, :], positions=positions, label=concs[i])
-            #pints.plot.trace(chains)
-            #plt.show()
-#chains2=np.load('GC4_MCMC_1_low_ru')
-plt.show()
+
+    chains=np.load(("/").join([electrode, folder, filename]))
+    #plot_params(titles, chains[:, 25000:, :], positions=positions, label=concs[i])
+    trace_plots(titles, chains, graph_titles, rhat=True )
+    plt.show()
+
     #
     #plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.30, hspace=0.33)
 #plot_params(titles, chains2)
