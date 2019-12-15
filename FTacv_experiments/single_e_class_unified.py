@@ -72,7 +72,7 @@ class single_electron:
                 other_values["experiment_voltage"]=other_values["experiment_voltage"][desired_idx]/self.nd_param.c_E0
             else:
                 if simulation_options["method"]=="sinusoidal":
-                    self.nd_param.time_end=(self.nd_param.num_peaks)#/self.nd_param.omega)
+                    self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.omega)/self.nd_param.c_T0
                 else:
                     self.nd_param.time_end=2*(self.nd_param.E_reverse-self.nd_param.E_start)
                 self.times()
