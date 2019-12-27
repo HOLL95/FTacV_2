@@ -72,7 +72,7 @@ class single_electron:
                 other_values["experiment_voltage"]=other_values["experiment_voltage"][desired_idx]/self.nd_param.c_E0
             else:
                 if simulation_options["method"]=="sinusoidal":
-                    self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.omega)/self.nd_param.c_T0
+                    self.nd_param.time_end=(self.nd_param.num_peaks)#/self.nd_param.omega)
                 else:
                     self.nd_param.time_end=2*(self.nd_param.E_reverse-self.nd_param.E_start)
                 self.times()
@@ -85,11 +85,10 @@ class single_electron:
 
         else:
             if simulation_options["method"]=="sinusoidal":
-                self.nd_param.time_end=(self.nd_param.num_peaks/self.nd_param.omega)/self.nd_param.c_T0
+                self.nd_param.time_end=(self.nd_param.num_peaks)#/self.nd_param.omega)
             else:
                 self.nd_param.time_end=2*(self.nd_param.E_reverse-self.nd_param.E_start)
             self.times()
-            print(self.nd_param.time_end, self.time_vec[-1])
             if simulation_options["no_transient"]!=False:
                     transient_time=self.t_nondim(self.time_vec)
                     start_idx=np.where(transient_time>simulation_options["no_transient"])
@@ -218,7 +217,6 @@ class single_electron:
                 filter_bit=top_hat[index]
                 results[index]=filter_bit
         else:
-            print(self.harmonic_range)
             first_harm=(self.harmonic_range[0]*true_harm)-(self.nd_param.omega*self.filter_val)
             last_harm=(self.harmonic_range[-1]*true_harm)+(self.nd_param.omega*self.filter_val)
             likelihood=top_hat[np.where((frequencies>first_harm) & (frequencies<last_harm))]
@@ -226,7 +224,7 @@ class single_electron:
             results=np.zeros(len(top_hat), dtype=complex)
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
         comp_results=np.append((np.real(results)), np.imag(results))
-        return abs(results)
+        return comp_results
     def abs_transform(self, data):
         window=np.hanning(len(data))
         hanning_transform=np.multiply(window, data)
@@ -490,18 +488,14 @@ class single_electron:
         if self.simulation_options["numerical_debugging"]!=False:
             self.numerical_plots(solver)
         else:
-            start=time.time()
             if self.simulation_options["dispersion"]==True:
                 #print("dispersion")
-
                 time_series=self.paralell_disperse(solver)
-
             else:
                 time_series=solver(self.nd_param_dict, self.time_vec, self.simulation_options["method"],-1, self.bounds_val)
         if self.simulation_options["no_transient"]!=False:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
-        print(time.time()-start)
         #time_series=self.define_voltages()
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)

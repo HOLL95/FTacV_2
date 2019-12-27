@@ -40,7 +40,7 @@ file_numbers=["8_94","114", "209"]
 file_nos=["_{0}_".format(x) for x in file_numbers]
 dec_amounts=[32, 1, 1]
 omegas=[8.94, 114.14, 209.18]
-for counter in range(1, len(file_nos)):
+for counter in range(0, len(file_nos)):
     desired_conc=file_nos[counter]
     binary_files={}
     for filename in files:
@@ -148,25 +148,39 @@ for counter in range(1, len(file_nos)):
     current_results=blank_fit.other_values["experiment_current"]
     voltage_results=blank_fit.other_values["experiment_voltage"]
     voltages=blank_fit.define_voltages()
+    fig, ax=plt.subplots(1,2)
     blank_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2", "cap_phase", "omega"])
-    #ax[0].plot(blank_fit.t_nondim(time_results), blank_fit.i_nondim(current_results))
-    #ax[0].set_ylabel("Current(A)")
-    #ax[0].set_xlabel("Time(s)")
-    #ax2=ax[0].twinx()
-    #blank_fit.nd_param.phase=(3*math.pi/2)+(math.pi/2)
-    #ax2.plot(blank_fit.t_nondim(time_results), blank_fit.i_nondim(blank_fit.define_voltages(True)), color="red", label="Predicted capacitance phase+$\\frac{\pi}{2}$")
-    #ax2.legend()
-    #ax2.set_ylabel("Voltage(V)")
-    #ax[1].plot(blank_fit.t_nondim(time_results), blank_fit.i_nondim(current_results))
-    #ax[1].set_ylabel("Current(A)")
-    #ax[1].set_xlabel("Time(s)")
-    #ax3=ax[1].twinx()
-    #ax3.set_ylabel("Voltage(V)")
+    blank_fit.nd_param.phase=(3*math.pi/2)+(math.pi/2)
+    ax2=ax[0]
+    ax2.plot(blank_fit.t_nondim(time_results), blank_fit.e_nondim(blank_fit.define_voltages(True)*1e3), color="red", label="Predicted capacitance phase+$\\frac{\pi}{2}$", linestyle="--")
 
-    #blank_fit.nd_param.phase=4.3593306496513256+(math.pi/2)
-    #ax3.plot(blank_fit.t_nondim(time_results), blank_fit.i_nondim(blank_fit.define_voltages(True)), color="red", label="Fitted capacitance phase+$\\frac{\pi}{2}$")
-    #ax3.legend()
-    #plt.show()
+    ax2.set_ylabel("Voltage(mV)")
+    ax1=ax2.twinx()
+    ax1.plot(blank_fit.t_nondim(time_results), blank_fit.i_nondim(current_results)*1e3)
+    ax1.set_ylabel("Current(mA)")
+    ax2.set_xlabel("Time(s)")
+    legend_1 =ax2.legend(loc=1, borderaxespad=1.)
+    legend_1.remove()
+    legend_2=ax1.legend(loc=1, borderaxespad=1.)
+    ax1.add_artist(legend_1)
+    legend_2.remove()
+    ax3=ax[1]
+    ax3.set_ylabel("Voltage(mV)")
+
+    blank_fit.nd_param.phase=4.3593306496513256+(math.pi/2)
+    ax3.plot(blank_fit.t_nondim(time_results), blank_fit.e_nondim(blank_fit.define_voltages(True)*1e3), color="red", label="Fitted capacitance phase+$\\frac{\pi}{2}$", linestyle="--")
+
+    ax4=ax[1].twinx()
+    ax4.plot(blank_fit.t_nondim(time_results), blank_fit.i_nondim(current_results)*1e3)
+    ax4.set_ylabel("Current(mA)")
+
+    legend_1 =ax3.legend(loc=1, borderaxespad=1.)
+    legend_1.remove()
+    legend_2=ax4.legend(loc=1, borderaxespad=1.)
+    ax4.add_artist(legend_1)
+    legend_2.remove()
+    ax3.set_xlabel("Time(s)")
+    plt.show()
     plt.plot(time_results, voltage_results)
     #plt.plot(time_results, blank_fit.define_voltages()[blank_fit.time_idx:])
     #ax=plt.gca()

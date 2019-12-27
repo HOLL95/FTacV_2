@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2019.7.22)  2 DEC 2019 15:14
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2019.7.22)  18 DEC 2019 14:12
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -155,17 +155,17 @@ Preview: Tightpage 0 0 0 0
 Here is how much of TeX's memory you used:
  1277 strings out of 494145
  19328 string characters out of 6157748
- 80431 words of memory out of 5000000
+ 84431 words of memory out of 5000000
  4683 multiletter control sequences out of 15000+600000
  3640 words of font info for 14 fonts, out of 8000000 for 9000
  430 hyphenation exceptions out of 8191
- 34i,9n,56p,254b,199s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 34i,9n,56p,256b,199s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/ams
 fonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr1
 0.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></
 usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on image_tex_edited.pdf (1 page, 51534 bytes).
+Output written on image_tex_edited.pdf (1 page, 52827 bytes).
 PDF statistics:
  28 PDF objects out of 1000 (max. 8388607)
  19 compressed objects within 1 object stream

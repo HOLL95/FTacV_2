@@ -8,6 +8,8 @@ from harmonics_plotter import harmonics
 import os
 import pickle
 import pints
+import sys
+import select
 dir_path = os.path.dirname(os.path.realpath(__file__))
 types=["current", "voltage"]
 exp="Experimental-120919"
@@ -73,14 +75,14 @@ for lcv_1 in range(1, 11):
         "k0_scale":50,
         "k0_range":1e3,
         "cap_phase":0,
-        'sampling_freq' : (1.0/200),
+        'sampling_freq' : (1.0/400),
         'phase' : 3*(math.pi/2),
         "time_end": None,
         'num_peaks': 30
     }
     solver_list=["Bisect", "Brent minimisation", "Newton-Raphson", "inverted"]
     likelihood_options=["timeseries", "fourier"]
-    time_start=1/(param_list["omega"])
+    time_start=2/(param_list["omega"])
     simulation_options={
         "no_transient":time_start,
         "numerical_debugging": False,
@@ -114,7 +116,7 @@ for lcv_1 in range(1, 11):
         'CdlE3': [-0.01,0.01],#1.10053945995e-06,
         'gamma': [1e-11,1e-9],
         'k_0': [10, 1e3], #(reaction rate s-1)
-        'alpha': [0.3, 0.7],
+        'alpha': [0.4, 0.6],
         "cap_phase":[0, 2*math.pi],
         "E0_mean":[0.19, 0.25],
         "E0_std": [0.001, 0.2],
@@ -145,18 +147,18 @@ for lcv_1 in range(1, 11):
     CMAES_boundaries=pints.RectangularBoundaries(list([np.zeros(len(noramp_fit.optim_list))]), list([np.ones(len(noramp_fit.optim_list))]))
     noramp_fit.simulation_options["label"]="cmaes"
     #noramp_fit.simulation_options["test"]=True
-    num_runs=20
+    num_runs=10
     param_mat=np.zeros((num_runs,len(noramp_fit.optim_list)))
-    score_vec=np.zeros(num_runs)
+    score_vec=np.ones(num_runs)*1e6
     for i in range(0, num_runs):
         x0=abs(np.random.rand(noramp_fit.n_parameters()))#noramp_fit.change_norm_group(gc4_3_low_ru, "norm")
         print(noramp_fit.change_norm_group(x0, "un_norm"))
         cmaes_fitting=pints.OptimisationController(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
-        cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
+        cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-7)
         if "E0_mean" in noramp_fit.optim_list and "k0_loc" in noramp_fit.optim_list:
             cmaes_fitting.set_parallel(False)
         else:
-            cmaes_fitting.set_parallel(False)
+            cmaes_fitting.set_parallel(True)
         found_parameters, found_value=cmaes_fitting.run()
         cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
         print(list(cmaes_results))
@@ -172,6 +174,11 @@ for lcv_1 in range(1, 11):
         cmaes_fourier=noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=False)
         param_mat[i,:]=cmaes_results
         score_vec[i]=found_value
+        print("Finish?")
+        i, o, e = select.select( [sys.stdin], [], [], 5)
+        if len(i) != 0:
+            break
+
 
     idx=[i[0] for i in sorted(enumerate(score_vec), key=lambda y:y[1])]
     save_params=param_mat[idx[0:3], :]
@@ -180,12 +187,12 @@ for lcv_1 in range(1, 11):
     cmaes_results=param_mat[best_idx,:]
     cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
     Electrode_save=extra+Electrode
-    run="Run_3"
+    run="Run_4"
     if "k0_shape" in noramp_fit.optim_list:
         sim_options=resistance_type+"_"+"k0_disp"
     else:
         sim_options=resistance_type
-    filename=("_").join([folder,Method, sim_options])+".run4"
+    filename=("_").join([folder,Method, sim_options])+".run5"
     filepath=("/").join([dir_path, "Inferred_params", Electrode_save, run])
     noramp_fit.save_state(results_dict, filepath, filename, save_params)
     error=np.std(abs(np.subtract(cmaes_time, current_results)))
@@ -210,14 +217,14 @@ for lcv_1 in range(1, 11):
     for i in range(0, 10):
         mcmc = pints.MCMCController(log_posterior, 3, xs,method=pints.HaarioBardenetACMC)
         mcmc.set_parallel(True)
-        mcmc.set_max_iterations(50000)
+        mcmc.set_max_iterations(40000)
         chains=mcmc.run()
         rhat_mean=np.mean(pints.rhat_all_params(chains[:, 30000:, :]))
         #pints.plot.trace(chains)
         #plt.show()
         if rhat_mean<1.1:
             run="MCMC_runs/omega_nondim"
-            save_file=filename=("_").join([folder,Method, sim_options, "MCMC"])+".run4"
+            save_file=filename=("_").join([folder,Method, sim_options, "MCMC"])+".run6"
             filepath=("/").join([dir_path, "Inferred_params", Electrode_save, run])
             f=open(filepath+"/"+filename, "wb")
             np.save(f, chains)

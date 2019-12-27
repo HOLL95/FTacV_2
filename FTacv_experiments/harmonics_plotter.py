@@ -30,7 +30,7 @@ class harmonics:
         for i in range(0, self.num_harmonics):
             true_harm=self.harmonics[i]*self.input_frequency
             freq_idx=np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))
-            filter_bit=top_hat[freq_idx]
+            filter_bit=(top_hat[freq_idx])
             #test_hat[freq_idx]=1e5
             harmonics[i,np.where((frequencies<(true_harm+(self.input_frequency*self.filter_val))) & (frequencies>true_harm-(self.input_frequency*self.filter_val)))]=filter_bit
             #harmonics[i, 0:len(filter_bit)]=filter_bit
@@ -42,16 +42,16 @@ class harmonics:
         obj_func=np.append(func(time_series),0)
         time_domain=(np.fft.ifft(np.append(obj_func,np.flip(obj_func))))
         return time_domain
-    def harmonic_selecter(self, ax, time_series, times, box=True):
+    def harmonic_selecter(self, ax, time_series, times, box=True, arg=np.real, line_label=None):
         f=np.fft.fftfreq(len(time_series), times[1]-times[0])
         hann=np.hanning(len(time_series))
         time_series=np.multiply(time_series, hann)
         Y=np.fft.fft(time_series)
-        last_harm=12*self.input_frequency
-
-        frequencies=f[np.where((f>0) & (f<(last_harm+(0.5*self.input_frequency))))]
-        fft_plot=abs(Y[np.where((f>0) & (f<(last_harm+(0.5*self.input_frequency))))])
-        ax.plot(frequencies, fft_plot)
+        last_harm=self.harmonics[-1]*self.input_frequency
+        first_harm=self.harmonics[0]*self.input_frequency
+        frequencies=f[np.where((f>(first_harm-(0.5*self.input_frequency))) & (f<(last_harm+(0.5*self.input_frequency))))]
+        fft_plot=(Y[np.where((f>(first_harm-(0.5*self.input_frequency))) & (f<(last_harm+(0.5*self.input_frequency))))])
+        ax.plot(frequencies, arg(fft_plot), label=line_label)
         if box==True:
             len_freq=np.linspace(0, 100, len(frequencies))
             longer_len_freq=np.linspace(0, 100, 10000)

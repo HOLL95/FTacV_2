@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "noramp_fitting_3.py", line 2, in <module>
+    import matplotlib.pyplot as plt
+  File "/users/henney/.local/lib/python3.6/site-packages/matplotlib/pyplot.py", line 115, in <module>
+    _backend_mod, new_figure_manager, draw_if_interactive, _show = pylab_setup()
+  File "/users/henney/.local/lib/python3.6/site-packages/matplotlib/backends/__init__.py", line 63, in pylab_setup
+    [backend_name], 0)
+  File "/users/henney/.local/lib/python3.6/site-packages/matplotlib/backends/backend_tkagg.py", line 4, in <module>
+    from . import tkagg  # Paint image to Tk photo blitter extension.
+  File "/users/henney/.local/lib/python3.6/site-packages/matplotlib/backends/tkagg.py", line 5, in <module>
+    from six.moves import tkinter as Tk
+  File "/users/henney/.local/lib/python3.6/site-packages/six.py", line 92, in __get__
+    result = self._resolve()
+  File "/users/henney/.local/lib/python3.6/site-packages/six.py", line 115, in _resolve
+    return _import_module(self.mod)
+  File "/users/henney/.local/lib/python3.6/site-packages/six.py", line 82, in _import_module
+    __import__(name)
+ModuleNotFoundError: No module named 'tkinter'

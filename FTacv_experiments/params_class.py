@@ -152,7 +152,6 @@ class params:
         self.c_E0=(self.R*self.T)/self.F
 
         if "v_nondim" in param_dict:
-            print(param_dict["v_nondim"])
             self.v=param_dict["v"]
         else:
             self.v=self.c_E0*self.c_omega

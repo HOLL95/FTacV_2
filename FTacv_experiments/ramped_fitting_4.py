@@ -5,6 +5,8 @@ from single_e_class_unified  import single_electron
 from harmonics_plotter import harmonics
 import pints.plot
 import os
+from multiplotter import multiplot
+import math
 dir_path = os.path.dirname(os.path.realpath(__file__))
 results_dict="Inferred_params"
 Electrode="Yellow"
@@ -20,7 +22,7 @@ ramp_data_class.dim_dict["phase"]=0
 ramp_data_class.dim_dict["cap_phase"]=0
 #ramp_data_class.dim_dict["omega"]=8.95
 ramp_data_class.dim_dict["original_omega"]=8.94
-ramp_data_class.simulation_options["dispersion_bins"]=16
+ramp_data_class.simulation_options["dispersion_bins"]=200
 ramped_data_path=("/").join([dir_path, "experiment_data_2", "Experimental-120919", "Ramped", "Yellow"])
 start_harm=2
 end_harm=7
@@ -70,42 +72,58 @@ cmaes_times=time_results#noramp_results.t_nondim(noramp_results.time_vec[noramp_
 test_voltages=voltage_results
 filtered_exp, filtered_exp_freq=likelihood_func(harmonic_range, cmaes_times, cmaes_time_series, noramp_results.nd_param.omega)
 filtered_data, filtered_data_freq=likelihood_func(harmonic_range, time_results, current_results,  noramp_results.nd_param.omega)
-plt.plot(filtered_exp)
-plt.plot(filtered_data)
-plt.show()
+
 #test_voltages=np.interp(cmaes_times, time_results, voltage_results)
 ramped_param_vals=[noramp_results.dim_dict[x] for x in ramped_optim_list]
 ramped_param_vals=[0.230288480903605996, 0.041226544633855209, 122.16602260400302, 742.0285824092344, 8.212777750912338e-05, 0.00295011584929738, -0.0005139373308230138, 7.330227126430568e-11, 8.885659818458482,0,0.5146469208293426]
+values=[[0.23794865088573297, 0.012233237509352422, 127.31889407388738, 866.5594838874783, 7.735179022904297e-05, 0.002100658721047255, -0.0003313772993110888, 7.92266323442856e-11, 8.884799587792013, 0, 0.5999996893552537],
+        [0.23363378517047495, 0.03481010462713212, 125.2418680556816, 866.5594838874783, 7.694171200331618e-05, 0.003209611999861764, -0.0004263185805571494, 7.476933579891946e-11, 8.884799587792013, 5.02832295276801, 0.5999996422725197] ,
+        [0.23422376456952138, 0.03260990314447788, 127.84406477439944, 866.5594838874783, 7.6536077935438e-05, 0.0028147360128534457, -0.00040069155469661145, 7.510752378483546e-11, 8.884799587792013,  5.040933894042927, 0.5999999355676289] ,
+        [0.23388480903605996, 0.030956721349239304, 125.32474893610775, 866.5594838874783, 7.633158635035894e-05, 0.0025282530103625106, -0.00038943293495081674, 7.525190180668605e-11, 8.884799587792013, 5.05002670496206, 0.5952709809282939] ,
+        [0.23251409481227692, 0.03738294965025301, 131.6521158525072, 866.5594838874783, 7.621231601962323e-05, 0.0026921147914714116, -0.00041118732365409173, 7.377445613940177e-11, 8.884799587792013,  5.012665587646454, 0.5999999998930867]]
+axes=multiplot(1, 4, **{"harmonic_position":0, "num_harmonics":5, "orientation":"landscape", "plot_width":5})
+
 #ramped_param_vals=[0.2146905833892083, 0.03054987719700828, 97.73281867896537, 607.3604383735801, 9.855333151006176e-05, 0.002360092744665423, -0.0006167247956683124, 2.816480836302093e-10, 8.884799587792013, 3.7667007049769547, 5.036133769048488, 0.6175763030220238]
 #ramped_param_vals=[0.2105491969962405, 0.060492147323936776, 109.9494203694055, 667.8257252271911, 9.034055522879727e-05, 0.002655104265433323, -0.0005653310639016844, 1.1167514700671097e-10, 8.884680131969208, 1.232169931719665, 0.46318222889196947]
 #ramped_param_vals=[0.228308296004341, 0.04678928704199179, 109.9494215030595, 753.3526020630202, 7.39149998133382e-05, 0.0032451274206835596, -0.00046254359814023406, 8.063249835588253e-11, 8.884745411351478, 2.236534676329661, 0.4631822303721044]
-
+#ramped_param_vals=[0.22285754799270494, 0.04694179204711807, 247.23685999878182, 512.1240571770394, 7.706083559507504e-05, 0.0028478498239308467, -0.00041016659783854256, 7.257026464642658e-11, 8.885659818458482,0, 0.6999999975394792]
 ramp_fit.harmonic_range=harmonic_range
-e_s=[ramped_param_vals[0]]#[0.222, 0.228, 0.234, 0.236]
-for i in e_s:
-    ramped_param_vals[0]=i
-    ramped_time_series=ramp_fit.i_nondim(ramp_fit.test_vals(ramped_param_vals, "timeseries"))
+axes_keys=sorted(axes.axes_dict.keys())
+j=0
+for i in range(1, len(values)):
+    ramped_time_series=ramp_fit.i_nondim(ramp_fit.test_vals(values[i], "timeseries"))
     ramped_times=ramp_fit.t_nondim(ramp_fit.time_vec[ramp_fit.time_idx:])
     ramped_harmonics=ramp_data_harm_class.generate_harmonics(ramped_times, ramped_time_series)
+    results=np.loadtxt(dir_path+"/experiment_data_2/Experimental-120919/Ramped/Yellow/"+"Yellow_Electrode_Ramped_"+str(i+1)+"_cv_current")
+    time_results=results[:,0]
+    current_results=results[:,1]
     sinusoid_data_harmonics=noramp_harm.generate_harmonics(time_results, current_results)
     sinusoid_harmonics=noramp_harm.generate_harmonics(cmaes_times, cmaes_time_series)
     ramp_fit.simulation_options["method"]="dcv"
     dcv_plot=ramp_fit.e_nondim(ramp_fit.define_voltages())
     ramp_fit.simulation_options["method"]="ramped"
-    j=0
+
     for harm_counter in range(0, len(ramped_harmonics)):
-        plt.subplot(len(ramped_harmonics), 1, j+1)
-        plt.plot(ramped_time_results, abs(ramped_harmonics[harm_counter,:]*1e6), label="Simultation")
-        if i==e_s[0]:
-            plt.plot(ramped_time_results, abs(ramped_data_harmonics[harm_counter,:]*1e6), label="Data", linestyle="--")
+        ax=axes.axes_dict["row1"][j]
+        ax.plot(ramped_times, (ramped_harmonics[harm_counter,:]*1e6), label="Simultation")
+        ax.plot(ramped_time_results, (ramped_data_harmonics[harm_counter,:]*1e6), label="Data", alpha=0.5)
+        ax2=ax.twinx()
+        ax2.set_ylabel(harmonic_range[harm_counter], rotation=0)
+        ax2.set_yticks([])
             #plt.axvline(ramped_param_vals[0], color="black", linestyle="--", label="$E_0$")
-        plt.ylabel("Current($\mu$A)")
+        if harm_counter%3==2:
+            ax.set_ylabel("Current($\mu$A)")
+        if harm_counter==(len(ramped_harmonics)-1):
+            ax.set_xlabel("Time(s)")
+            ax.legend()
+        else:
+            ax.set_xticks([])
         #sinusoidal_axes[j].plot(cmaes_times, (sinusoid_harmonics[harm_counter,:]*1e6), label="Simulation")
         #sinusoidal_axes[j].plot(time_results, (sinusoid_data_harmonics[harm_counter,:]*1e6), label="Data")
         j+=1
 
-    plt.xlabel("Time(s)")
-    plt.legend()
+
+
 plt.show()
 
 print(len(ramp_fit.time_vec), len(ramped_time_results))

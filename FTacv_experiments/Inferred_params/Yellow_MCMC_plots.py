@@ -6,6 +6,7 @@ import os
 import sys
 import matplotlib.ticker as ticker
 import math
+import scipy.stats as stat
 dir_path = os.path.dirname(os.path.realpath(__file__))
 slash_idx=[i for i in range(len(dir_path)) if dir_path[i]=="/"]
 one_above=dir_path[:slash_idx[-1]]
@@ -53,19 +54,20 @@ def plot_params(titles, set_chain, positions=None, label=None):
         axes=plt.subplot(row,col,i+1)
         plot_chain=chain_appender(set_chain, positions[i])
         if abs(np.mean(plot_chain))<0.001:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3e'))
+            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2e'))
         else:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
+            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
         axes.hist(plot_chain, alpha=0.4,bins=20, stacked=True, label=label)
         axes.legend()
         lb, ub = axes.get_xlim( )
-        axes.set_xticks(np.linspace(lb, ub, 5))
+        axes.set_xticks(np.linspace(lb, ub, 4))
         axes.set_xlabel(titles[i])
         axes.set_ylabel('frequency')
         axes.set_title(graph_titles[i])
 def trace_plots(titles, chains, names, rhat=False):
     row, col=det_subplots(len(titles))
-    rhat_vals=pints.rhat_all_params(chains[:, 15000:, :])
+    if rhat==True:
+        rhat_vals=pints.rhat_all_params(chains[:, 30000:, :])
     for i in range(0, len(titles)):
         axes=plt.subplot(row,col,i+1)
 
@@ -85,6 +87,7 @@ def trace_plots(titles, chains, names, rhat=False):
             axes.set_title(names[i])
         axes.set_ylabel(titles[i])
         axes.set_xlabel('Iteration')
+    plt.subplots_adjust(left=0.05, bottom=0.1, right=0.95, top=0.9, wspace=0.37, hspace=0.29)
 unit_dict={
     "E_0": "V",
     'E_start': "V", #(starting dc voltage - V)
@@ -155,11 +158,11 @@ Titles={
     "noise":"Noise",
 }
 #f=open(filename, "r")
-params=(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","omega","gamma","cap_phase","phase","alpha", "noise"])
+params=(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha", "noise"])
 optim_list=params
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 graph_titles=[Titles[x] for x in optim_list]
-folder="MCMC_runs/Steady_state"
+folder="MCMC_runs/omega_nondim/high_skew"
 electrode="Yellow"
 path=("/").join([dir_path , electrode, folder])
 files=os.listdir(path)#
@@ -168,7 +171,8 @@ print(files)
 concs1=["1e-1", "5e-1", "1e0", "15e-1", "3e0"]
 concs=["__{0}__".format(x) for x in concs1]
 concs=[str(x) for x in range(1, 11)]
-exclude=["1","6","9"]
+exclude=["6","9", "10"]
+include=["4_", "5", "7", "9"]
 [concs.pop(concs.index(x)) for x in exclude]
 vals=[0.1, 0.5, 1, 1.5, 3]
 extension="_cv_high_ru_MCMC.run3"
@@ -176,20 +180,43 @@ desired_file="Noramp_"
 file_numbers=["8_94","114", "209"]
 #concs=["__{0}__".format(x) for x in file_numbers]
 positions=[params.index(x) for x in optim_list]
+ns=[str(x) for x in range(2, 9)]
+nums=["_{0}_cv".format(x) for x in ns]
 #for i in range(0, len(concs)):
-for filename in files:#
-    
-    #if filename==(desired_file+concs[i]+extension):#(concs[i] in filename) and (extension in filename) and (desired_file in filename):
+for num in nums:
+    for filename in files:#
+        if "run8" in filename and num in filename:# and  True  in [x in filename for x in include]:
+            print(filename)
+            number=filename[7]
+
+            chains=np.load(("/").join([electrode, folder, filename]))
+            alpha_index=params.index("alpha")
+            """
+            if number=="2":
+                plot_params(titles, chains[:, 25000:45000, :], positions=positions, label="Scan "+num)
+            else:
+                plot_params(titles, chains[:, 30000:, :], positions=positions, label="Scan "+num)
+            """
+            alpha_chain=[]
+            for i in range(0, 2):
+                alpha_chain=np.append(alpha_chain, chains[i, 30000:, alpha_index])
+            #plt.hist(alpha_chain)
+            #plt.show()
+
+            skew=stat.skew(alpha_chain)
+            print(skew)
+
+            #plot_params(titles, chains[:, 30000:, :], positions=positions, label="Scan "+num)
+            trace_plots(titles, chains[:, :50000, :], graph_titles, rhat=True)
+            plt.show()
+
+        #if filename==(desired_file+concs[i]+extension):#(concs[i] in filename) and (extension in filename) and (desired_file in filename):
 
 
-    chains=np.load(("/").join([electrode, folder, filename]))
-    #plot_params(titles, chains[:, 25000:, :], positions=positions, label=concs[i])
-    trace_plots(titles, chains, graph_titles, rhat=True )
-    plt.show()
 
-    #
+
+            #trace_plots(titles, chains[:, :, :], graph_titles, rhat=True )
+            #plt.show()
+plt.show()
     #plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.30, hspace=0.33)
 #plot_params(titles, chains2)
-
-    #plot_params(titles,chains[:, 30000:, :])
-    #plt.show()
