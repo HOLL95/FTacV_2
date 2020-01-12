@@ -3,6 +3,11 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 class multiplot:
     def __init__(self, num_rows, num_cols, **kwargs):
+        if (num_rows%1)!=0 or (num_cols%1)!=0:
+            raise ValueError("require integer row and column numbers")
+        else:
+            num_rows=int(num_rows)
+            num_cols=int(num_cols)
         mpl.rcParams['xtick.labelsize'] = 11
         mpl.rcParams['ytick.labelsize'] = 11
         mpl.rcParams['axes.labelsize'] = 11
@@ -31,7 +36,13 @@ class multiplot:
             kwargs["harmonic_position"]=[0]
         if type(kwargs["harmonic_position"]) is not list:
             kwargs["harmonic_position"]=[kwargs["harmonic_position"]]
-
+        for pos in kwargs["harmonic_position"]:
+            if kwargs["orientation"] =="landscape":
+                if pos>=num_rows:
+                    raise ValueError(str(pos)+" is greater than largest row number "+str(num_rows))
+            elif kwargs["orientation"] =="portrait":
+                if pos>=num_cols:
+                    raise ValueError(str(pos)+" is greater than largest column number "+str(num_cols))
         y_dim=(kwargs["num_harmonics"]*num_rows*kwargs["plot_height"])+(kwargs["row_spacing"]*(num_rows-1))
         x_dim=(kwargs["plot_width"]*num_cols)+(kwargs["col_spacing"]*(num_cols-1))
         print(y_dim, x_dim)

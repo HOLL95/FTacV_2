@@ -375,7 +375,19 @@ class single_electron:
         elif "E0_std" in self.optim_list:
             start1=time.time()
             e0_vals, e0_disp=self.therm_dispersion()
-            for i in range(0, self.simulation_options["dispersion_bins"]):
+
+            if "alpha_dispersion" in self.simulation_options:
+                alpha_bins=5
+                alpha_vals=np.linspace(self.param_bounds["alpha"][0],self.param_bounds["alpha"][1], alpha_bins)
+                alpha_weights=[1/alpha_bins]*alpha_bins
+                for i in range(0, alpha_bins):
+                    self.nd_param_dict["alpha"]=float(alpha_vals[i])
+                    for j in range(0,self.simulation_options["dispersion_bins"]):
+                        self.nd_param_dict["E_0"]=float(e0_vals[j])
+                        time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
+                        time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[j]*alpha_weights[i]))
+            else:
+                for i in range(0, self.simulation_options["dispersion_bins"]):
                     self.nd_param_dict["E_0"]=float(e0_vals[i])
                     time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
                     time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
@@ -388,6 +400,62 @@ class single_electron:
 
 
         return time_series
+
+    def generic_dispersion(self, solver):
+        if "dispersion_parameters" not in self.simulation_options:
+            raise ValueError("Dispersion parameters not defined")
+        if len(self.simulation_options["dispersion_bins"])!=len(self.simulation_options["dispersion_parameters"]):
+            raise ValueError("Need to define number of bins for each parameter")
+        if len(self.simulation_options["dispersion_distributions"])!=len(self.simulation_options["dispersion_parameters"]):
+            raise ValueError("Need to define distributions for each parameter")
+        weight_arrays=[]
+        weight_values=[]
+        nd_dict=vars(self.nd_param)
+        for i in range(0, len(self.simulation_options["dispersion_parameters"])):
+            if self.simulation_options["dispersion_distributions"][i]=="uniform":
+                if (self.simulation_options["dispersion_parameters"][i]+"_lower" not in self.dim_dict) or (self.simulation_options["dispersion_parameters"][i]+"_upper" not in self.dim_dict):
+                    raise ValueError("Uniform distribution requires "+self.simulation_options["dispersion_parameters"][i]+"_lower and " + self.simulation_options["dispersion_parameters"][i]+"_upper")
+                else:
+                    weight_values.append(np.linspace(self.simulation_options["dispersion_parameters"][i]+"_lower", self.simulation_options["dispersion_parameters"][i]+"_upper", self.simulation_options["dispersion_bins"][i]))
+                    weight_arrays.append([1/self.simulation_options["dispersion_bins"][i]]*self.simulation_options["dispersion_bins"][i])
+            elif self.simulation_options["dispersion_distributions"][i]=="normal":
+                if (self.simulation_options["dispersion_parameters"][i]+"_mean" not in self.dim_dict) or (self.simulation_options["dispersion_parameters"][i]+"_std" not in self.dim_dict):
+                    raise ValueError("Uniform distribution requires "+self.simulation_options["dispersion_parameters"][i]+"_mean and " + self.simulation_options["dispersion_parameters"][i]+"_std")
+                else:
+                    param_mean=nd_dict[self.simulation_options["dispersion_parameters"][i]+"_mean"]
+                    param_std=self.simulation_options["dispersion_parameters"][i]+"_std"
+                    min_val=norm.ppf(1e-11, loc=param_mean, scale=param_scale)
+                    max_val=norm.ppf(1-1e-11, loc=param_mean, scale=param_scale)
+                    param_vals=np.linspace(min_val, max_val, self.simulation_options["dispersion_bins"][i])
+                    param_weights=np.zeros(self.simulation_options["dispersion_bins"][i])
+                    param_weights[0]=norm.cdf(param_vals[0],loc=param_mean, scale=self.param_std)
+                    for j in range(1, self.simulation_options["dispersion_bins"][i]):
+                        param_weights[j]=norm.cdf(param_vals[j],loc=param_mean, scale=self.param_std)-norm.cdf(param_vals[j-1],loc=param_mean, scale=param_std)
+                    weight_values.append(param_vals)
+                    weight_arrays.append(param_weights)
+            elif self.simulation_options["dispersion_distributions"][i]=="lognormal":
+                if (self.simulation_options["dispersion_parameters"][i]+"_shape" not in self.dim_dict) or (self.simulation_options["dispersion_parameters"][i]+"_loc" not in self.dim_dict) or (self.simulation_options["dispersion_parameters"][i]+"_scale" not in self.dim_dict):
+                    raise ValueError("Uniform distribution requires "+self.simulation_options["dispersion_parameters"][i]+"_shape and " + self.simulation_options["dispersion_parameters"][i]+"_loc and "  + self.simulation_options["dispersion_parameters"][i]+"_scale")
+                else:
+                    param_loc=nd_dict[self.simulation_options["dispersion_parameters"][i]+"_loc"]
+                    param_shape=nd_dict[self.simulation_options["dispersion_parameters"][i]+"_shape"]
+                    param_scale=nd_dict[self.simulation_options["dispersion_parameters"][i]+"_scale"]
+                    min_val=lognorm.ppf(1e-11, param_shape, loc=param_loc, scale=param_scale)
+                    max_val=lognorm.ppf(1-1e-11, param_shape, loc=param_loc, scale=param_scale)
+                    param_vals=np.linspace(min_val, max_val, self.simulation_options["dispersion_bins"][i])
+                    param_weights=np.zeros(self.simulation_options["dispersion_bins"][i])
+                    param_weights[0]=lognorm.cdf(param_vals[0],param_shape, loc=param_loc, scale=param_scale)
+                    for j in range(1, self.simulation_options["dispersion_bins"][i]):
+                        param_weights[j]=norm.cdf(param_vals[j],param_shape, loc=param_loc, scale=param_scale)-norm.cdf(param_vals[j-1],param_shape, loc=param_loc, scale=param_scale)
+                    weight_values.append(param_vals)
+                    weight_arrays.append(param_weights)
+            else:
+                raise KeyError(self.simulation_options["dispersion_distributions"][i]+" distribution not implemented")
+
+
+
+
+
     def kinetic_dispersion(self):
         #print self.nd_param.k0_shape, self.nd_param.k0_loc, self.nd_param.k0_scale
         k0_weights=np.zeros(self.simulation_options["dispersion_bins"])
@@ -461,6 +529,7 @@ class single_electron:
             plt.subplot((y/x), x, i+1)
 
     def simulate(self,parameters, frequencies):
+        start=time.time()
         if len(parameters)!= len(self.optim_list):
             print(self.optim_list)
             print(parameters)
@@ -496,6 +565,7 @@ class single_electron:
         if self.simulation_options["no_transient"]!=False:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
+        #print(time.time()-start, len(time_series))
         #time_series=self.define_voltages()
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)

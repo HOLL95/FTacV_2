@@ -136,7 +136,7 @@ for lcv_2 in range(0, len(concs)):
         time_results=noramp_fit.other_values["experiment_time"]
         current_results=noramp_fit.other_values["experiment_current"]
         voltage_results=noramp_fit.other_values["experiment_voltage"]
-        noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0", "Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase", "phase", "alpha"])
+        noramp_fit.def_optim_list(["E_0","k_0", "Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase", "phase", "alpha"])
         noramp_fit.dim_dict["alpha"]=0.5
         #noramp_fit.simulation_options["phase_only"]=True
         true_data=current_results

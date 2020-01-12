@@ -7,6 +7,7 @@ import pints.plot
 import os
 from multiplotter import multiplot
 import math
+import scipy.stats as stat
 dir_path = os.path.dirname(os.path.realpath(__file__))
 results_dict="Inferred_params"
 Electrode="Yellow"
@@ -22,7 +23,7 @@ ramped_data_class.dim_dict["phase"]=0
 ramped_data_class.dim_dict["cap_phase"]=0
 #ramped_data_class.dim_dict["omega"]=8.95
 ramped_data_class.dim_dict["original_omega"]=8.94
-ramped_data_class.simulation_options["dispersion_bins"]=50
+ramped_data_class.simulation_options["dispersion_bins"]=16
 ramped_data_path=("/").join([dir_path, "experiment_data_2", "Experimental-120919", "Ramped", "Yellow"])
 start_harm=2
 end_harm=7
@@ -186,12 +187,12 @@ for j in range(0, num_runs):
     mcmc = pints.MCMCController(log_posterior, 3, xs,method=pints.HaarioBardenetACMC)
     alpha_index=ramped_data_class.optim_list.index("alpha")
     alpha_chain=[]
-    mcmc.set_parallel(False)
-    mcmc.set_max_iterations(100000)
+    mcmc.set_parallel(True)
+    mcmc.set_max_iterations(60000)
     chains=mcmc.run()
-    rhat_mean=np.mean(pints.rhat_all_params(chains[:, 60000:, :]))
+    rhat_mean=np.mean(pints.rhat_all_params(chains[:, 30000:, :]))
     for q in range(0, 2):
-        alpha_chain=np.append(alpha_chain, chains[q, 60000:, alpha_index])
+        alpha_chain=np.append(alpha_chain, chains[q, 30000:, alpha_index])
     alpha_skew=stat.skew(alpha_chain)
     if alpha_skew<-0.05:
         Electrode_save="Yellow/Ramped"

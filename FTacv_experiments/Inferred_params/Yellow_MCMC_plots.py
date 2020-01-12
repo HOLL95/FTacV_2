@@ -152,17 +152,18 @@ Titles={
     'alpha': "Symmetry factor",
     "E0_mean":"Themodynamic mean",
     "E0_std": "Thermodynamic standard deviation",
+    "E_0":"Midpoint potential",
     "cap_phase":"Capacitance phase",
     'phase' : "Phase",
     "":"Experiment",
     "noise":"Noise",
 }
 #f=open(filename, "r")
-params=(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha", "noise"])
+params=(["E_0", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha", "noise"])
 optim_list=params
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 graph_titles=[Titles[x] for x in optim_list]
-folder="MCMC_runs/omega_nondim/high_skew"
+folder="MCMC_runs/omega_nondim/"
 electrode="Yellow"
 path=("/").join([dir_path , electrode, folder])
 files=os.listdir(path)#
@@ -185,29 +186,25 @@ nums=["_{0}_cv".format(x) for x in ns]
 #for i in range(0, len(concs)):
 for num in nums:
     for filename in files:#
-        if "run8" in filename and num in filename:# and  True  in [x in filename for x in include]:
+        if "run13" in filename and num in filename:# and  True  in [x in filename for x in include]:
             print(filename)
             number=filename[7]
 
             chains=np.load(("/").join([electrode, folder, filename]))
-            alpha_index=params.index("alpha")
             """
             if number=="2":
                 plot_params(titles, chains[:, 25000:45000, :], positions=positions, label="Scan "+num)
             else:
                 plot_params(titles, chains[:, 30000:, :], positions=positions, label="Scan "+num)
             """
-            alpha_chain=[]
-            for i in range(0, 2):
-                alpha_chain=np.append(alpha_chain, chains[i, 30000:, alpha_index])
+
             #plt.hist(alpha_chain)
             #plt.show()
 
-            skew=stat.skew(alpha_chain)
-            print(skew)
-
+            print([np.mean(chain_appender(chains[:, 30000:, :], x)) for x in range(0, len(titles))])
             #plot_params(titles, chains[:, 30000:, :], positions=positions, label="Scan "+num)
-            trace_plots(titles, chains[:, :50000, :], graph_titles, rhat=True)
+            trace_plots(titles, chains[:, :, :], graph_titles, rhat=True)
+
             plt.show()
 
         #if filename==(desired_file+concs[i]+extension):#(concs[i] in filename) and (extension in filename) and (desired_file in filename):
