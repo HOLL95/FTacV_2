@@ -1,10 +1,10 @@
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import math
 import time
 from single_e_class_unified import single_electron
 from ramped_setup import FTACV_initialisation
-from harmonics_plotter import harmonics
+#from harmonics_plotter import harmonics
 import os
 import pickle
 import pints
@@ -152,7 +152,7 @@ for lcv_1 in range(2, 3):
     num_runs=15
     param_mat=np.zeros((num_runs,len(noramp_fit.optim_list)))
     score_vec=np.ones(num_runs)*1e6
-    alpha_vec=np.arange(0.45, 0.62, 0.01)
+    alpha_vec=np.arange(0.62, 0.67, 0.01)
     for q in range(0, len(alpha_vec)):
         noramp_fit.dim_dict["alpha"]=alpha_vec[q]
         for i in range(0, num_runs):

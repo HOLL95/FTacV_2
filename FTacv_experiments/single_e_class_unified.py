@@ -5,7 +5,7 @@ import math
 import numpy as np
 import itertools
 import multiprocessing as mp
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from params_class import params
 from decimal import Decimal
 import copy
