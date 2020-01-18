@@ -9,16 +9,15 @@ import scipy.stats as stat
 dir_path = os.path.dirname(os.path.realpath(__file__))
 results_dict="Inferred_params"
 Electrode="Yellow"
-run="Run_3"
+run="Run_5"
 
 final_osc=[25, 20, 15, 10]
 other_files=["6", "9"]
-for i in range(2, 3):
+for i in range(2, 11):
 
-    if str(i) in other_files:
-        file="Noramp_"+str(i)+"_cv_high_ru.run3_4"
-    else:
-        file="Noramp_"+str(i)+"_cv_high_ru.run3_2"
+
+    file="Noramp_2_cv_high_ru_alpha_0.6"
+
     method="timeseries"
     master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase", "phase"]
     noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run, file]))
@@ -124,7 +123,7 @@ for i in range(2, 3):
 
         Electrode_save="Yellow"
         run2="MCMC_runs/omega_nondim"
-        save_file=file+"_MCMC_run14"
+        save_file=file+"_MCMC_dispersed_run"
         filepath=("/").join([dir_path, "Inferred_params", Electrode_save, run2])
         #print(pints.rhat_all_params(chains[:, 20000:, :]))
         #k_rhat=pints.rhat_all_params(chains[:, 20000:, :])[2]

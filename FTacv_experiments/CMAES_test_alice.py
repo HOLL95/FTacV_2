@@ -22,9 +22,9 @@ f_counter=0
 other_files=["6", "9"]
 def RMSE(series1, series2):
     return np.sqrt((np.sum(1/(len(series1))*np.power(np.subtract(series1, series2),2))))
-for i in range(1,10):
+for i in np.arange(0.45, 0.68, 0.01):
 
-    file="Noramp_2_cv_high_ru.run"+str(i)
+    file="Noramp_2_cv_high_ru_alpha_"+str(round(i, 3))
 
     method="timeseries"
     master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha"]
@@ -39,7 +39,6 @@ for i in range(1,10):
 
 
     noramp_results.simulation_options["dispersion_bins"]=32
-    noramp_results.simulation_options["alpha_dispersion"]=True
     noramp_results.param_bounds["alpha"]=[0.1, 0.9]
     param_vals=([noramp_results.save_dict["params"][0][noramp_results.save_dict["optim_list"].index(key)] if  (key in noramp_results.save_dict["optim_list"]) else noramp_results.dim_dict[key] for key in master_optim_list])
     master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha"]
@@ -49,9 +48,9 @@ for i in range(1,10):
     voltage_results=noramp_results.e_nondim(noramp_results.other_values["experiment_voltage"])#[0::dec_amount]
     print_vals=np.append(param_vals, RMSE(current_results, cmaes_time)*1e6)
     print(list(print_vals), ",")
-    plt.plot(voltage_results, current_results)
-    plt.plot(voltage_results, cmaes_time, alpha=0.7)
-    plt.show()
+    #plt.plot(voltage_results, current_results)
+    #plt.plot(voltage_results, cmaes_time, alpha=0.7)
+    #plt.show()
 
     #param_vals=[0.448042594478853, 0.04578302993986619, 186.55619822678182, 1499.9999952103126, 3.274964218833196e-05, -0.0037437099369155846, 0.0033541585110203383, 1.5457010853658904e-10, 8.941956053700354, 4.226410309725663, 5.549175826705732]
 

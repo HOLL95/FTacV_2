@@ -18,12 +18,10 @@ class params:
         if flag=='re_dim':
             self.k_0=value/self.c_T0
             if self.dispersion==True:
-                self.k0_loc=self.k0_loc/self.c_T0
                 self.k0_scale=self.k0_scale/self.c_T0
         elif flag == 'non_dim':
             self.k_0=value*self.c_T0
             if self.dispersion==True:
-                self.k0_loc=self.k0_loc*self.c_T0
                 self.k0_scale=self.k0_scale*self.c_T0
     def cdl(self, value, flag):
         if flag=='re_dim':
@@ -137,7 +135,6 @@ class params:
             self.E0_std=param_dict["E0_std"]
             self.E0_mean=param_dict["E0_mean"]
             self.k0_shape=param_dict["k0_shape"]
-            self.k0_loc=param_dict["k0_loc"]
             self.k0_scale=param_dict["k0_scale"]
         if self.dcv==True:
             self.Cdlinv=param_dict["Cdlinv"]

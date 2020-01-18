@@ -14,7 +14,8 @@ Electrode="Yellow"
 run="Run_3"
 concs=["1e-1M", "1e0M"]
 file_numbers=[str(x) for x in range(1, 4)]
-figure=multiplot(4, 4, **{"harmonic_position":3, "num_harmonics":5, "orientation":"portrait", "fourier_position":2, "plot_width":5})
+figure=multiplot(4, 1, **{"harmonic_position":3, "num_harmonics":5, "orientation":"landscape", "fourier_position":2, "plot_width":5})
+#plt.show()
 keys=sorted(figure.axes_dict.keys())
 plot_counter=0
 h_counter=0
@@ -22,7 +23,7 @@ f_counter=0
 other_files=["6", "9"]
 def RMSE(series1, series2):
     return np.sqrt((np.sum(1/(len(series1))*np.power(np.subtract(series1, series2),2))))
-for i in range(2,6):
+for i in range(2,3):
     if str(i) in other_files:
         file="Noramp_"+str(i)+"_cv_high_ru.run3_4"
     else:
@@ -41,10 +42,13 @@ for i in range(2,6):
 
 
     noramp_results.simulation_options["dispersion_bins"]=32
+    noramp_results.simulation_options["alpha_dispersion"]=True
+    noramp_results.param_bounds["alpha"]=[0.58, 0.65]
     param_vals=([noramp_results.save_dict["params"][0][noramp_results.save_dict["optim_list"].index(key)] if  (key in noramp_results.save_dict["optim_list"]) else noramp_results.dim_dict[key] for key in master_optim_list])
-    master_optim_list=["E_0", "k0_shape", "k0_scale","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha"]
+
+    master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase"]
+    param_vals=[0.22809533506585455, 0.03404445089143265, 125.10937537364292, 629.5264907453902, 7.695998831014857e-05, 0.0031407658207061066, -0.00042313607259804705, 7.477530795339478e-11, 8.940472727537692, 4.384314137609872, 5.028118555961978]
     #param_vals=[0.24704003369743605, 127.22888060724983, 899.0593759401338, 7.759349521072281e-05, 0.0018792925278760739, -0.0003331168610431201, 8.105946935824678e-11, 8.940643709990447, 4.457735184257261, 5.135033708944046, 0.596434662870841]
-    param_vals=[0.24323038307184336, 0.58906941878404, 55.76171519515906, 672.7221187164696, 7.764498276243975e-05, 0.002120925983914189, -0.000384743271809684, 7.697386442097152e-11, 8.940520091009153, 4.419395313633473, 5.104001442412966, 0.5622531162206027]
     noramp_results.def_optim_list(master_optim_list)
     cmaes_time=noramp_results.i_nondim(noramp_results.test_vals(param_vals, method))
     current_results=noramp_results.i_nondim(noramp_results.other_values["experiment_current"])#[0::dec_amount]
@@ -69,31 +73,31 @@ for i in range(2,6):
     plt.rcParams.update({'axes.labelsize': 16})
     mpl.rcParams['axes.labelsize'] = 12
     dec_amount=16
-
+    print(len(figure.axes_dict[keys[0]]))
     time_results=noramp_results.t_nondim(noramp_results.other_values["experiment_time"])#[0::dec_amount]
-    figure.axes_dict[keys[0]][plot_counter].plot(voltage_results*1e3, (cmaes_time)*1e3, label="Sim")
-    figure.axes_dict[keys[0]][plot_counter].plot(voltage_results*1e3,(current_results)*1e3, alpha=0.5, label="Data")
-    figure.axes_dict[keys[0]][plot_counter].set_xlabel("Voltage(mV)")
-    figure.axes_dict[keys[0]][plot_counter].set_ylabel("Current(mA)")
-    figure.axes_dict[keys[0]][plot_counter].legend()
-    figure.axes_dict[keys[1]][plot_counter].plot(time_results, (cmaes_time)*1e3, label="Sim")
-    figure.axes_dict[keys[1]][plot_counter].plot(time_results, ((current_results)*1e3), label="Data")
-    figure.axes_dict[keys[1]][plot_counter].plot(time_results, np.subtract(cmaes_time*1e3, current_results*1e3), label="Residual")
-    figure.axes_dict[keys[1]][plot_counter].set_xlabel("Time(s)")
-    figure.axes_dict[keys[1]][plot_counter].set_ylabel("Current(mA)")
-    figure.axes_dict[keys[1]][plot_counter].legend()
+    figure.axes_dict[keys[0]][0].plot(voltage_results*1e3, (cmaes_time)*1e3, label="Sim")
+    figure.axes_dict[keys[0]][0].plot(voltage_results*1e3,(current_results)*1e3, alpha=0.5, label="Data")
+    figure.axes_dict[keys[0]][0].set_xlabel("Voltage(mV)")
+    figure.axes_dict[keys[0]][0].set_ylabel("Current(mA)")
+    figure.axes_dict[keys[0]][0].legend()
+    figure.axes_dict[keys[1]][0].plot(time_results, (cmaes_time)*1e3, label="Sim")
+    figure.axes_dict[keys[1]][0].plot(time_results, ((current_results)*1e3), label="Data")
+    figure.axes_dict[keys[1]][0].plot(time_results, np.subtract(cmaes_time*1e3, current_results*1e3), label="Residual")
+    figure.axes_dict[keys[1]][0].set_xlabel("Time(s)")
+    figure.axes_dict[keys[1]][0].set_ylabel("Current(mA)")
+    figure.axes_dict[keys[1]][0].legend()
     plot_counter+=1
-    harms.harmonic_selecter(figure.axes_dict[keys[2]][f_counter], cmaes_time, time_results,  box=False, arg=np.real, line_label="Sim")
-    harms.harmonic_selecter(figure.axes_dict[keys[2]][f_counter],current_results, time_results,  box=False, arg=np.real, line_label="Data")
-    figure.axes_dict[keys[2]][f_counter].set_xlabel("Frequency(Hz)")
-    figure.axes_dict[keys[2]][f_counter].set_ylabel("Real")
-    figure.axes_dict[keys[2]][f_counter].legend(loc=2)
+    harms.harmonic_selecter(figure.axes_dict[keys[2]][0], cmaes_time, time_results,  box=False, arg=np.real, line_label="Sim")
+    harms.harmonic_selecter(figure.axes_dict[keys[2]][0],current_results, time_results,  box=False, arg=np.real, line_label="Data")
+    figure.axes_dict[keys[2]][0].set_xlabel("Frequency(Hz)")
+    figure.axes_dict[keys[2]][0].set_ylabel("Real")
+    figure.axes_dict[keys[2]][0].legend(loc=2)
     f_counter+=1
-    harms.harmonic_selecter(figure.axes_dict[keys[2]][f_counter], cmaes_time, time_results, box=False, arg=np.imag,line_label="Sim")
-    harms.harmonic_selecter(figure.axes_dict[keys[2]][f_counter],  current_results,  time_results,box=False, arg=np.imag, line_label="Data")
-    figure.axes_dict[keys[2]][f_counter].set_xlabel("Frequency(Hz)")
-    figure.axes_dict[keys[2]][f_counter].set_ylabel("Imaginary")
-    #figure.axes_dict[keys[2]][f_counter].legend(loc=2)
+    harms.harmonic_selecter(figure.axes_dict[keys[2]][1], cmaes_time, time_results, box=False, arg=np.imag,line_label="Sim")
+    harms.harmonic_selecter(figure.axes_dict[keys[2]][1],  current_results,  time_results,box=False, arg=np.imag, line_label="Data")
+    figure.axes_dict[keys[2]][1].set_xlabel("Frequency(Hz)")
+    figure.axes_dict[keys[2]][1].set_ylabel("Imaginary")
+    #figure.axes_dict[keys[0]][f_counter].legend(loc=2)
     f_counter+=1
     data_harms=harms.generate_harmonics(time_results, cmaes_time)
     exp_harms=harms.generate_harmonics(time_results, current_results)

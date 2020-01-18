@@ -1,11 +1,11 @@
 import isolver_martin_brent
-import isolver_martin_NR
+#import isolver_martin_NR
 from scipy.stats import norm, lognorm
 import math
 import numpy as np
 import itertools
 import multiprocessing as mp
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from params_class import params
 from decimal import Decimal
 import copy
@@ -44,6 +44,7 @@ class single_electron:
         self.num_harmonics=len(self.harmonic_range)
         self.filter_val=other_values["filter_val"]
         self.bounds_val=other_values["bounds_val"]
+        self.time_array=[]
         if self.simulation_options["experimental_fitting"]==True:
             if simulation_options["method"]=="sinusoidal":
                 time_end=(self.nd_param.num_peaks/self.nd_param.omega)
@@ -124,13 +125,13 @@ class single_electron:
 
             self.boundaries=param_boundaries
 
-        if ("E0_std" in optim_list) or ("k0_loc" in optim_list):
+        if ("E0_std" in optim_list) or ("k0_shape" in optim_list):
             self.simulation_options["dispersion"]=True
         else:
             self.simulation_options["dispersion"]=False
         if self.simulation_options["dispersion"]==True:
             if "k_0" not in self.optim_list:
-                k0params=set(["k0_loc", "k0_shape", "k0_scale"])
+                k0params=set(["k0_shape", "k0_scale"])
                 if k0params.issubset(set(self.optim_list))==False:
                     missing_param=k0params-(k0params & set(self.optim_list))
                     raise ValueError("Missing the following kinetic dispersion parameters: "+ (", ").join([str(x) for x in missing_param]))
@@ -397,6 +398,9 @@ class single_electron:
                 self.nd_param_dict["k_0"]=k0_vals[i]
                 time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
                 time_series=np.add(time_series, np.multiply(time_series_current, k0_disp[i]))
+        print(self.dim_dict["k0_shape"], self.dim_dict["k0_scale"])
+        #plt.plot(k0_vals, k0_disp)
+        #plt.show()
 
 
         return time_series
@@ -459,18 +463,29 @@ class single_electron:
     def kinetic_dispersion(self):
         #print self.nd_param.k0_shape, self.nd_param.k0_loc, self.nd_param.k0_scale
         k0_weights=np.zeros(self.simulation_options["dispersion_bins"])
-        k_start=lognorm.ppf(0.000001, self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
-        k_end=lognorm.ppf(0.999999, self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
+        k_start=lognorm.ppf(1e-9, self.nd_param.k0_shape, 0, scale=self.nd_param.k0_scale)
+        k_end=lognorm.ppf(1-1e-5, self.nd_param.k0_shape, 0, scale=self.nd_param.k0_scale)
         k0_vals=np.linspace(k_start,k_end, self.simulation_options["dispersion_bins"])
-        k0_weights[0]=lognorm.cdf(k0_vals[0], self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
+        k0_weights[0]=lognorm.cdf(k0_vals[0], self.nd_param.k0_shape, 0, scale=self.nd_param.k0_scale)
         for k in range(1, len(k0_weights)):
-            k0_weights[k]=lognorm.cdf(k0_vals[k], self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)-lognorm.cdf(k0_vals[k-1], self.nd_param.k0_shape, loc=self.nd_param.k0_loc, scale=self.nd_param.k0_scale)
-        #plt.plot(k0_vals, k0_weights)
+            k0_weights[k]=lognorm.cdf(k0_vals[k], self.nd_param.k0_shape, 0, scale=self.nd_param.k0_scale)-lognorm.cdf(k0_vals[k-1], self.nd_param.k0_shape, 0, scale=self.nd_param.k0_scale)
         #plt.title("k0")
-        #plt.show()
         return k0_vals, k0_weights
 
     def therm_dispersion(self):
+        self.e0_min=norm.ppf(1e-11, loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        self.e0_max=norm.ppf(1-(1e-11), loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
+        e0_vals=np.linspace(self.e0_min, self.e0_max, self.simulation_options["dispersion_bins"])
+        e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        for i in range(1, len(e0_weights)):
+            e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+        #plt.plot(e0_vals, e0_weights)
+        #print self.nd_param.E0_mean,self.nd_param.E0_std
+        #plt.title("e0")
+        #plt.show()
+        return e0_vals, e0_weights
+    def alpha_dispersion(self):
         self.e0_min=norm.ppf(1e-11, loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
         self.e0_max=norm.ppf(1-(1e-11), loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
         e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
@@ -529,7 +544,6 @@ class single_electron:
             plt.subplot((y/x), x, i+1)
 
     def simulate(self,parameters, frequencies):
-        start=time.time()
         if len(parameters)!= len(self.optim_list):
             print(self.optim_list)
             print(parameters)
@@ -554,6 +568,7 @@ class single_electron:
                 raise ValueError("Newton-Raphson dcv simulation not implemented")
         else:
             raise ValueError('Numerical method not defined')
+        start=time.time()
         if self.simulation_options["numerical_debugging"]!=False:
             self.numerical_plots(solver)
         else:
@@ -562,9 +577,11 @@ class single_electron:
                 time_series=self.paralell_disperse(solver)
             else:
                 time_series=solver(self.nd_param_dict, self.time_vec, self.simulation_options["method"],-1, self.bounds_val)
+        #self.time_array.append(time.time()-start)
         if self.simulation_options["no_transient"]!=False:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
+
         #print(time.time()-start, len(time_series))
         #time_series=self.define_voltages()
         if self.simulation_options["likelihood"]=='fourier':

@@ -52,7 +52,7 @@ fancy_names={
     'alpha': "$\\alpha$",
     "E0_mean":"$E^0 \\mu$",
     "E0_std": "$E^0 \\sigma$",
-    "cap_phase":"Capacitance phase",
+    "cap_phase":"$C_{dl}$ phase",
     'phase' : "Phase",
     "":"Experiment",
     "noise":"$\sigma$",
@@ -62,16 +62,15 @@ def chain_appender(chains, param):
     for i in range(1, len(chains)):
         new_chain=np.append(new_chain, chains[i, 30000:, param])
     return new_chain
-all_params=['E0_mean', "E0_std",'k_0',"Ru","Cdl", "CdlE1", "CdlE2",'gamma',"omega", "phase","cap_phase"]
-optim_list=['E0_mean', "E0_std",'k_0',"Ru","Cdl", "CdlE1", "CdlE2",'gamma',"omega", "phase","cap_phase"]
+all_params=['E0_mean', "E0_std",'k_0',"Ru","Cdl", "CdlE1", "CdlE2",'gamma',"omega", "phase","cap_phase", "alpha"]
+optim_list=['E0_mean', "E0_std",'k_0',"Ru","cap_phase"]
 positions=[all_params.index(x) for x in optim_list]
 #positions[-1]=positions[-1]-1
 plt.rcParams.update({'font.size': 12})
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 n_param=len(titles)
-chains=np.load(("/").join([dir_path, "Yellow", "MCMC_runs","omega_nondim", "Noramp_3_cv_high_ru_MCMC.run3"]))
-pints.plot.trace(chains[1:, 10000:, :])
-plt.show()
+chains=np.load(("/").join([dir_path, "Yellow", "MCMC_runs","omega_nondim", "Noramp_2_cv_high_ru.run3_2_MCMC_run14"]))
+chains=chains[:, 50000:, :]
 fig_size=(12,12)
 fig, ax=plt.subplots(n_param, n_param)
 def plot_kde_1d(x, ax):
@@ -81,13 +80,13 @@ def plot_kde_1d(x, ax):
     x1 = np.linspace(xmin, xmax, 100)
     x2 = np.linspace(xmin, xmax, 50)
     ax.hist(x, bins=x2)
-    if np.mean(x)<0.001:
+    """if np.mean(x)<0.001:
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
     elif np.mean(x)<1:
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.4f'))
     else:
-        ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-    ax.set_xticks(np.linspace(xmin, xmax, 4))
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))"""
+    #ax.set_xticks(np.linspace(xmin, xmax, 4))
 def plot_kde_2d(x, y, ax):
     # Get minimum and maximum values
     xmin, xmax = np.min(x), np.max(x)
@@ -95,20 +94,21 @@ def plot_kde_2d(x, y, ax):
 
     # Plot values
     values = np.vstack([x, y])
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
-    ax.set_xticks(np.linspace(xmin, xmax, 3))
-    ax.imshow(np.rot90(values), cmap=plt.cm.Blues, extent=[xmin, xmax, ymin, ymax])
+    #ax.set_xlim(xmin, xmax)
+    #ax.set_ylim(ymin, ymax)
+    #ax.set_xticks(np.linspace(xmin, xmax, 3))
+    ax.scatter(x, y, s=0.5)#, cmap=plt.cm.Blues, extent=[xmin, xmax, ymin, ymax])
 
     # Create grid
     xx, yy = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
     positions = np.vstack([xx.ravel(), yy.ravel()])
 
     # Get kernel density estimate and plot contours
-    kernel = stats.gaussian_kde(values)
-    f = np.reshape(kernel(positions).T, xx.shape)
-    ax.contourf(xx, yy, f, cmap='Blues')
-    ax.contour(xx, yy, f, colors='k')
+    #kernel = stats.gaussian_kde(values)
+    #f = np.reshape(kernel(positions).T, xx.shape)
+    #ax.contourf(xx, yy, f, cmap='Blues')
+    #ax.contour(xx, yy, f, colors='k')
+    """
     if np.mean(x)<0.001:
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
     elif np.mean(x)<1:
@@ -121,17 +121,20 @@ def plot_kde_2d(x, y, ax):
         ax.yaxis.set_major_formatter(FormatStrFormatter('%.4f'))
     else:
         ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    """
     # Fix aspect ratio
     print(((xmax - xmin)/ (ymax - ymin)))
-    ax.set_aspect((xmax - xmin)/ (ymax - ymin))
+    #ax.set_aspect(0.25*(xmax - xmin)/ (ymax - ymin))
 for i in range(0,n_param):
     for j in range(0, n_param):
         if i==j:
             axes=ax[i,j]
             if titles[i]=='Cdl':
                 axes.xaxis.set_major_formatter(FormatStrFormatter('%.1e'))
-            plot_kde_1d(chain_appender(chains, positions[j]), ax=axes)
-            ax[i, j].set_ylabel("frequency")
+            ax1=axes.twinx()
+            plot_kde_1d(chain_appender(chains, positions[j]), ax=ax1)
+            ax1.set_ylabel("frequency")
+            axes.set_yticks([])
         elif i<j:
             ax[i,j].axis('off')
         else:

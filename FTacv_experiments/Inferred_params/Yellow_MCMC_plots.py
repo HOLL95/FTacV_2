@@ -87,7 +87,7 @@ def trace_plots(titles, chains, names, rhat=False):
             axes.set_title(names[i])
         axes.set_ylabel(titles[i])
         axes.set_xlabel('Iteration')
-    plt.subplots_adjust(left=0.05, bottom=0.1, right=0.95, top=0.9, wspace=0.37, hspace=0.29)
+    plt.subplots_adjust(left=0.07, bottom=0.05, right=0.98, top=0.95, wspace=0.40, hspace=0.42)
 unit_dict={
     "E_0": "V",
     'E_start': "V", #(starting dc voltage - V)
@@ -159,7 +159,7 @@ Titles={
     "noise":"Noise",
 }
 #f=open(filename, "r")
-params=(["E_0", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha", "noise"])
+params=(["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "noise"])
 optim_list=params
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 graph_titles=[Titles[x] for x in optim_list]
@@ -186,7 +186,7 @@ nums=["_{0}_cv".format(x) for x in ns]
 #for i in range(0, len(concs)):
 for num in nums:
     for filename in files:#
-        if "run13" in filename and num in filename:# and  True  in [x in filename for x in include]:
+        if "run14" in filename and num in filename:# and  True  in [x in filename for x in include]:
             print(filename)
             number=filename[7]
 
@@ -201,7 +201,7 @@ for num in nums:
             #plt.hist(alpha_chain)
             #plt.show()
 
-            print([np.mean(chain_appender(chains[:, 30000:, :], x)) for x in range(0, len(titles))])
+            print([np.mean(chain_appender(chains[:, 50000:, :], x)) for x in range(0, len(titles))])
             #plot_params(titles, chains[:, 30000:, :], positions=positions, label="Scan "+num)
             trace_plots(titles, chains[:, :, :], graph_titles, rhat=True)
 
