@@ -74,7 +74,7 @@ for i in range(0,len(Cdl_range)):
     synthetic_data=noramp.simulate([Cdl_range[i]], frequencies, "nah", "timeseries")
     noisy_data=np.add(synthetic_data,noise)
     harmonics=noramp.kaiser_filter(noisy_data, True)
-    print len(harmonics)
+    print((len(harmonics)))
     for j in range(0, noramp.num_harmonics):
         ax[j].plot(harmonics[j,:], label=noramp.optim_list[0]+" " + str(Cdl_range[i]), alpha=0.5)
     #plt.show()

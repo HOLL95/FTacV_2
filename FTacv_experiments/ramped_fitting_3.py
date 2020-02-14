@@ -90,8 +90,9 @@ simulation_options={
     "numerical_debugging": False,
     "experimental_fitting":True,
     "dispersion":False,
-    "dispersion_bins":32,
+    "dispersion_bins":5,
     "test": False,
+    "GH_quadrature":True,
     "phase_only":True,
     "method": "ramped",
     "likelihood":likelihood_options[1],
@@ -100,8 +101,8 @@ simulation_options={
     "optim_list":[]
 }
 other_values={
-    "filter_val": 0.5,
-    "harmonic_range":list(range(3,7,1)),
+    "filter_val": 0.1,
+    "harmonic_range":list(range(2,7,1)),
     "experiment_time": time_results1,
     "experiment_current": current_results1,
     "experiment_voltage":voltage_results1,
@@ -117,10 +118,10 @@ param_bounds={
     'CdlE2': [-0.01,0.01],#0.000245772700637,
     'CdlE3': [-0.01,0.01],#1.10053945995e-06,
     'gamma': [1e-11,1e-9],
-    'k_0': [50, 200], #(reaction rate s-1)
+    'k_0': [1, 200], #(reaction rate s-1)
     'alpha': [0.4, 0.6],
     "cap_phase":[0, 2*math.pi],
-    "E0_mean":[0.21, 0.24],
+    "E0_mean":[0.2, 0.3],
     "E0_std": [0.001, 0.2],
     "k0_shape":[0,2],
     "k0_loc":[0, 1e3],
@@ -129,32 +130,22 @@ param_bounds={
     'phase' : [0, 2*math.pi]
 }
 ramp_fit=single_electron(None, param_list, simulation_options, other_values, param_bounds)
-ramp_fit=
 sim_volts=ramp_fit.define_voltages()
 time_results=ramp_fit.other_values["experiment_time"]
 current_results=ramp_fit.other_values["experiment_current"]
 voltage_results=ramp_fit.other_values["experiment_voltage"]
-ramp_harm=harmonics(list(range(3,7,1)), ramp_fit.nd_param.omega*ramp_fit.nd_param.c_T0, 0.08)
+ramp_harm=harmonics(other_values["harmonic_range"], ramp_fit.nd_param.omega*ramp_fit.nd_param.c_T0, 0.08)
 data_harms=ramp_harm.generate_harmonics(time_results, current_results)
 #ramp_fit.def_optim_list(["E0_mean","E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"cap_phase","phase","alpha"])
 ramp_fit.def_optim_list(["E0_mean", "E0_std","k_0" ,"Ru","Cdl","CdlE1", "CdlE2","gamma",'omega'])
 #ramp_fit.dim_dict["gamma"]=0
 noramp_params=[0.23363378517047495, 0.03481010462713212, 125.2418680556816, 630.0772611187369, 7.694171200331618e-05, 0.003209611999861764, -0.0004263185805571494, 7.476933579891946e-11, 8.940473342512918]
-for i in range(0, len(noramp_params)):
-    ramp_fit.param_bounds[ramp_fit.optim_list[i]]=[0.85*noramp_params[i], 1.15*noramp_params[i]]
 ramp_fit.def_optim_list(["E0_mean", "E0_std","k_0" ,"Ru","Cdl","CdlE1", "CdlE2","gamma",'omega',"phase", "alpha"])
 inferred_params=[0.21363378517047495, 0.0426544633855209, 122.16602260400302, 742.0285824092344, 8.212777750912338e-05, 0.00295011584929738, -0.0005139373308230138, 7.130227126430568e-11, 8.875659818458482, 0.4274370247643113, 0.5146469208293426]
 
 cmaes_time=ramp_fit.test_vals(inferred_params, likelihood="timeseries", test=False)
-plt.plot(time_results, current_results, alpha=0.6)
-plt.plot(time_results, cmaes_time, alpha=0.6)
-plt.show()
 sim_harms=ramp_harm.generate_harmonics(time_results, cmaes_time)
-for j in range(0, len(data_harms)):
-    plt.subplot(len(data_harms), 1, j+1)
-    plt.plot(time_results, abs(data_harms[j,:]))
-    plt.plot(ramp_fit.time_vec, abs(sim_harms[j,:]))
-plt.show()
+
 
 
 
@@ -168,10 +159,12 @@ if ru_pick==2:
 """
     #ramp_fit.dim_dict["alpha"]=0.5
 true_data=current_results
-fourier_arg=ramp_fit.kaiser_filter(current_results)
+ramp_fit.simulation_options["fourier_scaling"]=True
 if simulation_options["likelihood"]=="timeseries":
     cmaes_problem=pints.SingleOutputProblem(ramp_fit, time_results, true_data)
 elif simulation_options["likelihood"]=="fourier":
+    fourier_arg=ramp_fit.kaiser_filter(current_results)
+    ramp_fit.secret_data_fourier=fourier_arg
     dummy_times=np.linspace(0, 1, len(fourier_arg))
     cmaes_problem=pints.SingleOutputProblem(ramp_fit, dummy_times, fourier_arg)
 score = pints.SumOfSquaresError(cmaes_problem)#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
@@ -182,18 +175,19 @@ num_runs=10
 param_mat=np.zeros((num_runs,len(ramp_fit.optim_list)))
 score_vec=np.zeros(num_runs)
 for i in range(0, num_runs):
-    noramp_params=[0.23363378517047495, 0.03481010462713212, 125.2418680556816, 630.0772611187369, 7.694171200331618e-05, 0.003209611999861764, -0.0004263185805571494, 7.476933579891946e-11, 8.940473342512918,0, 0.5999996422725197]
+    noramp_params=[0.23863378517047495, 0.04481010462713212, 125.2418680556816, 512.0772611187369, 7.694171200331618e-05, 0,0, 7.176933579891946e-11, 8.840473342512918,0, 0.5999996422725197]
+    noramp_params=[0.22774874566415484, 0.046075057493608136, 123.33007397100599, 873.5412252656006, 9.999999955830733e-05, -0.04999999026295966, 0.0028305800048256807, 8.378704532562238e-11, 8.88472746776295, 3.6139946530540388, 0.400000005069297]
     x0=ramp_fit.change_norm_group(noramp_params, "norm")#abs(np.random.rand(ramp_fit.n_parameters()))#ramp_fit.change_norm_group(gc4_3_low_ru, "norm")
     print(x0)
     print(ramp_fit.change_norm_group(x0, "un_norm"))
     cmaes_fitting=pints.OptimisationController(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
-    cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-3)
+    cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-7)
     if "E0_mean" in ramp_fit.optim_list and "k0_loc" in ramp_fit.optim_list:
         cmaes_fitting.set_parallel(False)
     else:
         cmaes_fitting.set_parallel(True)
-    ramp_fit.simulation_options["test"]=False
     found_parameters, found_value=cmaes_fitting.run()
+    #found_value=1000
     cmaes_results=ramp_fit.change_norm_group(found_parameters, "un_norm")
     print(list(cmaes_results))
     print(ramp_fit.dim_dict["phase"])

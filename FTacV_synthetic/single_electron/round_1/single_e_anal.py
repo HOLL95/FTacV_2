@@ -9,7 +9,7 @@ import time
 import scipy.special as bessel
 class analytical_electron:
     def __init__(self, dim_paramater_dictionary, Ein, gamma_0):
-        key_list=dim_paramater_dictionary.keys()
+        key_list=list(dim_paramater_dictionary.keys())
         self.nd_param=params(dim_paramater_dictionary)
         for i in range(0, len(key_list)):
             self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])

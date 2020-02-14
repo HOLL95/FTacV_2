@@ -47,7 +47,7 @@ def harmonic_plot(time, harmonics, harmonic_no, ax):
 #ax.text(-0.1, 1.15, letters[letter_counter], transform=ax.transAxes,
     #fontsize=16, fontweight='bold', va='top', ha='right')
 plt.rcParams.update({'font.size': 12})
-fig, ax=plt.subplots(3, 2)
+fig, ax=plt.subplots(2, 2)
 directory=os.path.dirname(os.path.realpath(__file__))
 dec_amount=8
 v_array=[]
@@ -88,18 +88,23 @@ for i in range(0, len(names)):
 
 
 
-for j in range(0, 3):
+for j in range(1, 3):
     for i in range(0, 2):
         voltage_results=v_array[j]
         current_results=c_array[j]
         time_results=t_array[j]
-        axes=ax[j,i]
+        axes=ax[j-1,i]
         if j==0:
 
             axes.set_title(types[i])
         if i==0:
-            voltage_input(time_results, voltage_results, axes)
-            reduction=2465
+            if j ==2:
+                max=(1/8.94)*20
+                idx=tuple(np.where(time_results<max))
+                voltage_input(time_results[idx], voltage_results[idx], axes)
+            else:
+                voltage_input(time_results, voltage_results, axes)
+            reduction=2465//3
             if (j+1)==3:
                 axes.plot(time_results[:reduction], voltage_results[:reduction])
             pad = 5
@@ -108,8 +113,8 @@ for j in range(0, 3):
                 size='large', ha='right', va='center', rotation="horizontal")
 
         elif i==1 and (j+1)==3:
-            time_series(voltage_results[reduction:], current_results[reduction:], axes)
-            axes.plot(voltage_results[:reduction], current_results[:reduction]*1000, alpha=0.7)
+            time_series(voltage_results[idx], current_results[idx], axes)
+            axes.plot(voltage_results[:reduction], current_results[:reduction]*1000)
         else:
             time_series(voltage_results, current_results, axes)
 

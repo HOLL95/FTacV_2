@@ -11,40 +11,21 @@ from harmonics_plotter import harmonics
 dir_path = os.path.dirname(os.path.realpath(__file__))
 results_dict="Inferred_params"
 Electrode="Yellow"
-run="Run_3"
+run="Run_6"
 concs=["1e-1M", "1e0M"]
 file_numbers=[str(x) for x in range(1, 4)]
-plot_params=["E0_mean", "E0_std","k_0","Ru","gamma", "alpha"]
-master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha"]
+plot_params=["E0_mean", "E0_std","k_0","Ru","alpha_mean", "alpha_std"]
+master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha_mean", "alpha_std"]
 num_harms=5
+font = {'family' : 'normal',
+        'size'   : 12}
 figure=multiplot(num_rows=2, num_cols=len(plot_params)/2, **{"harmonic_position":[0,1], "num_harmonics":num_harms, "orientation":"landscape",  "plot_width":5})
+plt.rc('font', **font)
+#figure=multiplot(num_rows=2, num_cols=len(plot_params)/2, **{"harmonic_position":[0,1], "num_harmonics":num_harms, "orientation":"landscape",  "plot_width":5})
 
 
 keys=sorted(figure.axes_dict.keys())
 
-fancy_names={
-    "E_0": '$E^0$',
-    'E_start': '$E_{start}$', #(starting dc voltage - V)
-    'E_reverse': '$E_{reverse}$',
-    'omega':'$\\omega$',#8.88480830076,  #    (frequency Hz)
-    'd_E': "$\\Delta E$",   #(ac voltage amplitude - V) freq_range[j],#
-    'v': "v",   #       (scan rate s^-1)
-    'area': "Area", #(electrode surface area cm^2)
-    'Ru': "$R_{u}$",  #     (uncompensated resistance ohms)
-    'Cdl': "$C_{dl}$", #(capacitance parameters)
-    'CdlE1': "$C_{dlE1}$",#0.000653657774506,
-    'CdlE2': "$C_{dlE2}$",#0.000245772700637,
-    'CdlE3': "$C_{dlE3}$",#1.10053945995e-06,
-    'gamma': '$\\Gamma$',
-    'k_0': '$k_0$', #(reaction rate s-1)
-    'alpha': "$\\alpha$",
-    "E0_mean":"$E^0 \\mu$",
-    "E0_std": "$E^0 \\sigma$",
-    "cap_phase":"Capacitance phase",
-    'phase' : "Phase",
-    "":"Experiment",
-    "noise":"$\sigma$",
-}
 unit_dict={
     "E_0": "V",
     'E_start': "V", #(starting dc voltage - V)
@@ -58,7 +39,7 @@ unit_dict={
     'CdlE1': "",#0.000653657774506,
     'CdlE2': "",#0.000245772700637,
     'CdlE3': "",#1.10053945995e-06,
-    'gamma': '$mol\ cm^{-2}$',
+    'gamma': 'mol cm^{-2}$',
     'k_0': '$s^{-1}$', #(reaction rate s-1)
     'alpha': "",
     "E0_mean":"V",
@@ -68,8 +49,35 @@ unit_dict={
     "k0_scale":"",
     "cap_phase":"rads",
     'phase' : "rads",
+    "alpha_mean": "",
+    "alpha_std": "",
     "":"",
     "noise":"",
+}
+fancy_names={
+    "E_0": '$E^0$',
+    'E_start': '$E_{start}$', #(starting dc voltage - V)
+    'E_reverse': '$E_{reverse}$',
+    'omega':'$\\omega$',#8.88480830076,  #    (frequency Hz)
+    'd_E': "$\\Delta E$",   #(ac voltage amplitude - V) freq_range[j],#
+    'v': "v",   #       (scan rate s^-1)
+    'area': "Area", #(electrode surface area cm^2)
+    'Ru': "Ru",  #     (uncompensated resistance ohms)
+    'Cdl': "$C_{dl}$", #(capacitance parameters)
+    'CdlE1': "$C_{dlE1}$",#0.000653657774506,
+    'CdlE2': "$C_{dlE2}$",#0.000245772700637,
+    'CdlE3': "$C_{dlE3}$",#1.10053945995e-06,
+    'gamma': '$\\Gamma',
+    'k_0': '$k_0$', #(reaction rate s-1)
+    'alpha': "$\\alpha$",
+    "E0_mean":"$E^0 \\mu$",
+    "E0_std": "$E^0 \\sigma$",
+    "cap_phase":"Capacitance phase",
+    "alpha_mean": "$\\alpha\\mu$",
+    "alpha_std": "$\\alpha\\sigma$",
+    'phase' : "Phase",
+    "":"Experiment",
+    "noise":"$\sigma$",
 }
 plot_counter=0
 h_counter=0
@@ -81,25 +89,26 @@ param_bounds={
     'E_0':[0.3, 0.6],#[param_list['E_start'],param_list['E_reverse']],
     'Ru': [0,1000],  #     (uncompensated resistance ohms)
     'Cdl': [0,1e-4], #(capacitance parameters)
-    'CdlE1': [-0.05,0.15],#0.000653657774506,
+    'CdlE1': [-0.15,0.15],#0.000653657774506,
     'CdlE2': [-0.01,0.01],#0.000245772700637,
     'CdlE3': [-0.01,0.01],#1.10053945995e-06,
     'gamma': [8e-11,1e-9],
-    'k_0': [50, 200], #(reaction rate s-1)
+    'k_0': [10, 150], #(reaction rate s-1)
     'alpha': [0.4, 0.6],
     "cap_phase":[5*math.pi/4, 2*math.pi],
     "E0_mean":[0.1, 0.4],
-    "E0_std": [0.05, 0.2],
-    'phase' : [5*math.pi/4, 2*math.pi]
+    "E0_std": [0.01, 0.1],
+    "alpha_mean":[0.4, 0.6],
+    "alpha_std":[0.001, 0.2],
+    'phase' : [5*math.pi/4, 7*math.pi/4]
 }
 i=2
 if str(i) in other_files:
     file="Noramp_"+str(i)+"_cv_high_ru.run3_4"
 else:
     file="Noramp_"+str(i)+"_cv_high_ru.run3_2"
-
+file="Noramp_2_cv_high_ru_alpha_disp"
 method="timeseries"
-
 noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run, file]))
 
 #For 1e0M no. 1
@@ -110,8 +119,8 @@ noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run,
 #[0.44902174254951466, 0.04649482119604907, 167.77163066745334, 1499.9999899319125, 3.244942640679048e-05, -0.0015943375724840197, 0.003256602506039867, 1.5805338795893364e-10, 8.941715397492652, 4.227414643240183, 5.562298818419109]
 
 
-noramp_results.simulation_options["dispersion_bins"]=50
-param_vals=[0.25, 0.1, 100, 100, 1e-10, 0.5]
+noramp_results.simulation_options["dispersion_bins"]=10
+param_vals=[0.25, 0.1, 100, 100, 0.5, 0.1]
 noramp_results.dim_dict["Cdl"]=1e-5
 noramp_results.dim_dict["CdlE1"]=0
 noramp_results.dim_dict["CdlE2"]=0

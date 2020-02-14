@@ -5,17 +5,17 @@ import pints.plot
 import os
 files=os.listdir('.')
 #f=open(filename, "r")
-titles=['E_0', 'k_0', 'Cdl', 'Ru']
-true_params=[-0.4, 10, 0.000134,20.0]
+titles=['E_0', 'k_0',  'Ru','Cdl']
+true_params=[-0.4, 10, 20.0,0.000134,]
 noise_vals=[0.01, 0.02, 0.005, 0]
 fig, ax=plt.subplots(2,3)
 counter=-1
-extension=".fo"
+extension=".cm"
 chain_select=1
 j=0
 for j in range(0, len(files)):
     if files[j][-len(extension):-1]== extension[:-1]:
-        print files[j]
+        print((files[j]))
         counter+=1
         chains=np.load(files[j])
         for i in range(0, len(titles)):

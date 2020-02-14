@@ -12,40 +12,21 @@ from harmonics_plotter import harmonics
 dir_path = os.path.dirname(os.path.realpath(__file__))
 results_dict="Inferred_params"
 Electrode="Yellow"
-run="Run_3"
+run="Run_6"
 concs=["1e-1M", "1e0M"]
 file_numbers=[str(x) for x in range(1, 4)]
-plot_params=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma", "cap_phase", "alpha"]
-master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha"]
+plot_params=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "cap_phase", "alpha_mean", "alpha_std"]
+master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha_mean", "alpha_std"]
 num_harms=5
+font = {'family' : 'normal',
+        'size'   : 12}
+
+plt.rc('font', **font)
 #figure=multiplot(num_rows=2, num_cols=len(plot_params)/2, **{"harmonic_position":[0,1], "num_harmonics":num_harms, "orientation":"landscape",  "plot_width":5})
 
 
 #keys=sorted(figure.axes_dict.keys())
 
-fancy_names={
-    "E_0": '$E^0$',
-    'E_start': '$E_{start}$', #(starting dc voltage - V)
-    'E_reverse': '$E_{reverse}$',
-    'omega':'$\\omega$',#8.88480830076,  #    (frequency Hz)
-    'd_E': "$\\Delta E$",   #(ac voltage amplitude - V) freq_range[j],#
-    'v': "v",   #       (scan rate s^-1)
-    'area': "Area", #(electrode surface area cm^2)
-    'Ru': "$R_{u}$",  #     (uncompensated resistance ohms)
-    'Cdl': "$C_{dl}$", #(capacitance parameters)
-    'CdlE1': "$C_{dlE1}$",#0.000653657774506,
-    'CdlE2': "$C_{dlE2}$",#0.000245772700637,
-    'CdlE3': "$C_{dlE3}$",#1.10053945995e-06,
-    'gamma': '$\\Gamma$',
-    'k_0': '$k_0$', #(reaction rate s-1)
-    'alpha': "$\\alpha$",
-    "E0_mean":"$E^0 \\mu$",
-    "E0_std": "$E^0 \\sigma$",
-    "cap_phase":"Capacitance phase",
-    'phase' : "Phase",
-    "":"Experiment",
-    "noise":"$\sigma$",
-}
 unit_dict={
     "E_0": "V",
     'E_start': "V", #(starting dc voltage - V)
@@ -59,7 +40,7 @@ unit_dict={
     'CdlE1': "",#0.000653657774506,
     'CdlE2': "",#0.000245772700637,
     'CdlE3': "",#1.10053945995e-06,
-    'gamma': '$mol\ cm^{-2}$',
+    'gamma': 'mol cm^{-2}$',
     'k_0': '$s^{-1}$', #(reaction rate s-1)
     'alpha': "",
     "E0_mean":"V",
@@ -69,8 +50,35 @@ unit_dict={
     "k0_scale":"",
     "cap_phase":"rads",
     'phase' : "rads",
+    "alpha_mean": "",
+    "alpha_std": "",
     "":"",
     "noise":"",
+}
+fancy_names={
+    "E_0": '$E^0$',
+    'E_start': '$E_{start}$', #(starting dc voltage - V)
+    'E_reverse': '$E_{reverse}$',
+    'omega':'$\\omega$',#8.88480830076,  #    (frequency Hz)
+    'd_E': "$\\Delta E$",   #(ac voltage amplitude - V) freq_range[j],#
+    'v': "v",   #       (scan rate s^-1)
+    'area': "Area", #(electrode surface area cm^2)
+    'Ru': "Ru",  #     (uncompensated resistance ohms)
+    'Cdl': "$C_{dl}$", #(capacitance parameters)
+    'CdlE1': "$C_{dlE1}$",#0.000653657774506,
+    'CdlE2': "$C_{dlE2}$",#0.000245772700637,
+    'CdlE3': "$C_{dlE3}$",#1.10053945995e-06,
+    'gamma': '$\\Gamma',
+    'k_0': '$k_0$', #(reaction rate s-1)
+    'alpha': "$\\alpha$",
+    "E0_mean":"$E^0 \\mu$",
+    "E0_std": "$E^0 \\sigma$",
+    "cap_phase":"Capacitance phase",
+    "alpha_mean": "$\\alpha\\mu$",
+    "alpha_std": "$\\alpha\\sigma$",
+    'phase' : "Phase",
+    "":"Experiment",
+    "noise":"$\sigma$",
 }
 plot_counter=0
 h_counter=0
@@ -90,15 +98,17 @@ param_bounds={
     'alpha': [0.4, 0.6],
     "cap_phase":[5*math.pi/4, 2*math.pi],
     "E0_mean":[0.1, 0.4],
-    "E0_std": [0.01, 0.15],
-    'phase' : [5*math.pi/4, 2*math.pi]
+    "E0_std": [0.01, 0.1],
+    "alpha_mean":[0.4, 0.6],
+    "alpha_std":[0.001, 0.2],
+    'phase' : [5*math.pi/4, 7*math.pi/4]
 }
 i=2
 if str(i) in other_files:
     file="Noramp_"+str(i)+"_cv_high_ru.run3_4"
 else:
     file="Noramp_"+str(i)+"_cv_high_ru.run3_2"
-
+file="Noramp_2_cv_high_ru_alpha_disp"
 method="timeseries"
 
 noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run, file]))
@@ -111,9 +121,8 @@ noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run,
 #[0.44902174254951466, 0.04649482119604907, 167.77163066745334, 1499.9999899319125, 3.244942640679048e-05, -0.0015943375724840197, 0.003256602506039867, 1.5805338795893364e-10, 8.941715397492652, 4.227414643240183, 5.562298818419109]
 
 
-noramp_results.simulation_options["dispersion_bins"]=32
-["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma", "cap_phase", "alpha"]
-param_vals=[0.25, 0.1, 100, 100,1e-5, 1e-5, 1e-5, 1e-10, 3*math.pi/2, 0.5]
+noramp_results.simulation_options["dispersion_bins"]=10
+param_vals=[0.25, 0.05, 100, 100,1e-5, 1e-5,3*math.pi/2, 0.5, 0.05]
 noramp_results.dim_dict["Cdl"]=1e-5
 noramp_results.dim_dict["CdlE1"]=0
 noramp_results.dim_dict["CdlE2"]=0
@@ -137,22 +146,24 @@ start_harm=3
 harms=harmonics(range(start_harm, start_harm+num_harms),noramp_results.dim_dict["omega"] , 0.05)
 #noramp_results.simulation_options["likelihood"]=method
 #noramp_results.simulation_options["dispersion_bins"]=16
-num_scans=100
+num_scans=4
 #plt.rcParams.update({'axes.labelsize': 16})
 #mpl.rcParams['axes.labelsize'] = 1
-col_len=2
+col_len=3
 row_len=len(plot_params)//col_len
 
-fig, axes=plt.subplots(col_len, row_len)
-for j in range(0,1):# len(plot_params)
-    col_idx=j%row_len
-    row_idx=j//row_len
+fig, axes=plt.subplots(row_len, col_len)
+print(axes)
+for j in range(0,len(plot_params)):#
+    col_idx=j//row_len
+    row_idx=j%row_len
+    print(row_idx, col_idx, row_len)
     new_params=np.copy(param_vals)
     values=np.linspace(param_bounds[plot_params[j]][0], param_bounds[plot_params[j]][1],num_scans)
     for q in range(0, num_scans):
         new_params[j]=values[q]
         cmaes_time=noramp_results.i_nondim(noramp_results.test_vals(new_params, method))
-        """
+
         ax=axes[row_idx, col_idx]
         ax.set_xlabel("Voltage(V)")
         ax.set_ylabel("Current(mA)")
@@ -162,8 +173,7 @@ for j in range(0,1):# len(plot_params)
             value_label="{:.2E}".format(Decimal(values[q]))
         ax.plot(voltage_results, cmaes_time*1e3, label=value_label+unit_dict[plot_params[j]])
         ax.set_title(fancy_names[plot_params[j]])
-        ax.legend(loc="upper right")
-        """
+        ax.legend(loc="upper right", bbox_to_anchor=(1, 0.5))
 #fig.tight_layout()
-print(np.mean(noramp_results.time_array), np.std(noramp_results.time_array))
+
 plt.show()

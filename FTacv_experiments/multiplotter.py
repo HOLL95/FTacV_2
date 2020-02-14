@@ -8,9 +8,9 @@ class multiplot:
         else:
             num_rows=int(num_rows)
             num_cols=int(num_cols)
-        mpl.rcParams['xtick.labelsize'] = 11
-        mpl.rcParams['ytick.labelsize'] = 11
-        mpl.rcParams['axes.labelsize'] = 11
+        mpl.rcParams['xtick.labelsize'] = 9
+        mpl.rcParams['ytick.labelsize'] = 9
+        mpl.rcParams['axes.labelsize'] = 9
         if "num_harmonics" not in kwargs:
             kwargs["num_harmonics"]=4
         if "orientation" not in kwargs:

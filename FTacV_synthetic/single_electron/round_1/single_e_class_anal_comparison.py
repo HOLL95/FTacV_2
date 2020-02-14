@@ -7,7 +7,7 @@ import copy
 import time
 class single_electron:
     def __init__(self, dim_paramater_dictionary, optim_list, harmonic_range, filter_val):
-        key_list=dim_paramater_dictionary.keys()
+        key_list=list(dim_paramater_dictionary.keys())
         self.nd_param=params(dim_paramater_dictionary)
         for i in range(0, len(key_list)):
             self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
@@ -117,7 +117,7 @@ class single_electron:
         if flag2=='fourier':
             filtered=self.kaiser_filter(time_series)
             if test=="yes":
-                print normed_params
+                print(normed_params)
                 plt.plot(self.secret_data_fourier)
                 plt.plot(filtered, alpha=0.7)
                 plt.show()

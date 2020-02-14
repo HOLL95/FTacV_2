@@ -59,14 +59,14 @@ ramped_other_values={
 }
 noramp_startup.generic_noramp_params["k_0"]=100
 ramp_startup.generic_ramped_params["k_0"]=100
-noramp_startup.generic_noramp_params["num_peaks"]=50
+noramp_startup.generic_noramp_params["num_peaks"]=5
 noramp_startup.generic_noramp_params["v_nondim"]=False
 noramp_startup.generic_noramp_params["original_omega"]=noramp_startup.generic_noramp_params["omega"]
 ramp_startup.generic_ramped_params["v_nondim"]=True
 ramp_startup.generic_ramped_params["sampling_freq"]=1/800.0
 noramp_simulations=single_electron("", noramp_startup.generic_noramp_params, simulation_options, noramp_other_values)
 ramped_simulations=single_electron("", ramp_startup.generic_ramped_params, ramped_simulation_options, ramped_other_values)
-harm_class=harmonics(noramp_other_values["harmonic_range"],noramp_simulations.nd_param.omega, 0.1)
+harm_class=harmonics(noramp_other_values["harmonic_range"],noramp_simulations.dim_dict["omega"], 0.1)
 ramp_ts=noramp_simulations.i_nondim(ramped_simulations.test_vals([], "timeseries"))*1e3
 noramp_ts=noramp_simulations.i_nondim(noramp_simulations.test_vals([], "timeseries"))*1e3
 volts_noramp=noramp_simulations.e_nondim(noramp_simulations.define_voltages())                   #noramp_simulations.other_values["experiment_voltage"])

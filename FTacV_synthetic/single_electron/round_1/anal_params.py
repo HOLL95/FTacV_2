@@ -52,7 +52,7 @@ class params:
             self.sampling_freq=value/((2*math.pi)/self.nd_omega)
         elif flag == 'non_dim':
             self.sampling_freq=value*((2*math.pi)/self.nd_omega)
-            print "Changing the sampling freq to " + str(self.sampling_freq)
+            print(("Changing the sampling freq to " + str(self.sampling_freq)))
     def __init__(self,param_dict):
         self.E_0=param_dict['E_0']
         self.k_0=param_dict['k_0']

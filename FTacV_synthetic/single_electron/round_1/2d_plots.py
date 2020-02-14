@@ -45,7 +45,7 @@ def plot_kde_2d(x, y, ax):
     ax.contour(xx, yy, f, colors='k')
 
     # Fix aspect ratio
-    print ((xmax - xmin)/ (ymax - ymin))
+    print(((xmax - xmin)/ (ymax - ymin)))
     ax.set_aspect((xmax - xmin)/ (ymax - ymin))
 for i in range(0,n_param):
     for j in range(0, n_param):

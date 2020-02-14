@@ -7,12 +7,13 @@ import pints.plot
 import os
 from decimal import Decimal
 import math
+import time
 from multiplotter import multiplot
 from harmonics_plotter import harmonics
 dir_path = os.path.dirname(os.path.realpath(__file__))
 results_dict="Inferred_params"
 Electrode="Yellow"
-run="Run_5"
+run="Run_3"
 concs=["1e-1M", "1e0M"]
 file_numbers=[str(x) for x in range(1, 4)]
 plot_params=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma", "cap_phase", "alpha"]
@@ -93,7 +94,7 @@ param_bounds={
     "E0_std": [0.01, 0.15],
     'phase' : [5*math.pi/4, 2*math.pi]
 }
-file="Noramp_2_cv_high_ru_alpha_0.66"
+file="Noramp_2_cv_high_ru.run3_2"
 
 method="timeseries"
 
@@ -109,8 +110,8 @@ noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run,
 
 noramp_results.simulation_options["dispersion_bins"]=16
 noramp_results.simulation_options["sampling_freq"]=1/200.0
-["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma", "cap_phase", "alpha"]
-param_vals=[0.25, 0.1, 100, 100,1e-5, 1e-5, 1e-5, 1e-10, 3*math.pi/2, 0.5]
+plot_params=["E_0","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma", "cap_phase", "alpha"]
+param_vals=[0.25, 100, 100,1e-5, 1e-5, 1e-5, 1e-10, 3*math.pi/2, 0.5]
 noramp_results.dim_dict["Cdl"]=1e-5
 noramp_results.dim_dict["CdlE1"]=0
 noramp_results.dim_dict["CdlE2"]=0
@@ -139,9 +140,11 @@ num_scans=10
 #mpl.rcParams['axes.labelsize'] = 1
 col_len=2
 row_len=len(plot_params)//col_len
+time_array=[]
 for q in range(0, num_scans):
-    cmaes_time=noramp_results.i_nondim(noramp_results.test_vals(param_vals, method))
-
+    start=time.time()
+    for j in range(0, 15):
+        cmaes_time=noramp_results.i_nondim(noramp_results.test_vals(param_vals, method))
+    time_array.append(time.time()-start)
 print(len(cmaes_time))
-print(np.mean(noramp_results.time_array), np.std(noramp_results.time_array))
-plt.show()
+print(np.mean(time_array), np.std(time_array))

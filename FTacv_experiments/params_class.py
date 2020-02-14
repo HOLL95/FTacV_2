@@ -132,10 +132,15 @@ class params:
         param_dict["nd_omega"]=param_dict["omega"]
         self.nd_omega=param_dict["omega"]
         if self.dispersion==True:
-            self.E0_std=param_dict["E0_std"]
-            self.E0_mean=param_dict["E0_mean"]
-            self.k0_shape=param_dict["k0_shape"]
-            self.k0_scale=param_dict["k0_scale"]
+            if "E0_std" in param_dict:
+                self.E0_std=param_dict["E0_std"]
+                self.E0_mean=param_dict["E0_mean"]
+            if "k0_shape" in param_dict:
+                self.k0_shape=param_dict["k0_shape"]
+                self.k0_scale=param_dict["k0_scale"]
+            if "alpha_std" in param_dict:
+                self.alpha_std=param_dict["alpha_std"]
+                self.alpha_mean=param_dict["alpha_mean"]
         if self.dcv==True:
             self.Cdlinv=param_dict["Cdlinv"]
             self.Cdlinv1=param_dict["Cdlinv1"]

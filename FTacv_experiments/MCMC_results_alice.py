@@ -9,17 +9,20 @@ import scipy.stats as stat
 dir_path = os.path.dirname(os.path.realpath(__file__))
 results_dict="Inferred_params"
 Electrode="Yellow"
-run="Run_5"
+run="Run_3"
 
 final_osc=[25, 20, 15, 10]
 other_files=["6", "9"]
 for i in range(2, 11):
+    #file="Noramp_"+str(i)+"_cv_high_ru_alpha_disp"
+    if str(i) in other_files:
+        file="Noramp_"+str(i)+"_cv_high_ru.run3_4"
+    else:
+        file="Noramp_"+str(i)+"_cv_high_ru.run3_2"
 
-
-    file="Noramp_2_cv_high_ru_alpha_0.6"
-
+    #file="Noramp_2_cv_high_ru_alpha_0.61"
     method="timeseries"
-    master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase", "phase"]
+    master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase", "phase", "alpha"]
     noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run, file]))
     param_vals=([noramp_results.save_dict["params"][0][noramp_results.save_dict["optim_list"].index(key)] if  (key in noramp_results.save_dict["optim_list"]) else noramp_results.dim_dict[key] for key in master_optim_list])
     param_vals[0]=noramp_results.save_dict["params"][0][noramp_results.save_dict["optim_list"].index("E0_mean")]
@@ -63,26 +66,37 @@ for i in range(2, 11):
     #updated_lb=np.append([noramp_results.param_bounds[key][0] for key in master_optim_list],0.75*error)
     #updated_ub=np.append([noramp_results.param_bounds[key][1] for key in master_optim_list], 1.25*error)
     error=np.std(abs(np.subtract(cmaes_time, current_results)))
-    #plt.plot(voltage_results, cmaes_time)
-    #plt.plot(voltage_results, current_results, alpha=0.5)
-    #plt.show()
-    mcmc_problem=pints.SingleOutputProblem(noramp_results, time_results, current_results)
+    plt.plot(voltage_results, cmaes_time)
+    plt.plot(voltage_results, current_results, alpha=0.5)
+    plt.show()
+
     noramp_results.param_bounds["Ru"]=[0, 2000]
     noramp_results.param_bounds["k_0"]=[0, 250]
-    noramp_results.param_bounds["alpha"]=[0.55, 0.65]
-    noramp_results.simulation_options["alpha_dispersion"]=True
+    noramp_results.param_bounds["alpha_mean"]=[0.4, 0.65]
+    noramp_results.param_bounds["alpha_std"]=[1e-5, 0.3]
+    #noramp_results.simulation_options["alpha_dispersion"]="normal"
+    noramp_results.dim_dict["alpha_mean"]=0.6
+    noramp_results.dim_dict["alpha_std"]=1e-2
+    noramp_results.def_optim_list(master_optim_list)
+    cmaes_time=noramp_results.test_vals(param_vals, method)
+    plt.plot(voltage_results, current_results, alpha=0.7)
+    plt.plot(voltage_results, cmaes_time)
+    plt.show()
     updated_lb=np.append([noramp_results.param_bounds[key][0] for key in master_optim_list], 0.01*error)
     updated_ub=np.append([noramp_results.param_bounds[key][1] for key in master_optim_list], 10*error)
-    [print(x, y, z) for x, y, z in zip(updated_lb, param_vals, updated_ub)]
+    mcmc_problem=pints.SingleOutputProblem(noramp_results, time_results, current_results)
     #updated_lb=np.append([x*0.65 for x in param_vals],0.01*error)
     #updated_ub=np.append([x*1.35 for x in param_vals], 10*error)
     updated_b=[updated_lb, updated_ub]
     updated_b=np.sort(updated_b, axis=0)
     #error=1
     log_liklihood=pints.GaussianLogLikelihood(mcmc_problem)
+    print(vars(log_liklihood))
     #log_liklihood=pints.GaussianKnownSigmaLogLikelihood(mcmc_problem, error)
     #print(noramp_results.n_parameters(), len(updated_b[0]))
     log_prior=pints.UniformLogPrior(updated_b[0], updated_b[1])
+    print(vars(log_prior))
+    print(len(updated_b[0]), noramp_results.n_parameters())
     #print(log_prior.n_parameters(), log_liklihood.n_parameters())
     log_posterior=pints.LogPosterior(log_liklihood, log_prior)
     #[(noramp_results.param_bounds[x][1]+noramp_results.param_bounds[x][0])/2 for x in noramp_results.optim_list ]
@@ -103,9 +117,9 @@ for i in range(2, 11):
         #alpha_index=noramp_results.optim_list.index("alpha")
         alpha_chain=[]
         mcmc.set_parallel(True)
-        mcmc.set_max_iterations(100000)
+        mcmc.set_max_iterations(40000)
         chains=mcmc.run()
-        rhat_mean=np.mean(pints.rhat_all_params(chains[:, 70000:, :]))
+        rhat_mean=np.mean(pints.rhat_all_params(chains[:, 30000:, :]))
         #for q in range(0, 2):
         #    alpha_chain=np.append(alpha_chain, chains[q, 30000:, alpha_index])
         #alpha_skew=stat.skew(alpha_chain)
@@ -123,7 +137,7 @@ for i in range(2, 11):
 
         Electrode_save="Yellow"
         run2="MCMC_runs/omega_nondim"
-        save_file=file+"_MCMC_dispersed_run"
+        save_file=file+"_MCMC_run22a"
         filepath=("/").join([dir_path, "Inferred_params", Electrode_save, run2])
         #print(pints.rhat_all_params(chains[:, 20000:, :]))
         #k_rhat=pints.rhat_all_params(chains[:, 20000:, :])[2]

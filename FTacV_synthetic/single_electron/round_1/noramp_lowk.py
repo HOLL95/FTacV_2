@@ -44,7 +44,7 @@ freq_values=[20, 400, 60, 30, 500, 80, 1, 50, 70, 200, 100, 300, 40, 90, 10]
 freq_values=np.sort(freq_values)
 noramp.label="cmaes"
 noramp.nd_param.time_end=(noramp.nd_param.num_peaks/noramp.nd_param.nd_omega)*2*math.pi#points_range*noramp.nd_param.sampling_freq
-print noramp.nd_param.num_peaks/noramp.nd_param.omega
+print((noramp.nd_param.num_peaks/noramp.nd_param.omega))
 #noramp.nd_param.time_end=(2*(noramp.nd_param.E_reverse-noramp.nd_param.E_start)/noramp.nd_param.v)
 noramp.times(points_range)
 frequencies=np.fft.fftfreq(int(points_range), noramp.time_vec[1]-noramp.time_vec[0])
@@ -101,7 +101,7 @@ while k<cmaes_runs:
     cmaes_params=np.zeros(len(found_parameters))
     for i in range(0,len(found_parameters)):
         cmaes_params[i]=noramp.un_normalise(found_parameters[i], [param_boundaries[0][i],param_boundaries[1][i]])
-    print cmaes_params
+    print(cmaes_params)
     cmaes_results[k,:]=cmaes_params
     cmaes_scores[k]=noramp.simulate(cmaes_params,frequencies, "Dont optimise", "fourier", "no", score=True )
     #noramp.pass_extra_data(noisy_data)
@@ -119,13 +119,13 @@ updated_ub=np.append(np.multiply([param_list[x]for x in noramp.optim_list], 1.5)
 updated_boundaries=[updated_lb, updated_ub]
 updated_boundaries=np.sort(updated_boundaries, 0)
 noramp.define_boundaries(updated_boundaries)
-print updated_boundaries
+print(updated_boundaries)
 log_liklihood=pints.UnknownNoiseLogLikelihood(mcmc_problem)
 log_prior=pints.UniformLogPrior(updated_boundaries[0],
                                 updated_boundaries[1])
 log_posterior=pints.LogPosterior(log_liklihood, log_prior)
 found_parameters=np.append(found_parameters, (70000))
-print found_parameters
+print(found_parameters)
 xs=[found_parameters,
     found_parameters,
     found_parameters
@@ -149,11 +149,11 @@ k_rhat=rhats[1]
 #print k_rhat
 #print "noise"+str(noise_val)
 pints.plot.trace(chains[:, :, :])
-print noise_max
+print(noise_max)
 plt.show()
-save=raw_input("Do you want to save this data? Y/N?")
+save=eval(input("Do you want to save this data? Y/N?"))
 if save =="Y":
-    filename=raw_input("filename?")
+    filename=eval(input("filename?"))
     f=open(filename, "w")
     np.save(f, chains)
     f.close()

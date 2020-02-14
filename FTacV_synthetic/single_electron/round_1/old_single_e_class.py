@@ -8,7 +8,7 @@ import time
 from scipy import signal
 class single_electron:
     def __init__(self, dim_paramater_dictionary, optim_list, harmonic_range, filter_val):
-        key_list=dim_paramater_dictionary.keys()
+        key_list=list(dim_paramater_dictionary.keys())
         self.nd_param=params(dim_paramater_dictionary)
         for i in range(0, len(key_list)):
             self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
@@ -61,7 +61,7 @@ class single_electron:
             #filter_bit=np.multiply(filter_bit, np.kaiser(len(filter_bit), 50))
             top_hat[np.where((frequencies<(true_harm+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm-(self.nd_param.omega*self.filter_val)))]=filter_bit
             if harmonical==True:
-                print self.harmonic_range[i]
+                print((self.harmonic_range[i]))
                 harmonics[i,:][np.where((frequencies<(true_harm+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm-(self.nd_param.omega*self.filter_val)))]=filter_bit
                 plt.plot((np.fft.ifft(harmonics[i,:])))
                 plt.show()
@@ -107,11 +107,11 @@ class single_electron:
             if score ==True:
                 return self.score_func(filtered)
             if test=="yes":
-                print normed_params
+                print(normed_params)
                 plt.plot(frequencies, self.secret_data_fourier)
                 plt.plot(frequencies, filtered, alpha=0.7)
                 plt.show()
-                print "score", score
+                print(("score", score))
                 #plt.plot(frequencies, filtered)
                 #plt.plot(frequencies, self.secret_data)
                 #plt.show()

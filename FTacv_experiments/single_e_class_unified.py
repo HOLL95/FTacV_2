@@ -103,6 +103,10 @@ class single_electron:
         self.other_values=other_values
         self.boundaries=None
         self.param_bounds=param_bounds
+        if "GH_quadrature" in self.simulation_options:
+            if self.simulation_options["GH_quadrature"]==True:
+                self.GH_nodes, self.GH_weights=np.polynomial.hermite.hermgauss(self.simulation_options["dispersion_bins"])
+                self.normal_GH_weights=[(1/math.sqrt(math.pi))*weight for weight in self.GH_weights]
         if self.simulation_options["experimental_fitting"]==True:
             self.secret_data_fourier=self.kaiser_filter(other_values["experiment_current"])
             self.secret_data_time_series=other_values["experiment_current"]
@@ -124,26 +128,37 @@ class single_electron:
                     param_boundaries[1][i]=self.param_bounds[self.optim_list[i]][1]
 
             self.boundaries=param_boundaries
-
-        if ("E0_std" in optim_list) or ("k0_shape" in optim_list):
+        disp_flags=["mean", "scale", "upper"]
+        disp_check=[[y in x for y in disp_flags] for x in self.optim_list]
+        if True in [True in x for x in disp_check]:
             self.simulation_options["dispersion"]=True
+            distribution_flags=["normal", "lognormal", "uniform"]
+            self.simulation_options["dispersion_parameters"]=[]
+            self.simulation_options["dispersion_distributions"]=[]
+            for i in range(0, len(self.optim_list)):
+                count=0
+                for j in range(0, len(disp_flags)):
+                    if count>1:
+                        raise ValueError("Multiple dispersion flags in "+self.optim_list[i])
+                    if disp_flags[j] in self.optim_list[i]:
+                        index=self.optim_list[i].find("_"+disp_flags[j])
+                        self.simulation_options["dispersion_parameters"].append(self.optim_list[i][:index])
+                        self.simulation_options["dispersion_distributions"].append(distribution_flags[j])
+                        count+=1
         else:
             self.simulation_options["dispersion"]=False
-        if self.simulation_options["dispersion"]==True:
-            if "k_0" not in self.optim_list:
-                k0params=set(["k0_shape", "k0_scale"])
-                if k0params.issubset(set(self.optim_list))==False:
-                    missing_param=k0params-(k0params & set(self.optim_list))
-                    raise ValueError("Missing the following kinetic dispersion parameters: "+ (", ").join([str(x) for x in missing_param]))
-            if "E_0" not in self.optim_list:
-                e0params=set(["E0_std", "E0_mean"])
-                if e0params.issubset(set(self.optim_list))==False:
-                    missing_param=e0params-(e0params & set(self.optim_list))
-                    raise ValueError("Missing the following thermodynamic dispersion parameters: " + (", ").join([str(x) for x in missing_param]))
+            #if type(self.simulation_options["dispersion_bins"]) is not list:
+            #    self.simulation_options["dispersion_bins"]=[self.simulation_options["dispersion_bins"]]*len(self.simulation_options["dispersion_parameters"])
+
         if "phase" in optim_list and "cap_phase" not in optim_list:
             self.simulation_options["phase_only"]=True
         else:
             self.simulation_options["phase_only"]=False
+        if "alpha_mean" in optim_list or "alpha_std" in optim_list:
+            self.simulation_options["alpha_dispersion"]="normal"
+        else:
+            if "alpha_dispersion" in self.simulation_options:
+                del self.simulation_options["alpha_dispersion"]
     def normalise(self, norm, boundaries):
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
     def un_normalise(self, norm, boundaries):
@@ -176,29 +191,6 @@ class single_electron:
     def pass_extra_data(self, time_series, fourier):
         self.secret_data_time_series=time_series
         self.secret_data_fourier=fourier
-    def fourier_plotter(self, time_series_1, label1, time_series_2, label2, fourier_end):
-        L=len(time_series_1)
-        window=np.hanning(L)
-        time_series_1=np.multiply(time_series_1, window)
-        time_series_2=np.multiply(time,e_series_2, window)
-        f=np.fft.fftfreq(len(time_series_1), self.time_vec[1]-self.time_vec[0])
-        true_harm=self.nd_param.omega*self.nd_param.c_T0
-        last_harm=(fourier_end*true_harm)+(self.nd_param.omega*self.filter_val)
-        freqs=f[np.where((f>0) & (f<last_harm))]
-        Y1=np.fft.fft(time_series_1)
-        Y2=np.fft.fft(time_series_2)
-        Y1=Y1[np.where((f>0) & (f<last_harm))]
-        Y2=Y2[np.where((f>0) & (f<last_harm))]
-        plt.subplot(1,3,2)
-        plt.title("Real")
-        plt.plot(freqs,np.real(Y1), label=label1)
-        plt.plot(freqs, np.real(Y2), label=label2, alpha=0.7)
-        plt.subplot(1,3,3)
-        plt.title("Imaginary")
-        plt.plot(freqs,np.imag(Y1), label=label1)
-        plt.plot(freqs, np.imag(Y2), label=label2, alpha=0.7)
-        plt.xlabel("frequency")
-        plt.legend()
     def kaiser_filter(self, time_series, harmonical=False):
         frequencies=self.frequencies
         L=len(time_series)
@@ -208,14 +200,25 @@ class single_electron:
         Y=np.fft.fft(time_series)
         #Y_pow=np.power(copy.deepcopy(Y[0:len(frequencies)]),2)
         top_hat=copy.deepcopy(Y[0:len(frequencies)])
-
+        scale_flag=False
         true_harm=self.nd_param.omega*self.nd_param.c_T0
-        if sum(np.diff(self.harmonic_range))!=len(self.harmonic_range)-1:
+
+        if "fourier_scaling" in self.simulation_options:
+            print(self.simulation_options["fourier_scaling"])
+            if self.simulation_options["fourier_scaling"]!=None:
+                scale_flag=True
+        if sum(np.diff(self.harmonic_range))!=len(self.harmonic_range)-1 or scale_flag==True:
             results=np.zeros(len(top_hat), dtype=complex)
             for i in range(0, self.num_harmonics):
                 true_harm_n=true_harm*self.harmonic_range[i]
-                index=[np.where((frequencies<(true_harm_n+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm_n-(self.nd_param.omega*self.filter_val)))]
-                filter_bit=top_hat[index]
+                index=tuple(np.where((frequencies<(true_harm_n+(self.nd_param.omega*self.filter_val))) & (frequencies>true_harm_n-(self.nd_param.omega*self.filter_val))))
+                if scale_flag==True:
+                    filter_bit=abs(top_hat[index])
+                    min_f=min(filter_bit)
+                    max_f=max(filter_bit)
+                    filter_bit=[self.normalise(x, [min_f, max_f]) for x in filter_bit]
+                else:
+                    filter_bit=top_hat[index]
                 results[index]=filter_bit
         else:
             first_harm=(self.harmonic_range[0]*true_harm)-(self.nd_param.omega*self.filter_val)
@@ -225,7 +228,7 @@ class single_electron:
             results=np.zeros(len(top_hat), dtype=complex)
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
         comp_results=np.append((np.real(results)), np.imag(results))
-        return comp_results
+        return abs(results)
     def abs_transform(self, data):
         window=np.hanning(len(data))
         hanning_transform=np.multiply(window, data)
@@ -285,68 +288,18 @@ class single_electron:
         for key in list(variables.keys()):
             if type(variables[key])==int or type(variables[key])==float or type(variables[key])==np.float64:
                 print(key, variables[key])
-    def pick_paramaters(self, param_vals, desired_params):
-        if len(desired_params)>len(param_vals):
-            raise ValueError("Too many parameters")
-        num_params=len(desired_params)
-        params=np.zeros(num_params)
-        for i in range(0,num_params):
-            idx=self.optim_list.index(desired_params[i])
-            print(desired_params[i], idx)
-            params[i]=param_vals[idx]
-        return params
-    def param_scanner(self, param_list, unit_dict, title, num_scans, param_vals=[], pc=0):
-        boundaries=self.param_bounds
-        if len(param_vals)==0 and pc==0:
-            pc_shift=False
-            param_vals=[(boundaries[x][0]+boundaries[x][1])/2.0 for x in param_list]
-        else:
-            pc_shift=True
-        unit_list=[unit_dict[k] for k in param_list]
-        current_optim_list=self.optim_list
-        self.optim_list=param_list
-        num_params=len(param_list)
-        for i in range(1, num_params):
-            if num_params%i==0:
-                col=i
-        pc_change=np.arange(1-(0.05*num_scans/2), 1+(0.05*num_scans/2), 0.05)
-        rows=num_params/col
-        first_elem=((np.arange(0, rows)*col))
-        bottom_elem=np.arange((rows*col)-col, rows*col)
-        for i in range(0, num_params):
-            ax=plt.subplot(rows, col, i+1)
-            if i in first_elem:
-                ax.set_ylabel("Current(A)")
-            else:
-                ax.axes.get_yaxis().set_ticks([])
-            if i in bottom_elem:
-                ax.set_xlabel("Voltage(V)")
-            else:
-                ax.axes.get_xaxis().set_ticks([])
-            true_val=param_vals[i]
-            plt.title(param_list[i])
-            print(param_list[i])
-            if pc_shift==True:
-                var_vals=np.multiply(true_val, pc_change)
-            else:
-                var_vals=np.linspace(self.param_bounds[param_list[i]][0], self.param_bounds[param_list[i]][1], num_scans)
-            for j in range(0,num_scans):
-                param_vals[i]=var_vals[j]
-                time_series=self.test_vals(param_vals, "timeseries", test=False)
-                if type(self.other_values["experiment_voltage"])!=bool:
-                    voltages=self.other_values["experiment_voltage"]
-                else:
-                    voltages=self.define_voltages()
-                if abs(var_vals[j])<0.01:
-                    label="{:.3E}".format(Decimal(str(var_vals[j])))
-                else:
-                    label="%.3f" % var_vals[j]
-                plt.plot(self.e_nondim(voltages), self.i_nondim(time_series),label=label+" "+ str(unit_dict[param_list[i]]), alpha=0.7)#
-            param_vals[i]=true_val
-            plt.legend()
-        plt.suptitle(title)
-        self.optim_list=current_optim_list
-        plt.show()
+
+    def normal_gh_transform(self,location, scale):
+        try:
+            if len(self.GH_nodes)!=self.simulation_options["dispersion_bins"]:
+                self.GH_nodes, self.GH_weights=np.polynomial.hermite.hermgauss(self.simulation_options["dispersion_bins"])
+                self.normal_GH_weights=[(1/math.sqrt(math.pi))*weight for weight in self.GH_weights]
+            nodes=[(scale*math.sqrt(2)*node)+location for node in self.GH_nodes]
+        except:
+            self.GH_nodes, self.GH_weights=np.polynomial.hermite.hermgauss(self.simulation_options["dispersion_bins"])
+            self.normal_GH_weights=[(1/math.sqrt(math.pi))*weight for weight in self.GH_weights]
+            nodes=[(scale*math.sqrt(2)*node)+location for node in self.GH_nodes]
+        return nodes
 
     def test_vals(self, parameters, likelihood, test=False):
         orig_likelihood=self.simulation_options["likelihood"]
@@ -356,6 +309,9 @@ class single_electron:
         self.simulation_options["label"]="MCMC"
         self.simulation_options["test"]=test
         results=self.simulate(parameters, self.frequencies)
+        if sum(results)==0:
+            print(self.simulation_options["dispersion"], self.simulation_options["alpha_dispersion"])
+            raise ValueError("Not simulated, check options")
         self.simulation_options["likelihood"]=orig_likelihood
         self.simulation_options["label"]=orig_label
         self.simulation_options["test"]=orig_test
@@ -376,11 +332,30 @@ class single_electron:
         elif "E0_std" in self.optim_list:
             start1=time.time()
             e0_vals, e0_disp=self.therm_dispersion()
-
+            counter=0
             if "alpha_dispersion" in self.simulation_options:
-                alpha_bins=5
-                alpha_vals=np.linspace(self.param_bounds["alpha"][0],self.param_bounds["alpha"][1], alpha_bins)
-                alpha_weights=[1/alpha_bins]*alpha_bins
+                if self.simulation_options["alpha_dispersion"]=="uniform":
+                    alpha_bins=5
+                    alpha_vals=np.linspace(self.param_bounds["alpha"][0],self.param_bounds["alpha"][1], alpha_bins)
+                    alpha_weights=[1/alpha_bins]*alpha_bins
+                elif self.simulation_options["alpha_dispersion"]=="normal":
+                    if "GH_quadrature" in self.simulation_options:
+                        if self.simulation_options["GH_quadrature"]==True:
+                            alpha_vals=self.normal_gh_transform(location=self.nd_param.alpha_mean, scale=self.nd_param.alpha_std)
+                            alpha_weights=self.normal_GH_weights
+                            alpha_bins=len(alpha_vals)
+                    else:
+                        alpha_bins=16
+                        alpha_min=max(0, norm.ppf(1e-4, loc=self.nd_param.alpha_mean, scale=self.nd_param.alpha_std))
+                        alpha_max=min(1,norm.ppf(1-(1e-4), loc=self.nd_param.alpha_mean, scale=self.nd_param.alpha_std))
+                        alpha_weights=np.zeros(alpha_bins)
+                        alpha_vals=np.linspace(alpha_min, alpha_max, alpha_bins)
+                        alpha_weights[0]=norm.cdf(alpha_vals[0], loc=self.nd_param.alpha_mean, scale=self.nd_param.alpha_std)
+                        alpha_mids=np.zeros(alpha_bins)
+                        alpha_mids[0]=alpha_vals[0]
+                        for i in range(1, len(alpha_weights)):
+                            alpha_weights[i]=norm.cdf(alpha_vals[i],loc=self.nd_param.alpha_mean, scale=self.nd_param.alpha_std)-norm.cdf(alpha_vals[i-1],loc=self.nd_param.alpha_mean, scale=self.nd_param.alpha_std)
+                            alpha_mids[i]=(alpha_vals[i]+alpha_vals[i-1])/2
                 for i in range(0, alpha_bins):
                     self.nd_param_dict["alpha"]=float(alpha_vals[i])
                     for j in range(0,self.simulation_options["dispersion_bins"]):
@@ -392,74 +367,19 @@ class single_electron:
                     self.nd_param_dict["E_0"]=float(e0_vals[i])
                     time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
                     time_series=np.add(time_series, np.multiply(time_series_current, e0_disp[i]))
+                    #plt.plot(voltages, np.multiply(time_series_current, e0_disp[i]))
+                    #print(e0_disp[i])
         elif ("k0_shape" in self.optim_list):
             k0_vals, k0_disp=self.kinetic_dispersion()
             for i in range(0, self.simulation_options["dispersion_bins"]):
                 self.nd_param_dict["k_0"]=k0_vals[i]
                 time_series_current=solver(self.nd_param_dict, self.time_vec,self.simulation_options["method"], -1, self.bounds_val)
                 time_series=np.add(time_series, np.multiply(time_series_current, k0_disp[i]))
-        print(self.dim_dict["k0_shape"], self.dim_dict["k0_scale"])
         #plt.plot(k0_vals, k0_disp)
         #plt.show()
 
 
         return time_series
-
-    def generic_dispersion(self, solver):
-        if "dispersion_parameters" not in self.simulation_options:
-            raise ValueError("Dispersion parameters not defined")
-        if len(self.simulation_options["dispersion_bins"])!=len(self.simulation_options["dispersion_parameters"]):
-            raise ValueError("Need to define number of bins for each parameter")
-        if len(self.simulation_options["dispersion_distributions"])!=len(self.simulation_options["dispersion_parameters"]):
-            raise ValueError("Need to define distributions for each parameter")
-        weight_arrays=[]
-        weight_values=[]
-        nd_dict=vars(self.nd_param)
-        for i in range(0, len(self.simulation_options["dispersion_parameters"])):
-            if self.simulation_options["dispersion_distributions"][i]=="uniform":
-                if (self.simulation_options["dispersion_parameters"][i]+"_lower" not in self.dim_dict) or (self.simulation_options["dispersion_parameters"][i]+"_upper" not in self.dim_dict):
-                    raise ValueError("Uniform distribution requires "+self.simulation_options["dispersion_parameters"][i]+"_lower and " + self.simulation_options["dispersion_parameters"][i]+"_upper")
-                else:
-                    weight_values.append(np.linspace(self.simulation_options["dispersion_parameters"][i]+"_lower", self.simulation_options["dispersion_parameters"][i]+"_upper", self.simulation_options["dispersion_bins"][i]))
-                    weight_arrays.append([1/self.simulation_options["dispersion_bins"][i]]*self.simulation_options["dispersion_bins"][i])
-            elif self.simulation_options["dispersion_distributions"][i]=="normal":
-                if (self.simulation_options["dispersion_parameters"][i]+"_mean" not in self.dim_dict) or (self.simulation_options["dispersion_parameters"][i]+"_std" not in self.dim_dict):
-                    raise ValueError("Uniform distribution requires "+self.simulation_options["dispersion_parameters"][i]+"_mean and " + self.simulation_options["dispersion_parameters"][i]+"_std")
-                else:
-                    param_mean=nd_dict[self.simulation_options["dispersion_parameters"][i]+"_mean"]
-                    param_std=self.simulation_options["dispersion_parameters"][i]+"_std"
-                    min_val=norm.ppf(1e-11, loc=param_mean, scale=param_scale)
-                    max_val=norm.ppf(1-1e-11, loc=param_mean, scale=param_scale)
-                    param_vals=np.linspace(min_val, max_val, self.simulation_options["dispersion_bins"][i])
-                    param_weights=np.zeros(self.simulation_options["dispersion_bins"][i])
-                    param_weights[0]=norm.cdf(param_vals[0],loc=param_mean, scale=self.param_std)
-                    for j in range(1, self.simulation_options["dispersion_bins"][i]):
-                        param_weights[j]=norm.cdf(param_vals[j],loc=param_mean, scale=self.param_std)-norm.cdf(param_vals[j-1],loc=param_mean, scale=param_std)
-                    weight_values.append(param_vals)
-                    weight_arrays.append(param_weights)
-            elif self.simulation_options["dispersion_distributions"][i]=="lognormal":
-                if (self.simulation_options["dispersion_parameters"][i]+"_shape" not in self.dim_dict) or (self.simulation_options["dispersion_parameters"][i]+"_loc" not in self.dim_dict) or (self.simulation_options["dispersion_parameters"][i]+"_scale" not in self.dim_dict):
-                    raise ValueError("Uniform distribution requires "+self.simulation_options["dispersion_parameters"][i]+"_shape and " + self.simulation_options["dispersion_parameters"][i]+"_loc and "  + self.simulation_options["dispersion_parameters"][i]+"_scale")
-                else:
-                    param_loc=nd_dict[self.simulation_options["dispersion_parameters"][i]+"_loc"]
-                    param_shape=nd_dict[self.simulation_options["dispersion_parameters"][i]+"_shape"]
-                    param_scale=nd_dict[self.simulation_options["dispersion_parameters"][i]+"_scale"]
-                    min_val=lognorm.ppf(1e-11, param_shape, loc=param_loc, scale=param_scale)
-                    max_val=lognorm.ppf(1-1e-11, param_shape, loc=param_loc, scale=param_scale)
-                    param_vals=np.linspace(min_val, max_val, self.simulation_options["dispersion_bins"][i])
-                    param_weights=np.zeros(self.simulation_options["dispersion_bins"][i])
-                    param_weights[0]=lognorm.cdf(param_vals[0],param_shape, loc=param_loc, scale=param_scale)
-                    for j in range(1, self.simulation_options["dispersion_bins"][i]):
-                        param_weights[j]=norm.cdf(param_vals[j],param_shape, loc=param_loc, scale=param_scale)-norm.cdf(param_vals[j-1],param_shape, loc=param_loc, scale=param_scale)
-                    weight_values.append(param_vals)
-                    weight_arrays.append(param_weights)
-            else:
-                raise KeyError(self.simulation_options["dispersion_distributions"][i]+" distribution not implemented")
-
-
-
-
-
     def kinetic_dispersion(self):
         #print self.nd_param.k0_shape, self.nd_param.k0_loc, self.nd_param.k0_scale
         k0_weights=np.zeros(self.simulation_options["dispersion_bins"])
@@ -473,14 +393,38 @@ class single_electron:
         return k0_vals, k0_weights
 
     def therm_dispersion(self):
-        self.e0_min=norm.ppf(1e-11, loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
-        self.e0_max=norm.ppf(1-(1e-11), loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
-        e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
-        e0_vals=np.linspace(self.e0_min, self.e0_max, self.simulation_options["dispersion_bins"])
-        e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
-        for i in range(1, len(e0_weights)):
-            e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
-        #plt.plot(e0_vals, e0_weights)
+        if "GH_quadrature" in self.simulation_options:
+            if self.simulation_options["GH_quadrature"]==True:
+                e0_vals=self.normal_gh_transform(location=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+                e0_weights=self.normal_GH_weights
+
+        else:
+            self.e0_min=norm.ppf(1e-4, loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+            self.e0_max=norm.ppf(1-(1e-4), loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+            e0_weights=np.zeros(self.simulation_options["dispersion_bins"])
+            e0_vals=np.linspace(self.e0_min, self.e0_max, self.simulation_options["dispersion_bins"])
+            e0_midpoints=np.zeros(self.simulation_options["dispersion_bins"])
+            e0_weights[0]=norm.cdf(e0_vals[0], loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+            e0_midpoints[0]=(e0_vals[0]+self.e0_min)/2
+            for i in range(1, len(e0_weights)):
+                e0_weights[i]=norm.cdf(e0_vals[i],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)-norm.cdf(e0_vals[i-1],loc=self.nd_param.E0_mean, scale=self.nd_param.E0_std)
+                e0_midpoints[i]=(e0_vals[i]+e0_vals[i-1])/2
+            e0_vals=e0_midpoints
+            #midpoint=len(e0_weights)//2
+            #e0_weights[midpoint:]=e0_weights[:midpoint]
+            #range1=np.arange(self.simulation_options["dispersion_bins"], 0, -1)
+            #e0_weights=np.divide(range1, sum(range1))
+            #print(e0_weights)
+            #plt.plot(self.e_nondim(e0_vals), e0_weights)
+            #plt.show()
+        #for i in range(0, len(e0_midpoints)):
+        #    plt.axvline(self.e_nondim(e0_midpoints[i]), color="black", linestyle="--")
+        #plt.show()
+
+        #print(list(e0_weights))
+        #print(list(self.e_nondim(e0_vals)))
+        #plt.axvline(self.e_nondim(self.nd_param.E0_mean))
+        #plt.plot(self.e_nondim(e0_vals), e0_weights)
         #print self.nd_param.E0_mean,self.nd_param.E0_std
         #plt.title("e0")
         #plt.show()
@@ -574,9 +518,16 @@ class single_electron:
         else:
             if self.simulation_options["dispersion"]==True:
                 #print("dispersion")
+                if type(self.simulation_options["dispersion_bins"]) is list:
+                    if len(self.simulation_options["dispersion_bins"])!=1:
+                        raise ValueError("Not currently implemented Henry")
+                    else:
+                        self.simulation_options["dispersion_bins"]=self.simulation_options["dispersion_bins"][0]
                 time_series=self.paralell_disperse(solver)
+                #print(np.sum(np.subtract(time_series, time_series2)))
             else:
                 time_series=solver(self.nd_param_dict, self.time_vec, self.simulation_options["method"],-1, self.bounds_val)
+
         #self.time_array.append(time.time()-start)
         if self.simulation_options["no_transient"]!=False:
             time_series=time_series[self.time_idx:]
@@ -587,9 +538,11 @@ class single_electron:
         if self.simulation_options["likelihood"]=='fourier':
             filtered=self.kaiser_filter(time_series)
             if (self.simulation_options["test"]==True):
+                print("HEY")
                 print(list(normed_params))
                 plt.plot(self.secret_data_fourier, label="data")
                 plt.plot(filtered , alpha=0.7, label="numerical")
+                plt.legend()
                 plt.show()
 
             return filtered
@@ -599,7 +552,7 @@ class single_electron:
                 if self.simulation_options["experimental_fitting"]==True:
                     plt.subplot(1,2,1)
                     plt.plot(self.other_values["experiment_voltage"],time_series)
-                    plt.plot(self.other_values["experiment_voltage"],self.secret_data_time_series, alpha=0.7)
+                    #plt.plot(self.other_values["experiment_voltage"],self.secret_data_time_series, alpha=0.7)
                     plt.subplot(1,2,2)
                     plt.plot(self.other_values["experiment_time"],time_series)
                     plt.plot(self.other_values["experiment_time"],self.secret_data_time_series, alpha=0.7)

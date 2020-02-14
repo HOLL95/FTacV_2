@@ -16,7 +16,7 @@ from ramped_setup import FTACV_initialisation
 from harmonics_plotter import harmonics
 def det_subplots(value):
     if np.floor(np.sqrt(value))**2==value:
-        return np.sqrt(value), np.sqrt(value)
+        return int(np.sqrt(value)), int(np.sqrt(value))
     if value<=10:
         start_val=2
     else:
@@ -27,7 +27,7 @@ def det_subplots(value):
         modulos=np.array([value%x for x in rows])
         idx_0=(np.where(modulos==0))
         if len(idx_0[0])!=0:
-            return rows[idx_0[0][-1]], value/rows[idx_0[0][-1]]
+            return int(rows[idx_0[0][-1]]), int(value/rows[idx_0[0][-1]])
         value+=1
 
 
@@ -46,17 +46,20 @@ def chain_appender(chains, param):
     for i in range(1, len(chains)):
         new_chain=np.append(new_chain, chains[i, :, param])
     return new_chain
-def plot_params(titles, set_chain, positions=None, label=None):
+def plot_params(titles, set_chain, positions=None, label=None, row=None, col=None):
     if positions==None:
         positions=range(0, len(titles))
-    row, col=det_subplots(len(titles))
+    if row is None:
+        row, col=det_subplots(len(titles))
     for i in range(0, len(titles)):
         axes=plt.subplot(row,col,i+1)
         plot_chain=chain_appender(set_chain, positions[i])
         if abs(np.mean(plot_chain))<0.001:
             axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2e'))
-        else:
+        elif abs(np.mean(plot_chain))<10:
             axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+        else:
+            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
         axes.hist(plot_chain, alpha=0.4,bins=20, stacked=True, label=label)
         axes.legend()
         lb, ub = axes.get_xlim( )
@@ -64,13 +67,13 @@ def plot_params(titles, set_chain, positions=None, label=None):
         axes.set_xlabel(titles[i])
         axes.set_ylabel('frequency')
         axes.set_title(graph_titles[i])
-def trace_plots(titles, chains, names, rhat=False):
+    plt.subplots_adjust(left=0.06, bottom=0.05, right=0.96, top=0.95, wspace=0.31, hspace=0.32)
+def trace_plots(titles, chains, names, rhat=False, burn_in_thresh=0):
     row, col=det_subplots(len(titles))
     if rhat==True:
-        rhat_vals=pints.rhat_all_params(chains[:, 30000:, :])
+        rhat_vals=pints.rhat_all_params(chains[:, burn_in_thresh:, :])
     for i in range(0, len(titles)):
-        axes=plt.subplot(row,col,i+1)
-
+        axes=plt.subplot(row,col, i+1)
         for j in range(0, len(chains)):
             axes.plot(chains[j, :, i], label="Chain "+str(j), alpha=0.7)
         if abs(np.mean(chains[j, :, i]))<0.001:
@@ -87,7 +90,7 @@ def trace_plots(titles, chains, names, rhat=False):
             axes.set_title(names[i])
         axes.set_ylabel(titles[i])
         axes.set_xlabel('Iteration')
-    plt.subplots_adjust(left=0.07, bottom=0.05, right=0.98, top=0.95, wspace=0.40, hspace=0.42)
+    plt.subplots_adjust(left=0.06, bottom=0.06, right=0.98, top=0.95, wspace=0.62, hspace=0.35)
 unit_dict={
     "E_0": "V",
     'E_start': "V", #(starting dc voltage - V)
@@ -109,8 +112,10 @@ unit_dict={
     "k0_shape":"",
     "k0_loc":"",
     "k0_scale":"",
-    "cap_phase":"rads",
-    'phase' : "rads",
+    "cap_phase":"",
+    'phase' : "",
+    "alpha_mean": "",
+    "alpha_std": "",
     "":"",
     "noise":"",
 }
@@ -132,7 +137,9 @@ fancy_names={
     'alpha': "$\\alpha$",
     "E0_mean":"$E^0 \\mu$",
     "E0_std": "$E^0 \\sigma$",
-    "cap_phase":"Capacitance phase",
+    "cap_phase":"$C_{dl}$ phase",
+    "alpha_mean": "$\\alpha\\mu$",
+    "alpha_std": "$\\alpha\\sigma$",
     'phase' : "Phase",
     "":"Experiment",
     "noise":"$\sigma$",
@@ -154,12 +161,16 @@ Titles={
     "E0_std": "Thermodynamic standard deviation",
     "E_0":"Midpoint potential",
     "cap_phase":"Capacitance phase",
+    "alpha_mean": "Symmetry factor mean",
+    "alpha_std": "Symmetry factor standard deviation",
     'phase' : "Phase",
     "":"Experiment",
     "noise":"Noise",
 }
 #f=open(filename, "r")
-params=(["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "noise"])
+params=["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "noise"]
+params1=["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha_mean", "alpha_std", "noise"]
+params=["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha_std", "noise"]
 optim_list=params
 titles=[fancy_names[x]+"("+unit_dict[x]+")" if (unit_dict[x]!="") else fancy_names[x] for x in optim_list]
 graph_titles=[Titles[x] for x in optim_list]
@@ -171,26 +182,33 @@ print(files)
 #fig=plt.figure(num=None, figsize=(12,9), dpi=120, facecolor='w', edgecolor='k')
 concs1=["1e-1", "5e-1", "1e0", "15e-1", "3e0"]
 concs=["__{0}__".format(x) for x in concs1]
-concs=[str(x) for x in range(1, 11)]
-exclude=["6","9", "10"]
-include=["4_", "5", "7", "9"]
-[concs.pop(concs.index(x)) for x in exclude]
+concs=[str(x) for x in range(1, 6)]
+
 vals=[0.1, 0.5, 1, 1.5, 3]
 extension="_cv_high_ru_MCMC.run3"
 desired_file="Noramp_"
 file_numbers=["8_94","114", "209"]
 #concs=["__{0}__".format(x) for x in file_numbers]
-positions=[params.index(x) for x in optim_list]
-ns=[str(x) for x in range(2, 9)]
+#positions_23=[params1.index(x) for x in params1]
+#positions_24=[params1.index(x) for x in params2]
+ns=[str(x) for x in range(1, 11)]
 nums=["_{0}_cv".format(x) for x in ns]
 #for i in range(0, len(concs)):
+runs=["run24"]
+row, col=det_subplots(len(params1))
+idx=1
+plt.rcParams.update({'font.size': 15})
 for num in nums:
+    idx+=1
     for filename in files:#
-        if "run14" in filename and num in filename:# and  True  in [x in filename for x in include]:
-            print(filename)
+        run_check=[string in filename for string in runs]
+        if True in run_check and num in filename:# and  True  in [x in filename for x in include]:
+            #print(filename)
             number=filename[7]
-
+            label_idx=run_check.index(True)
             chains=np.load(("/").join([electrode, folder, filename]))
+            #chains[1, :, ]=chains[2, :, :]
+            #chains=chains[:2, :, :]
             """
             if number=="2":
                 plot_params(titles, chains[:, 25000:45000, :], positions=positions, label="Scan "+num)
@@ -201,11 +219,23 @@ for num in nums:
             #plt.hist(alpha_chain)
             #plt.show()
 
-            print([np.mean(chain_appender(chains[:, 50000:, :], x)) for x in range(0, len(titles))])
-            #plot_params(titles, chains[:, 30000:, :], positions=positions, label="Scan "+num)
-            trace_plots(titles, chains[:, :, :], graph_titles, rhat=True)
+            #print([np.std(chain_appender(chains[:, 50000:, :], x)) for x in range(0, len(titles))], ",")
+            #print([np.mean(chains[1, 50000:, x]) for x in range(0, len(titles))])
+            """
+            if label_idx==1:
+                plot_params(titles, chains[:, 50000:, :], positions=positions_23, label=labels[label_idx], row=row, col=col)
+            else:
+                plot_params(titles, chains[:, 50000:, :], positions=positions_24, label=labels[label_idx], row=row, col=col)
+            """
+            trace_plots(titles, chains[:, :, :], ["" for x in range(0, len(graph_titles))], rhat=True, burn_in_thresh=50000)
 
-            plt.show()
+            fig = plt.gcf()
+            fig.set_size_inches((17.5, 10))
+            #plt.show()
+            save_path="Alice"+num+"MCMC.png"
+            fig.savefig(save_path, dpi=200)
+            plt.clf()
+            #plot_params(titles, chains[:, 50000:, :], positions=range(0, len(params)), label=str(idx))
 
         #if filename==(desired_file+concs[i]+extension):#(concs[i] in filename) and (extension in filename) and (desired_file in filename):
 
@@ -214,6 +244,5 @@ for num in nums:
 
             #trace_plots(titles, chains[:, :, :], graph_titles, rhat=True )
             #plt.show()
-plt.show()
     #plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.30, hspace=0.33)
 #plot_params(titles, chains2)

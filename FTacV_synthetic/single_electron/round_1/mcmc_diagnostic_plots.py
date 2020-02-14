@@ -20,7 +20,7 @@ for j in range(0, len(files)):
     if files[j][-len(extension):-1]== extension[:-1]:
         file_list.append(files[j])
         value_list.append(files[j][:files[j].index("_")])
-print file_list
+print(file_list)
 int_values=[float(x) for x in value_list]
 sort_index=np.argsort(int_values)
 sorted_files=sort_by_idx(file_list, sort_index)
@@ -42,7 +42,7 @@ for i in range(0, num_plots):
 #plt.subplot(
 for i in range(0, num_plots):
     while (k<len(sorted_values)) and (str((sorted_uniques[i]))==sorted_values[k]):
-        print sorted_uniques[i], sorted_values[k]
+        print((sorted_uniques[i], sorted_values[k]))
         chains=np.load(sorted_files[k])
         for j in range(0, 3):
             k_chain=np.append(k_chain, chains[j, 2000:, param_select])
@@ -55,9 +55,9 @@ for i in range(0, num_plots):
     mean_values[i]=np.mean(k_chain)
     std_values[i]=np.mean(stds)
     k_chain=np.array([])
-ax1.errorbar(range(len(mean_values)), mean_values, xerr= None, yerr=std_values)
+ax1.errorbar(list(range(len(mean_values))), mean_values, xerr= None, yerr=std_values)
 ax1.axhline(10000, color="black", linestyle="--")
 labels=[str(sorted_uniques[x])+" pi" for x in range(0, num_plots)]
-ax1.set_xticks(range(0, num_plots))
+ax1.set_xticks(list(range(0, num_plots)))
 ax1.set_xticklabels(labels)
 plt.show()

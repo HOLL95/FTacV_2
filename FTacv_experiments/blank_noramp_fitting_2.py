@@ -39,7 +39,7 @@ def binary_file_reader(filename):
 file_numbers=["8_94","114", "209"]
 file_nos=["_{0}_".format(x) for x in file_numbers]
 dec_amounts=[32, 1, 1]
-omegas=[8.94, 114.14, 209.18]
+omegas=[8.94]#, 114.14, 209.18]
 for counter in range(0, len(file_nos)):
     desired_conc=file_nos[counter]
     binary_files={}
@@ -148,9 +148,22 @@ for counter in range(0, len(file_nos)):
     current_results=blank_fit.other_values["experiment_current"]
     voltage_results=blank_fit.other_values["experiment_voltage"]
     voltages=blank_fit.define_voltages()
-    fig, ax=plt.subplots(1,2)
     blank_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2", "cap_phase", "omega"])
     blank_fit.nd_param.phase=(3*math.pi/2)+(math.pi/2)
+    param_set_1=[2.7371615612353777e-07, 1.377386734451008e-05, -0.023521133369626402, 0.0007344175954793371, 4.281633502258979, 8.941765261346148]
+    param_set_2=[999.9999983932938, 1.3523706647576712e-05, -0.021871525678528143, 0.0007168124240944443,3*math.pi/2, 8.941765261346148]
+    sets=[param_set_1, param_set_2]
+    labels=["Fitted phase", "Set phase"]
+    plt.plot(blank_fit.e_nondim(voltage_results), blank_fit.i_nondim(current_results)*1e3, label="Data")
+    for j in range(0, len(sets)):
+        time_series=blank_fit.i_nondim(blank_fit.test_vals(sets[j], likelihood="timeseries"))*1e3
+        plt.plot(blank_fit.e_nondim(voltage_results), time_series, linestyle="--", label=labels[j])
+        plt.legend()
+        plt.xlabel("Voltage(V)")
+        plt.ylabel("Current(mA)")
+    plt.show()
+
+    """
     ax2=ax[0]
     ax2.plot(blank_fit.t_nondim(time_results), blank_fit.e_nondim(blank_fit.define_voltages(True)*1e3), color="red", label="Predicted capacitance phase+$\\frac{\pi}{2}$", linestyle="--")
 
@@ -187,7 +200,10 @@ for counter in range(0, len(file_nos)):
     #ax2=ax.twinx()
     #ax2.plot(time_results, current_results, color="red")
     plt.show()
-
+    """
+    blank_fit.dim_dict["cap_phase"]=3*math.pi/2
+    blank_fit.dim_dict["omega"]=8.941765261346148
+    blank_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2", "cap_phase"])
     cmaes_problem=pints.SingleOutputProblem(blank_fit, time_results, current_results)
     score = pints.SumOfSquaresError(cmaes_problem)#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
     print(list([np.zeros(len(blank_fit.optim_list))]), list([np.ones(len(blank_fit.optim_list))]))
@@ -201,49 +217,7 @@ for counter in range(0, len(file_nos)):
     found_parameters, found_value=cmaes_fitting.run()
     cmaes_results=blank_fit.change_norm_group(found_parameters, "un_norm")
     print(list(cmaes_results))
-    cmaes_time=blank_fit.test_vals(cmaes_results, likelihood="timeseries", test=True)
+    cmaes_time=blank_fit.test_vals(cmaes_results, likelihood="timeseries")
     plt.plot(voltage_results, cmaes_time)
     plt.plot(voltage_results, current_results)
     plt.show()
-    #blank_fit.nd_param.phase=blank_fit.nd_param.cap_phase
-    #plt.plot(voltage_results, current_results)
-    #plt.plot(voltage_results, cmaes_time)
-    #plt.show()
-    #cmaes_time=blank_fit.test_vals(x0, likelihood="timeseries", test=True)
-    error=np.std(abs(np.subtract(cmaes_time, current_results)))#np.sqrt(np.sum(np.power(np.subtract(cmaes_time, current_results),2))/len(current_results))
-    #fit_params=["Ru"]
-    #mcmc_parameters=[cmaes_results[blank_fit.optim_list.index(x)] for x in fit_params ]
-    #blank_fit.optim_list=fit_params
-    mcmc_problem=pints.SingleOutputProblem(blank_fit, time_results, current_results)
-
-    #updated_lb=np.append([blank_fit.param_bounds[key][0] for key in master_optim_list],0.75*error)
-    #updated_ub=np.append([blank_fit.param_bounds[key][1] for key in master_optim_list], 1.25*error)
-    updated_lb=[blank_fit.param_bounds[x][0] for x in blank_fit.optim_list]#np.append([blank_fit.param_bounds[x][0] for x in blank_fit.optim_list],0.01*error)
-    updated_ub=[blank_fit.param_bounds[x][1] for x in blank_fit.optim_list]#np.append([blank_fit.param_bounds[x][1] for x in blank_fit.optim_list], 10*error)
-    updated_b=[updated_lb, updated_ub]
-    updated_b=np.sort(updated_b, axis=0)
-    log_liklihood=pints.GaussianKnownSigmaLogLikelihood(mcmc_problem, 1)
-    #print(blank_fit.n_parameters(), len(updated_b[0]))
-    log_prior=pints.UniformLogPrior(updated_b[0], updated_b[1])
-    #print(log_prior.n_parameters(), log_liklihood.n_parameters())
-    log_posterior=pints.LogPosterior(log_liklihood, log_prior)
-    #[(blank_fit.param_bounds[x][1]+blank_fit.param_bounds[x][0])/2 for x in blank_fit.optim_list ]
-    mcmc_parameters=cmaes_results
-    #mcmc_parameters=np.append(mcmc_parameters, error)
-    xs=[mcmc_parameters,
-        mcmc_parameters,
-        mcmc_parameters
-        ]
-    blank_fit.simulation_options["label"]="MCMC"
-    mcmc = pints.MCMCController(log_posterior, 3, xs,method=pints.HaarioBardenetACMC)
-    mcmc.set_parallel(True)
-    mcmc.set_max_iterations(20000)
-    chains=mcmc.run()
-    rhat_mean=np.mean(pints.rhat_all_params(chains))
-    pints.plot.trace(chains)
-    plt.show()
-    if rhat_mean<1.2:
-        save_file="Noramp_blank_run_1_"+str(desired_conc)+"_dec_"+str(dec_amount)+"_transient_"+str(simulation_options["no_transient"])+"_unknown_error_2"
-        f=open(("/").join([dir_path, "Inferred_params","Blank",Experiment, save_file]), "wb")
-        np.save(f, chains)
-        f.close()

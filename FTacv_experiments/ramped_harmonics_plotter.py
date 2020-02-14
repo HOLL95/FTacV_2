@@ -56,7 +56,7 @@ ramp_data_class.other_values["experiment_voltage"]=ramped_voltage_results
 ramp_fit=single_electron(None, dim_paramater_dictionary=ramp_data_class.dim_dict, simulation_options=ramp_data_class.simulation_options, other_values=ramp_data_class.other_values, param_bounds=ramp_data_class.param_bounds)
 ramped_data_harmonics=ramp_data_harm_class.generate_harmonics(ramped_time_results, ramped_current_results)
 file="Noramp_"+str(i)+"_cv_high_ru.run3_2"
-master_optim_list=["E_0", "k0_shape", "k0_scale","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","phase", "alpha"]
+master_optim_list=["E0_mean", "E0_std", "k0_shape", "k0_scale","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","phase", "alpha_mean", "alpha_std"]
 ramp_fit.def_optim_list(master_optim_list)
 
 
