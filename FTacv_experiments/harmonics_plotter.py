@@ -42,7 +42,7 @@ class harmonics:
         obj_func=np.append(func(time_series),0)
         time_domain=(np.fft.ifft(np.append(obj_func,np.flip(obj_func))))
         return time_domain
-    def harmonic_selecter(self, ax, time_series, times, box=True, arg=np.real, line_label=None, alpha=1.0):
+    def harmonic_selecter(self, ax, time_series, times, box=True, arg=np.real, line_label=None, alpha=1.0, extend=False):
         f=np.fft.fftfreq(len(time_series), times[1]-times[0])
         hann=np.hanning(len(time_series))
         time_series=np.multiply(time_series, hann)
@@ -50,7 +50,7 @@ class harmonics:
         last_harm=(5+self.harmonics[-1])*self.input_frequency
         first_harm=self.harmonics[0]*self.input_frequency
         frequencies=f[np.where((f>=0 )& (f<(last_harm+(0.5*self.input_frequency))))]#f[np.where((f>(first_harm-(0.5*self.input_frequency))) & (f<(last_harm+(0.5*self.input_frequency))))]
-        fft_plot=Y[np.where((f>=0 )& (f<(last_harm+(0.5*self.input_frequency))))]#(Y[np.where((f>(first_harm-(0.5*self.input_frequency))) & (f<(last_harm+(0.5*self.input_frequency))))])
+        fft_plot=Y[np.where((f>=0 )& (f<(last_harm+(0.5*self.input_frequency))))]#(Y[np.where((f>(first_harm-(0.5*self.input_frequency))) & (f<(last_harm+(0.5*self.input_frequency))))])]
         ax.semilogy(frequencies, abs(arg(fft_plot)), label=line_label, alpha=alpha)
         if box==True:
             len_freq=np.linspace(0, 100, len(frequencies))

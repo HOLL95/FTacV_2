@@ -5,6 +5,7 @@ import pints.plot
 import os
 import scipy.stats as stats
 from matplotlib.ticker import FormatStrFormatter
+from PIL import Image
 dir_path = os.path.dirname(os.path.realpath(__file__))
 #matplotlib.rc('text', usetex=True)
 #matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
@@ -97,7 +98,7 @@ all_params=['E0_mean', "E0_std",'k_0',"Ru","Cdl", "CdlE1", "CdlE2",'gamma',"omeg
 optim_list=['E0_mean', "E0_std",'k_0',"Ru", "phase", "cap_phase","alpha_std"]
 all_params=['E0_mean', "E0_std",'k_0',"Ru","Cdl", "CdlE1", "CdlE2",'gamma',"omega", "cap_phase","phase", "alpha_mean","alpha_std", "noise"]
 #all_params=['E0_mean', "E0_std",'k_0',"Ru","Cdl", "CdlE1", "CdlE2",'gamma',"omega", "phase","cap_phase", "alpha"]
-optim_list=all_params
+optim_list=optim_list
 positions=[all_params.index(x) for x in optim_list]
 #positions[-1]=positions[-1]-1
 
@@ -135,7 +136,7 @@ def plot_kde_1d(x, ax, num=None):
     else:
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))"""
     #ax.set_xticks(np.linspace(xmin, xmax, 4))
-plt.rcParams.update({'font.size': 9})
+plt.rcParams.update({'font.size': 16})
 def plot_kde_2d(x, y, ax):
     # Get minimum and maximum values
     xmin, xmax = np.min(x), np.max(x)
@@ -157,16 +158,16 @@ def plot_kde_2d(x, y, ax):
     #f = np.reshape(kernel(positions).T, xx.shape)
     #ax.contourf(xx, yy, f, cmap='Blues')
     #ax.contour(xx, yy, f, colors='k')
-
-    if np.std(x)<4e-4:
-        ax.xaxis.set_major_formatter(FormatStrFormatter('%.3f'))
-        ax.set_xticks([xmin, np.mean(x)])
+    ax.locator_params(nbins=2)
+    #if np.std(x)<4e-4:
+    #    ax.xaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+    #    ax.set_xticks([xmin, np.mean(x)])
     #if np.std(y)<4e-4:
     #    ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
     # Fix aspect ratio
     #print(((xmax - xmin)/ (ymax - ymin)))
     #ax.set_aspect(0.25*(xmax - xmin)/ (ymax - ymin))
-run="run23"
+run="run24"
 num=["_"+str(x)+"_" for x in range(1, 11)]
 for number in num:
     for file in files:
@@ -184,13 +185,14 @@ for number in num:
                     for j in range(0, n_param):
                         if i==j:
                             axes=ax[i,j]
-                            if i==n_param-1:
-                                axes.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+
 
                             #axes.set_yticks([])
                             ax1=axes.twinx()
                             #plot_kde_1d(chain_appender(chains, positions[j]), ax=axes)
-                            plot_kde_1d(chains[:,positions[j]], ax=axes, num=("Chain "+str(q)))
+                            plot_kde_1d(chains[:,positions[j]], ax=axes, num=("Chain "+str(q+1)))
+                            if i==0:
+                                axes.legend(loc="center left", bbox_to_anchor=(1.75, 0.5))
                             ticks=axes.get_yticks()
                             #labels=axes.get_yticklabes([])
                             axes.set_yticks([])
@@ -220,10 +222,17 @@ for number in num:
                             ax[i,j].set_yticklabels([])
                         if j!=n_param:
                             ax[-1, i].set_xlabel(titles[i])
+                            plt.setp( ax[-1, i].xaxis.get_majorticklabels(), rotation=15 )
 
             plt.subplots_adjust(left=0.1, bottom=0.1, right=0.91, top=0.98, wspace=0.2, hspace=0.12)
             fig = plt.gcf()
-            fig.set_size_inches((7.25,4.5))
-            plt.show()
-            #save_path="Alice_"+str(number)+"_2d_plots.png"
-            #fig.savefig(save_path, dpi=200)
+            fig.set_size_inches((14,9))
+            #plt.show()
+            save_path="Alice_"+str(number)+"_2d_plots.png"
+            fig.savefig(save_path, dpi=500)
+            img = Image.open(save_path)
+            basewidth = float(img.size[0])//2
+            wpercent = (basewidth/float(img.size[0]))
+            hsize = int((float(img.size[1])*float(wpercent)))
+            img = img.resize((int(basewidth),hsize), Image.ANTIALIAS)
+            img.save(save_path, "PNG", quality=95, dpi=(500, 500))

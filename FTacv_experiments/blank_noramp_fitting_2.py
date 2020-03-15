@@ -154,14 +154,18 @@ for counter in range(0, len(file_nos)):
     param_set_2=[999.9999983932938, 1.3523706647576712e-05, -0.021871525678528143, 0.0007168124240944443,3*math.pi/2, 8.941765261346148]
     sets=[param_set_1, param_set_2]
     labels=["Fitted phase", "Set phase"]
-    plt.plot(blank_fit.e_nondim(voltage_results), blank_fit.i_nondim(current_results)*1e3, label="Data")
+    plt.plot(blank_fit.e_nondim(voltage_results), blank_fit.i_nondim(current_results)*1e6, label="Data")
     for j in range(0, len(sets)):
-        time_series=blank_fit.i_nondim(blank_fit.test_vals(sets[j], likelihood="timeseries"))*1e3
+        time_series=blank_fit.i_nondim(blank_fit.test_vals(sets[j], likelihood="timeseries"))*1e6
         plt.plot(blank_fit.e_nondim(voltage_results), time_series, linestyle="--", label=labels[j])
         plt.legend()
         plt.xlabel("Voltage(V)")
-        plt.ylabel("Current(mA)")
+        plt.ylabel("Current($\\mu$A)")
+    fig=plt.gcf()
+    fig.set_size_inches((3.25, 4.5))
     plt.show()
+    save_path="blank_phases.png"
+    fig.savefig(save_path, dpi=500)
 
     """
     ax2=ax[0]

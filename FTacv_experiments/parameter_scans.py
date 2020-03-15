@@ -19,7 +19,7 @@ plot_params=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "cap_phase", "alpha_m
 master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha_mean", "alpha_std"]
 num_harms=5
 font = {'family' : 'normal',
-        'size'   : 12}
+        'size'   : 9}
 
 plt.rc('font', **font)
 #figure=multiplot(num_rows=2, num_cols=len(plot_params)/2, **{"harmonic_position":[0,1], "num_harmonics":num_harms, "orientation":"landscape",  "plot_width":5})
@@ -41,15 +41,15 @@ unit_dict={
     'CdlE2': "",#0.000245772700637,
     'CdlE3': "",#1.10053945995e-06,
     'gamma': 'mol cm^{-2}$',
-    'k_0': '$s^{-1}$', #(reaction rate s-1)
+    'k_0': "$s^{-1}$",#'$s^{-1}$', #(reaction rate s-1)
     'alpha': "",
     "E0_mean":"V",
     "E0_std": "V",
     "k0_shape":"",
     "k0_loc":"",
     "k0_scale":"",
-    "cap_phase":"rads",
-    'phase' : "rads",
+    "cap_phase":"",
+    'phase' : "",
     "alpha_mean": "",
     "alpha_std": "",
     "":"",
@@ -63,7 +63,7 @@ fancy_names={
     'd_E': "$\\Delta E$",   #(ac voltage amplitude - V) freq_range[j],#
     'v': "v",   #       (scan rate s^-1)
     'area': "Area", #(electrode surface area cm^2)
-    'Ru': "Ru",  #     (uncompensated resistance ohms)
+    'Ru': "R$_{u}$",  #     (uncompensated resistance ohms)
     'Cdl': "$C_{dl}$", #(capacitance parameters)
     'CdlE1': "$C_{dlE1}$",#0.000653657774506,
     'CdlE2': "$C_{dlE2}$",#0.000245772700637,
@@ -73,7 +73,7 @@ fancy_names={
     'alpha': "$\\alpha$",
     "E0_mean":"$E^0 \\mu$",
     "E0_std": "$E^0 \\sigma$",
-    "cap_phase":"Capacitance phase",
+    "cap_phase":"$C_{dl}$ phase",
     "alpha_mean": "$\\alpha\\mu$",
     "alpha_std": "$\\alpha\\sigma$",
     'phase' : "Phase",
@@ -120,8 +120,10 @@ noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run,
 #For 1e0M no. 3
 #[0.44902174254951466, 0.04649482119604907, 167.77163066745334, 1499.9999899319125, 3.244942640679048e-05, -0.0015943375724840197, 0.003256602506039867, 1.5805338795893364e-10, 8.941715397492652, 4.227414643240183, 5.562298818419109]
 
-
-noramp_results.simulation_options["dispersion_bins"]=10
+print(noramp_results.simulation_options["GH_quadrature"])
+noramp_results.simulation_options["dispersion_bins"]=20
+noramp_results.dim_dict["phase"]=3*math.pi/2
+plot_params=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "cap_phase", "alpha_mean", "alpha_std"]
 param_vals=[0.25, 0.05, 100, 100,1e-5, 1e-5,3*math.pi/2, 0.5, 0.05]
 noramp_results.dim_dict["Cdl"]=1e-5
 noramp_results.dim_dict["CdlE1"]=0
@@ -147,33 +149,62 @@ harms=harmonics(range(start_harm, start_harm+num_harms),noramp_results.dim_dict[
 #noramp_results.simulation_options["likelihood"]=method
 #noramp_results.simulation_options["dispersion_bins"]=16
 num_scans=4
-#plt.rcParams.update({'axes.labelsize': 16})
+plt.rcParams.update({'font.size': 15})
 #mpl.rcParams['axes.labelsize'] = 1
 col_len=3
 row_len=len(plot_params)//col_len
 
 fig, axes=plt.subplots(row_len, col_len)
+value_list=[[0.1, 0.2, 0.3, 0.4],
+        [0.01, 0.04, 0.07, 0.1],
+        [10, 50, 100, 150],
+        [0, 300, 600, 900],
+        [0, 3e-5,6e-5, 9e-5],
+        [-0.15, -0.05, 0.05, 0.15],
+        [4, 4.75, 5.5, 6.25],
+        [0.4, 0.45, 0.55, 0.6],
+        [0.01, 0.07, 0.13, 0.2]]
 print(axes)
 for j in range(0,len(plot_params)):#
-    col_idx=j//row_len
-    row_idx=j%row_len
+    col_idx=j%row_len
+    row_idx=j//row_len
     print(row_idx, col_idx, row_len)
     new_params=np.copy(param_vals)
-    values=np.linspace(param_bounds[plot_params[j]][0], param_bounds[plot_params[j]][1],num_scans)
+    values=value_list[j]#np.linspace(param_bounds[plot_params[j]][0], param_bounds[plot_params[j]][1],num_scans)
     for q in range(0, num_scans):
         new_params[j]=values[q]
         cmaes_time=noramp_results.i_nondim(noramp_results.test_vals(new_params, method))
 
         ax=axes[row_idx, col_idx]
-        ax.set_xlabel("Voltage(V)")
-        ax.set_ylabel("Current(mA)")
-        if abs(values[q])>1e-3:
-            value_label=str(round(values[q],2))
+        xlims=ax.get_xlim()
+        ax.set_xlim(noramp_results.dim_dict["E_start"], 0.8)
+        if row_idx==row_len-1:
+            ax.set_xlabel("Voltage(V)")
         else:
-            value_label="{:.2E}".format(Decimal(values[q]))
+            ax.set_xticks([])
+        if col_idx==0:
+            ax.set_ylabel("Current(mA)")
+        value_label=str(values[q])
+        #if abs(values[q])>1e-3:
+        #    value_label=str(round(values[q],2))
+        #else:
+        #    value_label="{:.2E}".format(Decimal(values[q]))
         ax.plot(voltage_results, cmaes_time*1e3, label=value_label+unit_dict[plot_params[j]])
-        ax.set_title(fancy_names[plot_params[j]])
-        ax.legend(loc="upper right", bbox_to_anchor=(1, 0.5))
+        #xlims=ax.get_xlim()
+        #ax.set_xlim(xlims[0], 0.7)
+        #ax.set_title(fancy_names[plot_params[j]])
+        ax.text(0.85, 0.9,fancy_names[plot_params[j]],
+        horizontalalignment='center',
+        verticalalignment='center',
+        transform = ax.transAxes,
+        fontsize=16)
+        ax.legend(loc="center right", handlelength=0.3,bbox_to_anchor=(1.02, 0.5))
+        #ax.legend(bbox_to_anchor=(0.5, -0.05), fontsize='small', ncol=num_scans, labelspacing=0.2, columnspacing=0.2, handlelength=0.5, loc="lower center")
 #fig.tight_layout()
 
+fig=plt.gcf()
+fig.set_size_inches((14, 9))
+plt.subplots_adjust(left=0.08, bottom=0.1, right=0.98, top=0.94, wspace=0.23, hspace=0.10)
 plt.show()
+save_path="parameter_scans.png"
+fig.savefig(save_path, dpi=500)

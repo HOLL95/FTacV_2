@@ -8,15 +8,20 @@ class multiplot:
         else:
             num_rows=int(num_rows)
             num_cols=int(num_cols)
-        mpl.rcParams['xtick.labelsize'] = 9
-        mpl.rcParams['ytick.labelsize'] = 9
-        mpl.rcParams['axes.labelsize'] = 9
+        #mpl.rcParams['xtick.labelsize'] = 12
+        #mpl.rcParams['ytick.labelsize'] = 12
+        #mpl.rcParams['axes.labelsize'] = 12
+
         if "num_harmonics" not in kwargs:
             kwargs["num_harmonics"]=4
         if "orientation" not in kwargs:
             kwargs["orientation"]="portrait"
         if "row_spacing" not in kwargs:
             kwargs["row_spacing"]=1
+        if "font_size" not in kwargs:
+            mpl.rcParams["font.size"]=10
+        else:
+            mpl.rcParams["font.size"]=kwargs["font_size"]
         if "col_spacing" not in kwargs:
             kwargs["col_spacing"]=1
         if "plot_width" not in kwargs:

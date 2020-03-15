@@ -9,8 +9,10 @@ class dispersion:
         if "dispersion_parameters" not in self.simulation_options:
             raise ValueError("Dispersion parameters not defined")
         if len(self.simulation_options["dispersion_bins"])!=len(self.simulation_options["dispersion_parameters"]):
+            print(self.simulation_options["dispersion_bins"],self.simulation_options["dispersion_parameters"])
             raise ValueError("Need to define number of bins for each parameter")
         if len(self.simulation_options["dispersion_distributions"])!=len(self.simulation_options["dispersion_parameters"]):
+            print(self.simulation_options["dispersion_distributions"],self.simulation_options["dispersion_parameters"])
             raise ValueError("Need to define distributions for each parameter")
         for i in range(0, len(self.simulation_options["dispersion_parameters"])):
             if self.simulation_options["dispersion_distributions"][i]=="uniform":

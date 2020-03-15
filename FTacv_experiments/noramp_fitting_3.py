@@ -63,23 +63,18 @@ for lcv_1 in range(2, 11):
         'omega':8.94,#8.88480830076,  #    (frequency Hz)
         "original_omega":8.94,
         'd_E': 300e-3,   #(ac voltage amplitude - V) freq_range[j],#
-        'v': 10.36e-3,   #       (scan rate s^-1)
         'area': 0.07, #(electrode surface area cm^2)
         'Ru': 1.0,  #     (uncompensated resistance ohms)
         'Cdl': 1e-5, #(capacitance parameters)
         'CdlE1': 0,#0.000653657774506,
         'CdlE2': 0,#0.000245772700637,
-        'CdlE3': 0,#1.10053945995e-06,
+        "CdlE3":0,
         'gamma': 1e-10,
         "original_gamma":1e-10,        # (surface coverage per unit area)
         'k_0': 10, #(reaction rate s-1)
         'alpha': 0.5,
         "E0_mean":0.2,
         "E0_std": 0.09,
-        "k0_shape":0.954,
-        "k0_loc":100,
-        "k0_scale":50,
-        "k0_range":1e3,
         "cap_phase":0,
         "alpha_mean":0.5,
         "alpha_std":1e-3,
@@ -123,7 +118,7 @@ for lcv_1 in range(2, 11):
         'CdlE2': [-0.01,0.01],#0.000245772700637,
         'CdlE3': [-0.01,0.01],#1.10053945995e-06,
         'gamma': [1e-11,1e-9],
-        'k_0': [50, 300], #(reaction rate s-1)
+        'k_0': [50, 1e3], #(reaction rate s-1)
         'alpha': [0.4, 0.6],
         "cap_phase":[math.pi/2, 2*math.pi],
         "E0_mean":[0.2, 0.3],
@@ -133,18 +128,23 @@ for lcv_1 in range(2, 11):
         "k0_shape":[0,1],
         "k0_scale":[0,1e4],
         "k0_range":[1e2, 1e4],
-        'phase' : [math.pi, 2*math.pi]
+        'phase' : [math.pi, 2*math.pi],
+        "noise":[0, 100]
     }
     noramp_fit=single_electron(None, param_list, simulation_options, other_values, param_bounds)
+    print(noramp_fit.nd_param.c_I0)
     noramp_fit.define_boundaries(param_bounds)
     time_results=noramp_fit.other_values["experiment_time"]
     current_results=noramp_fit.other_values["experiment_current"]
     voltage_results=noramp_fit.other_values["experiment_voltage"]
+    noramp_fit.dim_dict["noise"]=0
+    noramp_fit.dim_dict["phase"]=3*math.pi/2
     print(len(current_results))
     #noramp_fit.def_optim_list(["E_0","k0_shape", "k0_scale","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha"])
-    noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha_mean", "alpha_std"])
-    noramp_fit.simulation_options["dispersion_bins"]=5
+    noramp_fit.simulation_options["dispersion_bins"]=[5,5]
     noramp_fit.simulation_options["GH_quadrature"]=True
+    noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha_mean", "alpha_std"])
+
     #noramp_fit.simulation_options["alpha_dispersion"]="uniform"
     #noramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])
     #noramp_fit.dim_dict["gamma"]=0
@@ -155,35 +155,33 @@ for lcv_1 in range(2, 11):
     elif simulation_options["likelihood"]=="fourier":
         dummy_times=np.linspace(0, 1, len(fourier_arg))
         cmaes_problem=pints.SingleOutputProblem(noramp_fit, dummy_times, fourier_arg)
-    score = pints.SumOfSquaresError(cmaes_problem)#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
-    CMAES_boundaries=pints.RectangularBoundaries(list([np.zeros(len(noramp_fit.optim_list))]), list([np.ones(len(noramp_fit.optim_list))]))
+    score = pints.GaussianLogLikelihood(cmaes_problem)#[4.56725844e-01, 4.44532637e-05, 2.98665132e-01, 2.96752050e-01, 3.03459391e-01]#
+    CMAES_boundaries=pints.RectangularBoundaries(list([np.zeros(len(noramp_fit.optim_list)+1)]), list([np.ones(len(noramp_fit.optim_list)+1)]))
     noramp_fit.simulation_options["label"]="cmaes"
+    noramp_fit.simulation_options["test"]=False
     #noramp_fit.simulation_options["test"]=True
     num_runs=5
     param_mat=np.zeros((num_runs,len(noramp_fit.optim_list)))
     score_vec=np.ones(num_runs)*1e6
 
     for i in range(0, num_runs):
-        x0=abs(np.random.rand(noramp_fit.n_parameters()))#noramp_fit.change_norm_group(gc4_3_low_ru, "norm")
-        print(noramp_fit.change_norm_group(x0, "un_norm"))
+        x0=abs(np.random.rand(noramp_fit.n_parameters()+1))#noramp_fit.change_norm_group(gc4_3_low_ru, "norm")
+        print(len(x0), cmaes_problem.n_parameters(), CMAES_boundaries.n_parameters(), score.n_parameters())
         cmaes_fitting=pints.OptimisationController(score, x0, sigma0=None, boundaries=CMAES_boundaries, method=pints.CMAES)
         cmaes_fitting.set_max_unchanged_iterations(iterations=200, threshold=1e-7)
-        if "E0_mean" in noramp_fit.optim_list and "k0_loc" in noramp_fit.optim_list:
-            cmaes_fitting.set_parallel(False)
-        else:
-            cmaes_fitting.set_parallel(True)
+        cmaes_fitting.set_parallel(True)
         found_parameters, found_value=cmaes_fitting.run()
-        cmaes_results=noramp_fit.change_norm_group(found_parameters, "un_norm")
+        print(found_parameters)
+        cmaes_results=noramp_fit.change_norm_group(found_parameters[:-1], "un_norm")
         print(list(cmaes_results))
         cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
-        print("omega", noramp_fit.nd_param.nd_omega, noramp_fit.nd_param.omega)
         #plt.subplot(1,2,1)
-        #plt.plot(voltage_results, cmaes_time)
-        #plt.plot(voltage_results, current_results)
+        plt.plot(voltage_results, cmaes_time)
+        plt.plot(voltage_results, current_results)
         #plt.subplot(1,2,2)
         #plt.plot(time_results, noramp_fit.define_voltages()[noramp_fit.time_idx:])
         #plt.plot(time_results, voltage_results)
-        #plt.show()
+        plt.show()
         #cmaes_fourier=noramp_fit.test_vals(cmaes_results, likelihood="fourier", test=False)
         param_mat[i,:]=cmaes_results
         score_vec[i]=found_value
@@ -199,6 +197,9 @@ for lcv_1 in range(2, 11):
     best_idx=best_idx[0][0]
     cmaes_results=list(param_mat[best_idx,:])
     cmaes_time=noramp_fit.test_vals(cmaes_results, likelihood="timeseries", test=False)
+    plt.plot(voltage_results, cmaes_time)
+    plt.plot(voltage_results, current_results)
+    plt.show()
     Electrode_save=extra+Electrode
     run="Run_6"
     if "k0_shape" in noramp_fit.optim_list:

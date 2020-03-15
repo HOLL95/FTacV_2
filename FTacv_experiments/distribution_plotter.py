@@ -40,6 +40,7 @@ def normal_vals(location, scale, min=None, max=None):
     return weights, val_range2
 def RMSE(series1, series2):
     return np.sqrt((np.sum(1/(len(series1))*np.power(np.subtract(series1, series2),2))))
+plt.rcParams.update({'font.size': 10})
 for i in range(1, 11):
 
     file="Noramp_"+str(i)+"_cv_high_ru_alpha_disp"
@@ -95,6 +96,7 @@ for i in range(1, 11):
     plt.xlabel("$\\alpha$")
     plt.ylabel("Probability density")
     plt.legend()
+
     #print(time.time()-start)
     #current_results=noramp_results.i_nondim(noramp_results.other_values["experiment_current"])#[0::dec_amount]
     #voltage_results=noramp_results.e_nondim(noramp_results.other_values["experiment_voltage"])#[0::dec_amount]
@@ -118,5 +120,7 @@ for i in range(1, 11):
 
     #param_vals=[0.17989588529462708, 0.0561105224748124, 180.3580615548242, 1266.0203230196744, 1.8968981153440156e-05, 0.0194709122755512, 0.0001216629532319758, 1.5349480973755286e-10, 209.77882631191702, 4.551912859108585, 6.12365070126766, 0.4499006211167625]
 
-
+fig=plt.gcf()
+fig.set_size_inches((7, 4.5))
 plt.show()
+fig.savefig("Inferred_dispersion_params.png", dpi=500)

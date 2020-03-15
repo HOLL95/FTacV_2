@@ -14,7 +14,7 @@ Electrode="Yellow"
 run="Run_6"
 concs=["1e-1M", "1e0M"]
 file_numbers=[str(x) for x in range(1, 4)]
-figure=multiplot(3, 1, **{"harmonic_position":2, "num_harmonics":7, "orientation":"landscape", "fourier_position":1, "plot_width":5})
+figure=multiplot(3, 1, **{"harmonic_position":2, "num_harmonics":7, "orientation":"landscape", "fourier_position":1, "plot_width":5, "row_spacing":2, "plot_height":1})
 keys=sorted(figure.axes_dict.keys())
 plot_counter=0
 h_counter=0
@@ -33,7 +33,6 @@ for i in range(10,11):
     method="timeseries"
     master_optim_list=["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha"]
     noramp_results=single_electron(("/").join([dir_path, results_dict,Electrode,run, file]))
-
     #For 1e0M no. 1
     #[0.4437541435808381, 0.04672244339040179, 169.82717561197694, 1499.9999999884658, 3.326734620433954e-05, -0.0024550352309892637, 0.003444105740388075, 1.6931489825942052e-10, 8.94186753976662, 4.218129657177546, 5.5734366297761]
     #For 1e0M no.2
@@ -47,7 +46,10 @@ for i in range(10,11):
 
     #param_vals=[0.24704003369743605, 127.22888060724983, 899.0593759401338, 7.759349521072281e-05, 0.0018792925278760739, -0.0003331168610431201, 8.105946935824678e-11, 8.940643709990447, 4.457735184257261, 5.135033708944046, 0.596434662870841]
     #param_vals=[0.24323038307184336, 0.58906941878404, 55.76171519515906, 672.7221187164696, 7.764498276243975e-05, 0.002120925983914189, -0.000384743271809684, 7.697386442097152e-11, 8.940520091009153, 4.419395313633473, 5.104001442412966, 0.5622531162206027]
+    noramp_results.simulation_options["dispersion_bins"]=[5,5]
     noramp_results.def_optim_list(master_optim_list)
+
+    noramp_results.gen_test=True
     cmaes_time=noramp_results.i_nondim(noramp_results.test_vals(param_vals, method))
     current_results=noramp_results.i_nondim(noramp_results.other_values["experiment_current"])#[0::dec_amount]
     voltage_results=noramp_results.e_nondim(noramp_results.other_values["experiment_voltage"])#[0::dec_amount]
@@ -90,12 +92,14 @@ for i in range(10,11):
     harms.harmonic_selecter(figure.axes_dict[keys[1]][f_counter],  current_results,  time_results,box=False, arg=np.imag, line_label="Data", alpha=0.5)
     figure.axes_dict[keys[1]][f_counter].set_xlabel("Frequency(Hz)")
     figure.axes_dict[keys[1]][f_counter].set_ylabel("Imaginary")
-    figure.axes_dict[keys[1]][f_counter].legend(loc="lower right")
+    figure.axes_dict[keys[1]][f_counter].legend(bbox_to_anchor=(0.4, 0.6))
     #figure.axes_dict[keys[1]][f_counter].legend(loc=2)
     f_counter+=1
     data_harms=harms.generate_harmonics(time_results, cmaes_time)
+    print(len(data_harms))
     exp_harms=harms.generate_harmonics(time_results, current_results)
     for q in range(0, len(data_harms)):
+        print(q)
         figure.axes_dict[keys[2]][h_counter].plot(voltage_results*1e3, data_harms[q]*1e6, label="Sim")
         figure.axes_dict[keys[2]][h_counter].plot(voltage_results*1e3, exp_harms[q]*1e6, alpha=0.5, label="Data")
         lb, ub = figure.axes_dict[keys[2]][h_counter].get_ylim( )
@@ -105,20 +109,20 @@ for i in range(10,11):
         ax2.set_yticks([])
 
 
-        if q%len(data_harms)==2:
+        if q==len(data_harms)//2:
             figure.axes_dict[keys[2]][h_counter].set_ylabel("Current($\mu$A)")
         if q==len(data_harms)-1:
             figure.axes_dict[keys[2]][h_counter].set_xlabel("Voltage(mV)")
-            figure.axes_dict[keys[2]][h_counter].legend(loc="lower right", framealpha=1.0)
+            figure.axes_dict[keys[2]][h_counter].legend(framealpha=1.0,bbox_to_anchor=(0.1, 0.1))
         #if q==0:
         else:
             figure.axes_dict[keys[2]][h_counter].set_xticks([])
         h_counter+=1
 fig=plt.gcf()
-#plt.subplots_adjust(left=0.05, bottom=0.06, right=0.97, top=0.95, wspace=0.2, hspace=0.14)
-fig.set_size_inches((3.3, 9))
+plt.subplots_adjust(left=0.23, bottom=0.06, right=0.97, top=0.99, wspace=0.2, hspace=0.02)
+fig.set_size_inches((3.25, 7.5))
 plt.show()
-save_path="Alice"+num+"MCMC.png"
-fig.savefig(save_path, dpi=200)
+save_path="Alice_"+str(i)+"_sims.png"
+fig.savefig(save_path, dpi=500)
 
 plt.show()

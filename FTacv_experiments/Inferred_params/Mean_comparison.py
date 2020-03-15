@@ -7,7 +7,6 @@ import sys
 import matplotlib.ticker as ticker
 import math
 import scipy.stats as stat
-from PIL import Image
 dir_path = os.path.dirname(os.path.realpath(__file__))
 slash_idx=[i for i in range(len(dir_path)) if dir_path[i]=="/"]
 one_above=dir_path[:slash_idx[-1]]
@@ -56,9 +55,9 @@ def plot_params(titles, set_chain, positions=None, label=None, row=None, col=Non
         axes=plt.subplot(row,col,i+1)
         plot_chain=chain_appender(set_chain, positions[i])
         if abs(np.mean(plot_chain))<0.001:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.1e'))
+            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2e'))
         elif abs(np.mean(plot_chain))<10:
-            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
+            axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
         else:
             axes.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
         axes.hist(plot_chain, alpha=0.4,bins=20, stacked=True, label=label)
@@ -77,22 +76,21 @@ def trace_plots(titles, chains, names, rhat=False, burn_in_thresh=0):
         axes=plt.subplot(row,col, i+1)
         for j in range(0, len(chains)):
             axes.plot(chains[j, :, i], label="Chain "+str(j), alpha=0.7)
-        if abs(np.mean(chains[j, :, i]))<0.01:
-            axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1e'))
-        #else:
-        #    axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
-        if i>(len(titles))-(col+1):
-            axes.set_xlabel('Iteration')
-        if i==len(titles)-1:
-            axes.legend(loc="center right", bbox_to_anchor=(2.0, 0.5))
+        if abs(np.mean(chains[j, :, i]))<0.001:
+            axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2e'))
+        else:
+            axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+        if i==0:
+            axes.legend()
         #lb, ub = axes.get_xlim( )
         #axes.set_xticks(np.linspace(lb, ub, 5))
         if rhat == True:
-            axes.set_title(names[i]+ " Rhat="+str(round(rhat_vals[i],3))+"")
+            axes.set_title(names[i]+ " (Rhat="+str(round(rhat_vals[i],3))+")")
         else:
             axes.set_title(names[i])
         axes.set_ylabel(titles[i])
-
+        axes.set_xlabel('Iteration')
+    plt.subplots_adjust(left=0.06, bottom=0.06, right=0.98, top=0.95, wspace=0.62, hspace=0.35)
 unit_dict={
     "E_0": "V",
     'E_start': "V", #(starting dc voltage - V)
@@ -119,7 +117,7 @@ unit_dict={
     "alpha_mean": "",
     "alpha_std": "",
     "":"",
-    "noise":"$\\mu A$",
+    "noise":"",
 }
 fancy_names={
     "E_0": '$E^0$',
@@ -170,7 +168,7 @@ Titles={
     "noise":"Noise",
 }
 #f=open(filename, "r")
-params=["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "noise"]
+params=["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha_std", "noise"]
 params1=["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha_mean", "alpha_std", "noise"]
 params=["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha_std", "noise"]
 optim_list=params
@@ -193,12 +191,17 @@ file_numbers=["8_94","114", "209"]
 #positions_23=[params1.index(x) for x in params1]
 #positions_24=[params1.index(x) for x in params2]
 ns=[str(x) for x in range(1, 11)]
+means=np.zeros((len(ns), len(params)))
+stds=np.zeros((len(ns), len(params)))
 nums=["_{0}_cv".format(x) for x in ns]
 #for i in range(0, len(concs)):
 runs=["run24"]
 row, col=det_subplots(len(params1))
-idx=1
-plt.rcParams.update({'font.size': 13})
+idx=-1
+plt.rcParams.update({'font.size': 16})
+def standardise(x, mean, standard, sqrt_N):
+    return (x-mean)/(standard/sqrt_N)
+normed_chains=np.zeros((len(titles), 50000*3, len(ns)))
 for num in nums:
     idx+=1
     for filename in files:#
@@ -208,8 +211,6 @@ for num in nums:
             number=filename[7]
             label_idx=run_check.index(True)
             chains=np.load(("/").join([electrode, folder, filename]))
-            #chains[1, :, ]=chains[2, :, :]
-            #chains=chains[:2, :, :]
             """
             if number=="2":
                 plot_params(titles, chains[:, 25000:45000, :], positions=positions, label="Scan "+num)
@@ -217,43 +218,49 @@ for num in nums:
                 plot_params(titles, chains[:, 30000:, :], positions=positions, label="Scan "+num)
             """
 
-            #plt.hist(alpha_chain)
-            #plt.show()
+            means[idx, :]=[np.mean(chain_appender(chains[:, 50000:, :], x)) for x in range(0, len(titles))]
+            stds[idx, :]=[np.std(chain_appender(chains[:, 50000:, :], x)) for x in range(0, len(titles))]
 
-            #
-            #vals=[np.std(chain_appender(chains[:, 50000:, :], x)) for x in range(0, len(titles))]
-            #vals[-1]=vals[-1]*6.038052132625424e-06*1e6
-            #print(vals, ",")
+
+global_mean=[np.mean(means[:, x]) for x in range(0, len(params))]
+global_stds=[np.std(means[:, x]) for x in range(0, len(params))]
+
+xlabel=ns
+
+farad_params=["E0_mean", "E0_std", "k_0", "alpha_std"]
+Cdl_params=["Cdl","CdlE1", "CdlE2"]
+input_params=["omega","cap_phase","phase"]
+misc_params=["Ru", "gamma", "noise"]
+fig, axes=plt.subplots(2,2)
+for i in range(0, len(titles)):
+    subbed=np.subtract(means[: i],global_mean[i])
+    subbed=[means[x, i]-global_mean[i] for x in range(0, len(ns))]
+    normed_means=np.divide(subbed, global_stds[i]/np.sqrt(len(titles)))
+    mean_ratio=np.divide(means[:,i], normed_means)
+    scaled_error=np.divide(stds[:,i], mean_ratio)
+
+
+    if params[i] in farad_params:
+        ax=axes[0,0]
+        ax.set_ylabel("Z-score")
+    elif params[i] in Cdl_params:
+        ax=axes[0,1]
+    elif params[i] in input_params:
+        ax=axes[1,0]
+        ax.set_ylabel("Z-score")
+        ax.set_xlabel("Experiment")
+    elif params[i] in misc_params:
+        ax=axes[1,1]
+        ax.set_xlabel("Experiment")
+    ax.plot(ns, normed_means, label=titles[i])
+    ax.legend()
+    fig.set_size_inches((6.5, 9))
+
+plt.show()
+save_path="Z-scores"fig.savefig(save_path, dpi=200)
+
+
             #print([np.mean(chains[1, 50000:, x]) for x in range(0, len(titles))])
-            """
-            if label_idx==1:
-                plot_params(titles, chains[:, 50000:, :], positions=positions_23, label=labels[label_idx], row=row, col=col)
-            else:
-                plot_params(titles, chains[:, 50000:, :], positions=positions_24, label=labels[label_idx], row=row, col=col)
-            """
-            for i in range(0, len(chains)):
-                chains[i, :, -1]=chains[i, :, -1]*6.038052132625424e-06*1e6
-            trace_plots(titles, chains[:, :, :], ["" for x in range(0, len(graph_titles))], rhat=True, burn_in_thresh=50000)
-            plt.subplots_adjust(left=0.08, bottom=0.09, right=0.97, top=0.95, wspace=0.66, hspace=0.33)
-            fig = plt.gcf()
-            fig.set_size_inches((14, 9))
-            #plt.show()
-            save_path="Alice"+num+"MCMC.png"
-            fig.savefig(save_path, dpi=500)
-            plt.clf()
-            img = Image.open(save_path)
-            basewidth = float(img.size[0])//2
-            wpercent = (basewidth/float(img.size[0]))
-            hsize = int((float(img.size[1])*float(wpercent)))
-            img = img.resize((int(basewidth),hsize), Image.ANTIALIAS)
-            img.save(save_path, "PNG", quality=95, dpi=(500, 500))
-            flag=True
-
-            #plot_params(titles, chains[:, 50000:, :], positions=range(0, len(params)), label=str(idx))
-
-        #if filename==(desired_file+concs[i]+extension):#(concs[i] in filename) and (extension in filename) and (desired_file in filename):
-
-
 
 
             #trace_plots(titles, chains[:, :, :], graph_titles, rhat=True )

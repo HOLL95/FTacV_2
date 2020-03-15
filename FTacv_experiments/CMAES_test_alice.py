@@ -23,7 +23,7 @@ f_counter=0
 other_files=["6", "9"]
 def RMSE(series1, series2):
     return np.sqrt((np.sum(1/(len(series1))*np.power(np.subtract(series1, series2),2))))
-for i in range(6, 11):
+for i in range(1, 11):
 
     file="Noramp_"+str(i)+"_cv_high_ru_alpha_disp"
 

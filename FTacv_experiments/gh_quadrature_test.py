@@ -9,7 +9,10 @@ location=10
 scale=0.5
 s=0.1
 length=100
-nodes, weights=hermgauss(5)
+start=time.time()
+for i in range(0, 1):
+    nodes, weights=hermgauss(5)
+print((time.time()-start)/1)
 e0=np.zeros(length)
 def generic_func(x):
     return x**3+(2*x+1)
@@ -32,5 +35,3 @@ plt.plot(e0_val_range_2,  nc_disp)#, width=0.05)
 gh_disp=[gh_convert(w_x, n_x, location, scale) for w_x, n_x in zip(weights, nodes)]
 converted_nodes=[(scale*math.sqrt(2)*node)+location for node in nodes]
 print(np.sum(gh_disp), np.sum(nc_disp))
-plt.semilogy(converted_nodes, gh_disp)
-plt.show()
