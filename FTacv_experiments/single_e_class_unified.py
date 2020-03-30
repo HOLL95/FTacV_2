@@ -31,8 +31,8 @@ class single_electron:
             self.file_init=False
         required_params=set(["E_0", "k_0", "alpha", "gamma", "Ru", "Cdl", "CdlE1","CdlE2","CdlE3", "E_start", \
                             "E_reverse", "omega", "phase", "d_E"])
-        params=set(dim_parameter_dictionary.keys())
-        req_union=required_params.intersection(params)
+        param_set=set(dim_parameter_dictionary.keys())
+        req_union=required_params.intersection(param_set)
         if len(req_union)!=len(required_params):
             missing_params=required_params-req_union
             raise KeyError("Essential parameter(s) mising:",missing_params)
@@ -104,7 +104,7 @@ class single_electron:
         self.boundaries=None
         self.param_bounds=param_bounds
         if self.simulation_options["experimental_fitting"]==True:
-            self.secret_data_fourier=self.kaiser_filter(other_values["experiment_current"])
+            self.secret_data_fourier=self.top_hat_filter(other_values["experiment_current"])
             self.secret_data_time_series=other_values["experiment_current"]
     def GH_setup(self):
         """
@@ -387,7 +387,7 @@ class single_electron:
             time_series=time_series[self.time_idx:]
         time_series=np.array(time_series)
         if self.simulation_options["likelihood"]=='fourier':
-            filtered=self.kaiser_filter(time_series)
+            filtered=self.top_hat_filter(time_series)
             if (self.simulation_options["test"]==True):
                 print(list(normed_params))
                 self.variable_returner()

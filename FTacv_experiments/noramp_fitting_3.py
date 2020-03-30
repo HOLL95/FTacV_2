@@ -149,7 +149,7 @@ for lcv_1 in range(2, 11):
     #noramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])
     #noramp_fit.dim_dict["gamma"]=0
     true_data=current_results
-    fourier_arg=noramp_fit.kaiser_filter(current_results)
+    fourier_arg=noramp_fit.top_hat_filter(current_results)
     if simulation_options["likelihood"]=="timeseries":
         cmaes_problem=pints.SingleOutputProblem(noramp_fit, time_results, true_data)
     elif simulation_options["likelihood"]=="fourier":

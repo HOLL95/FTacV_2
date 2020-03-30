@@ -3,8 +3,8 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from single_e_class  import single_electron
-import pints
-import pints.plot
+#import pints
+#import pints.plot
 import copy
 import time
 from matplotlib.pyplot import figure
@@ -44,7 +44,7 @@ freq_values=[20, 400, 60, 30, 500, 80, 1, 50, 70, 200, 100, 300, 40, 90, 10]
 freq_values=np.sort(freq_values)
 noramp.label="cmaes"
 noramp.nd_param.time_end=(noramp.nd_param.num_peaks/noramp.nd_param.nd_omega)*2*math.pi#points_range*noramp.nd_param.sampling_freq
-print((noramp.nd_param.num_peaks/noramp.nd_param.omega))
+#print((noramp.nd_param.num_peaks/noramp.nd_param.omega))
 #noramp.nd_param.time_end=(2*(noramp.nd_param.E_reverse-noramp.nd_param.E_start)/noramp.nd_param.v)
 noramp.times(points_range)
 frequencies=np.fft.fftfreq(int(points_range), noramp.time_vec[1]-noramp.time_vec[0])
@@ -62,6 +62,9 @@ plot_times=np.multiply(noramp.time_vec, noramp.nd_param.c_T0)
 plot_current_data=np.multiply(synthetic_data, noramp.nd_param.c_I0)
 figure(num=None, figsize=(8,5), dpi=120, facecolor='w', edgecolor='k')
 plt.subplots_adjust(left=0.15)
+noise_val=0.005
+noise_max=max(plot_current_data)*noise_val
+print noise_max*1e6
 plt.plot(plot_times, plot_current_data)
 plt.show()
 #f=open('time_series_nr.fig', 'w')
@@ -70,7 +73,7 @@ plt.show()
 #plt.xlabel('Time(s)')
 #plt.ylabel('Current(A)')
 #plt.show()
-noise_val=0.02
+noise_val=0.005
 noise_max=max(synthetic_data)*noise_val
 noise=np.random.normal(0,noise_max, len(synthetic_data))
 noramp.define_boundaries(param_boundaries)

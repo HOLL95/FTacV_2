@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pints
-import pints.plot
+
 import os
 import matplotlib.ticker as ticker
 names=["time_series", "fourier","harmonics"]
