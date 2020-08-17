@@ -77,6 +77,8 @@ for lcv_1 in range(2, 11):
         "E0_std": 0.09,
         "cap_phase":0,
         "alpha_mean":0.5,
+        "k0_shape":1,
+        "k0_scale":100,
         "alpha_std":1e-3,
         'sampling_freq' : (1.0/400),
         'phase' : 3*(math.pi/2),
@@ -139,11 +141,16 @@ for lcv_1 in range(2, 11):
     voltage_results=noramp_fit.other_values["experiment_voltage"]
     noramp_fit.dim_dict["noise"]=0
     noramp_fit.dim_dict["phase"]=3*math.pi/2
-    print(len(current_results))
+    start=time.time()
+    s=noramp_fit.test_vals([], "timeseries")
+    print("time", time.time()-start)
+    plt.plot(voltage_results, s)
+    plt.show()
+    print("length", len(current_results))
     #noramp_fit.def_optim_list(["E_0","k0_shape", "k0_scale","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha"])
     noramp_fit.simulation_options["dispersion_bins"]=[5,5]
     noramp_fit.simulation_options["GH_quadrature"]=True
-    noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha_mean", "alpha_std"])
+    noramp_fit.def_optim_list(["E_0","k0_scale", "k0_shape","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha_mean", "alpha_std"])
 
     #noramp_fit.simulation_options["alpha_dispersion"]="uniform"
     #noramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])

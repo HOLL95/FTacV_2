@@ -11,7 +11,7 @@ for lcv_1 in range(0, num_freqs):
     param_list={
         'E_start': -0.5, #(starting dc voltage - V)
         'E_reverse': 0.5,    #  (reverse dc voltage - V)
-        'omega':freq_range[lcv_1]*math.pi,#8.88480830076,  #    (frequency Hz)
+        'omega':freq_range[lcv_1],#8.88480830076,  #    (frequency Hz)
         'd_E': 0.5,   #(ac voltage amplitude - V) freq_range[j],#
         'v': 150.97e-3,   #       (scan rate s^-1)
         'area': 0.03, #(electrode surface area cm^2)
@@ -21,11 +21,11 @@ for lcv_1 in range(0, num_freqs):
         'CdlE2': 0,#0.000245772700637,
         'CdlE3': 0,#1.10053945995e-06,
         'gamma': 6.5e-12,          # (surface coverage per unit area)
-        'E_0': 0.0,      #       (reversible potential V)
+        'E_0': -0.1,      #       (reversible potential V)
         'E0_std':0.0312279186927,# (reversible potential dispersion)
         'k_0': 10.0, #(reaction rate s-1)
         'k0_std': 0.0,
-        'alpha': 0.5,
+        'alpha': 0.55,
         'sampling_freq' : (1.0/200),
         'phase' : 3*(math.pi/2)*0,
         'time_end':1000
@@ -66,7 +66,7 @@ for lcv_1 in range(0, num_freqs):
     plt.plot(time_range, synthetic_data*1000, label="numerical")
     percent_diff=abs(peak_ratio-peak_ratio_inv)*100
     #plt.plot(np.subtract(i_val, synthetic_data))
-    plt.title(str(freq_range[lcv_1])+"$\pi$" + "    "+"$\Delta$=" + str(round(percent_diff,3))+ "%")
+    plt.title(str(freq_range[lcv_1])+ "    "+"$\Delta$=" + str(round(percent_diff,3))+ "%")
     plt.legend()
     plt.xlabel('Time(s)')
     plt.ylabel('Current(mA)')

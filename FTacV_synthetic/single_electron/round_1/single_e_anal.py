@@ -14,7 +14,7 @@ class analytical_electron:
         for i in range(0, len(key_list)):
             self.nd_param.non_dimensionalise(key_list[i], dim_paramater_dictionary[key_list[i]])
         nd_dict=self.nd_param.__dict__
-        self.nu=0.00
+        self.nu=((self.nd_param.E_reverse+self.nd_param.E_start)/2)-self.nd_param.E_0
         I_0_1_alpha=bessel.iv(0, (1-self.nd_param.alpha)*self.nd_param.d_E)
         I_0_alpha=bessel.iv(0, self.nd_param.alpha*self.nd_param.d_E)
         self.gamma_inf=I_0_1_alpha/(I_0_1_alpha+(np.exp(-self.nu)*I_0_alpha))

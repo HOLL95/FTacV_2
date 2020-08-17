@@ -20,6 +20,7 @@ unit_dict={
     'alpha': "",
     "E0_mean":"V",
     "E0_std": "V",
+    "E0_skew":"",
     "k0_shape":"",
     "k0_loc":"",
     "k0_scale":"",
@@ -27,6 +28,7 @@ unit_dict={
     'phase' : "rads",
     "alpha_mean": "",
     "alpha_std": "",
+    "sampling_freq":"$s^{-1}$",
     "":"",
     "noise":"",
     "error":"$\\mu A$",
@@ -39,7 +41,7 @@ fancy_names={
     'd_E': "$\\Delta E$",   #(ac voltage amplitude - V) freq_range[j],#
     'v': "v",   #       (scan rate s^-1)
     'area': "Area", #(electrode surface area cm^2)
-    'Ru': "Ru",  #     (uncompensated resistance ohms)
+    'Ru': "R$_u$",  #     (uncompensated resistance ohms)
     'Cdl': "$C_{dl}$", #(capacitance parameters)
     'CdlE1': "$C_{dlE1}$",#0.000653657774506,
     'CdlE2': "$C_{dlE2}$",#0.000245772700637,
@@ -49,25 +51,59 @@ fancy_names={
     'alpha': "$\\alpha$",
     "E0_mean":"$E^0 \\mu$",
     "E0_std": "$E^0 \\sigma$",
+    "E0_skew":"$E^0 \\alpha$",
     "cap_phase":"C$_{dl}$ phase",
-    "k0_shape":"$k^0$ shape",
-    "k0_scale":"$k^0$ scale",
+    "k0_shape":"$log(k^0(s^{-1}))\\sigma$",
+    "k0_scale":"$log(k^0(s^{-1}))\\mu$",
     "alpha_mean": "$\\alpha\\mu$",
+    "sampling_freq":"",
     "alpha_std": "$\\alpha\\sigma$",
     'phase' : "Phase",
     "":"Experiment",
     "noise":"$\sigma$",
     "error":"RMSE",
 }
+total_names={
+    "E_0": 'Midpoint potential',
+    'E_start': 'Start potential', #(starting dc voltage - V)
+    'E_reverse': 'Reverse potential',
+    'omega':'Potential frequency',#8.88480830076,  #    (frequency Hz)
+    'd_E': "Potential amplitude",   #(ac voltage amplitude - V) freq_range[j],#
+    'v': "Scan rate",   #       (scan rate s^-1)
+    'area': "Area", #(electrode surface area cm^2)
+    'Ru': "Uncompensated resistance",  #     (uncompensated resistance ohms)
+    'Cdl': "Linear double-layer capacitance", #(capacitance parameters)
+    'CdlE1': "$1^{st}$ order $C_{dl}$",#0.000653657774506,
+    'CdlE2': "$2^{nd}$ order $C_{dl}$",#0.000245772700637,
+    'CdlE3': "$3^{rd}$ order $C_{dl}$",#1.10053945995e-06,
+    'gamma': 'Surface coverage',
+    'k_0': 'Rate constant', #(reaction rate s-1)
+    'alpha': "Symmetry factor",
+    "E0_mean":"Midpoint potential mean",
+    "E0_std": "Midpoint potential standard deviation",
+    "E0_skew": "Midpoint potential skew",
+    "cap_phase":"C$_{dl}$ phase",
+    "k0_shape":"$k^0$ shape",
+    "k0_scale":"$k^0$ scale",
+    "alpha_mean": "Symmetry factor mean",
+    "alpha_std": "Symmetry factor standard deviation",
+    'phase' : "Phase",
+    "sampling_freq":"Sampling rate",
+    "":"Experiment",
+    "noise":"$\sigma$",
+    "error":"Error",
+}
 
-optim_list=["","E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase", "phase", "alpha_mean", "alpha_std"]
+optim_list=["","E_start", "E_reverse", "E_0","k_0","Ru","Cdl","gamma", "alpha", "v", "omega", "phase","d_E","sampling_freq", "area", "E0_mean", "E0_std", "E0_skew", "k0_shape", "k0_scale"]
 name_list=[fancy_names[x] for x in optim_list]
-values=[[0.24116928285797873, 0.044189985533550226, 135.53440184454033, 510.6019261842285, 7.57155256924869e-05, 0.001459719577206274, -0.00037125091413634306, 7.200978526571967e-11, 8.884799587792013, 0, 0,0.5973834903322666, 0.17881384642004294],
-        [0.22925918516708654, 0.04595696579195954, 123.33007397100599, 873.5412252656006, 3.3412012933121965e-05, 0.057928207116134806, -0.0021217096115628917, 7.178042062464878e-11, 8.884751771027027, 0,0,0.43751189633466997,0.1955423233286504]]
+title_list=[total_names[x] for x in optim_list[1:]]
+print((" & ").join(title_list)+"\\")
+values=[[-0.5, 0.1, -0.25, 1, 0.0, 1e-05, 1e-10, 0.5, 0.02235174, 8.88107702343454, 0.0, 0.15, 1/0.0025, 0.07, -0.25, 0.05, 0, 0.25, 1]
+]
 parameter_orientation="column"
 param_num=len(name_list)+1
-names=["SV experiment 10", "Ramped experiment 1"]
-title_num=len(names)+1
+names=["Value"]
+title_num=len(names)+2
 table_file=open("image_tex_edited.tex", "w")
 
 
@@ -78,6 +114,9 @@ if parameter_orientation=="row":
     table_control1="\\begin{tabular}{|"+(("c|"*param_num))+"}\n"
     table_control2="\\begin{tabular}{|"+(("p{3cm}|"*param_num))+"}\n"
     value_rows=[]
+    row0=(" & ").join(title_list)
+    row0+="\\\\\n"
+    value_rows.append(row0)
     row_1=""
     for i in range(0, len(name_list)):
         if unit_dict[optim_list[i]]!="":
@@ -132,8 +171,7 @@ elif parameter_orientation =="column":
     f =open("image_tex_test_param_col.tex", "r")
     table_control_1="\\begin{tabular}{|"+(("c|"*title_num))+"}\n"
     titles=["& {0}".format(x) for x in names]
-    titles="Parameter "+(" ").join(titles)+"\\\\\n"
-
+    titles="Parameter & "+"Symbol"+(" ").join(titles)+"\\\\\n"
     row_headings=[name_list[i]+" ("+unit_dict[optim_list[i]]+") " if unit_dict[optim_list[i]]!="" else name_list[i] for i in range(1, len(optim_list))]
     numerical_rows=[]
     for j in range(0, len(values[0])):
@@ -146,7 +184,7 @@ elif parameter_orientation =="column":
 
         numerical_rows.append(int_row+"\\\\\n\hline\n")
     for i in range(0, len(numerical_rows)):
-        numerical_rows[i]=row_headings[i]+numerical_rows[i]
+        numerical_rows[i]=title_list[i]+" & "+row_headings[i]+numerical_rows[i]
     for line in f:
         if line[0]=="\\":
             if "begin{tabular}" in line:
@@ -165,7 +203,7 @@ f.close()
 
 table_file.close()
 filename=""
-filename="Alice_ramped_SV_comp_"
+filename="Alice_jinetic_SV_"
 filename=filename+"table.png"
 os.system("pdflatex image_tex_edited.tex")
 os.system("convert -density 300 -trim image_tex_edited.pdf -quality 100 " + filename)

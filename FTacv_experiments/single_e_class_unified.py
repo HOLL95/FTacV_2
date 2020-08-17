@@ -177,6 +177,8 @@ class single_electron:
         else:
             if "alpha_dispersion" in self.simulation_options:
                 del self.simulation_options["alpha_dispersion"]
+    def add_noise(self, series, sd):
+        return np.add(series, np.random.normal(0, sd, len(series)))
     def normalise(self, norm, boundaries):
         return  (norm-boundaries[0])/(boundaries[1]-boundaries[0])
     def un_normalise(self, norm, boundaries):
@@ -239,8 +241,8 @@ class single_electron:
             #self.test_frequencies=frequencies[np.where((frequencies>first_harm) & (frequencies<last_harm))]
             results=np.zeros(len(top_hat), dtype=complex)
             results[np.where((frequencies>first_harm) & (frequencies<last_harm))]=likelihood
-        comp_results=np.append((np.real(results)), np.imag(results))
-        return abs(results)
+        #comp_results=np.append((np.real(results)), np.imag(results))
+        return results
     def abs_transform(self, data):
         window=np.hanning(len(data))
         hanning_transform=np.multiply(window, data)

@@ -1,12 +1,12 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import isolver_noramp
+#import isolver_noramp
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from single_e_class_dcv import single_electron
-from harmonics_plotter import harmonics
+#from single_e_class_dcv import single_electron
+#from harmonics_plotter import harmonics
 import pints
 import pints.plot
 import copy

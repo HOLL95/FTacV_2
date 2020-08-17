@@ -44,9 +44,9 @@ class params:
             self.Ru=value/self.c_E0*self.c_I0
     def Gamma(self, value, flag):
         if flag=='re_dim':
-            self.gamma=value/(1/6.5e-12)
+            self.gamma=value/(1/9.5e-12)
         elif flag == 'non_dim':
-            self.gamma=value*(1/6.5e-12)
+            self.gamma=value*(1/9.5e-12)
     def sf(self, value, flag):
         if flag=='re_dim':
             self.sampling_freq=value/((2*math.pi)/self.nd_omega)

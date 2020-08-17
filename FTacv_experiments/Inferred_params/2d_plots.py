@@ -168,7 +168,7 @@ def plot_kde_2d(x, y, ax):
     #print(((xmax - xmin)/ (ymax - ymin)))
     #ax.set_aspect(0.25*(xmax - xmin)/ (ymax - ymin))
 run="run24"
-num=["_"+str(x)+"_" for x in range(1, 11)]
+num=["_"+str(x)+"_" for x in range(10, 11)]
 for number in num:
     for file in files:
         if number in file and run in file:
@@ -227,7 +227,7 @@ for number in num:
             plt.subplots_adjust(left=0.1, bottom=0.1, right=0.91, top=0.98, wspace=0.2, hspace=0.12)
             fig = plt.gcf()
             fig.set_size_inches((14,9))
-            #plt.show()
+            plt.show()
             save_path="Alice_"+str(number)+"_2d_plots.png"
             fig.savefig(save_path, dpi=500)
             img = Image.open(save_path)
