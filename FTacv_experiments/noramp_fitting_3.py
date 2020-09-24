@@ -27,7 +27,7 @@ else:
 data_path="experiment_data_2/"+exp_type
 Electrode="Yellow"
 folder="Noramp"
-for lcv_1 in range(2, 11):
+for lcv_1 in range(3, 11):
     Method =str(lcv_1)+"_cv"
     type="current"
     type2="voltage"
@@ -40,11 +40,13 @@ for lcv_1 in range(2, 11):
         elif (Method in data)  and (type2 in data):
             voltages=np.loadtxt(path+"/"+data)
 
-    dec_amount=32
+    dec_amount=8
     de=300e-3
     estart=260e-3-de
     ereverse=estart+2*de
     kernel_size=64
+    true_sf=results[1,0]-results[0,0]
+    print(true_sf, "TRUESF")
     #current_results1=np.convolve(results[:, 1], np.ones((kernel_size,))/kernel_size, mode="valid")
     #current_results2=current_results1[0::dec_amount]
     current_results1=results[0::dec_amount, 1]
@@ -75,10 +77,12 @@ for lcv_1 in range(2, 11):
         'alpha': 0.5,
         "E0_mean":0.2,
         "E0_std": 0.09,
+        "k0_shape":1,
+        "k0_scale":100,
         "cap_phase":0,
         "alpha_mean":0.5,
         "alpha_std":1e-3,
-        'sampling_freq' : (1.0/400),
+        'sampling_freq' : true_sf,
         'phase' : 3*(math.pi/2),
         "time_end": None,
         'num_peaks': 30
@@ -114,11 +118,11 @@ for lcv_1 in range(2, 11):
         'omega':[0.95*param_list['omega'],1.05*param_list['omega']],#8.88480830076,  #    (frequency Hz)
         'Ru': [0, 1e3],  #     (uncompensated resistance ohms)
         'Cdl': [0,1e-4], #(capacitance parameters)
-        'CdlE1': [-0.05,0.15],#0.000653657774506,
+        'CdlE1': [-0.15,0.15],#0.000653657774506,
         'CdlE2': [-0.01,0.01],#0.000245772700637,
         'CdlE3': [-0.01,0.01],#1.10053945995e-06,
         'gamma': [1e-11,1e-9],
-        'k_0': [50, 1e3], #(reaction rate s-1)
+        'k_0': [10, 1e3], #(reaction rate s-1)
         'alpha': [0.4, 0.6],
         "cap_phase":[math.pi/2, 2*math.pi],
         "E0_mean":[0.2, 0.3],
@@ -126,30 +130,32 @@ for lcv_1 in range(2, 11):
         "alpha_mean":[0.4, 0.65],
         "alpha_std":[1e-3, 0.3],
         "k0_shape":[0,1],
-        "k0_scale":[0,1e4],
+        "k0_scale":[10,1e4],
         "k0_range":[1e2, 1e4],
         'phase' : [math.pi, 2*math.pi],
         "noise":[0, 100]
     }
     noramp_fit=single_electron(None, param_list, simulation_options, other_values, param_bounds)
-    print(noramp_fit.nd_param.c_I0)
+    print(noramp_fit.nd_param.c_I0, "C_I0")
     noramp_fit.define_boundaries(param_bounds)
     time_results=noramp_fit.other_values["experiment_time"]
     current_results=noramp_fit.other_values["experiment_current"]
     voltage_results=noramp_fit.other_values["experiment_voltage"]
     noramp_fit.dim_dict["noise"]=0
     noramp_fit.dim_dict["phase"]=3*math.pi/2
-    print(len(current_results))
+    print("length", len(current_results))
     #noramp_fit.def_optim_list(["E_0","k0_shape", "k0_scale","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha"])
     noramp_fit.simulation_options["dispersion_bins"]=[5,5]
     noramp_fit.simulation_options["GH_quadrature"]=True
-    noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase", "alpha_mean", "alpha_std"])
+    noramp_fit.def_optim_list(["E0_mean", "E0_std", "k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","phase", "cap_phase", "alpha_mean", "alpha_std"])
+   #noramp_fit.simulation_options["phase_only"]=True
 
     #noramp_fit.simulation_options["alpha_dispersion"]="uniform"
     #noramp_fit.def_optim_list(["Ru","Cdl","CdlE1", "CdlE2",'omega',"phase","cap_phase"])
     #noramp_fit.dim_dict["gamma"]=0
     true_data=current_results
     fourier_arg=noramp_fit.top_hat_filter(current_results)
+    noramp_fit.dim_dict["alpha"]=0.5
     if simulation_options["likelihood"]=="timeseries":
         cmaes_problem=pints.SingleOutputProblem(noramp_fit, time_results, true_data)
     elif simulation_options["likelihood"]=="fourier":
@@ -192,7 +198,9 @@ for lcv_1 in range(2, 11):
 
 
     idx=[i[0] for i in sorted(enumerate(score_vec), key=lambda y:y[1])]
-    save_params=param_mat[idx[0:3], :]
+    save_params=param_mat[idx[-3:], :]
+    print(idx)
+    print(save_params)
     best_idx=np.where(score_vec==min(score_vec))
     best_idx=best_idx[0][0]
     cmaes_results=list(param_mat[best_idx,:])
@@ -201,20 +209,21 @@ for lcv_1 in range(2, 11):
     plt.plot(voltage_results, current_results)
     plt.show()
     Electrode_save=extra+Electrode
-    run="Run_6"
+    run="Run_7"
     if "k0_shape" in noramp_fit.optim_list:
         sim_options=resistance_type+"_"+"k0_disp"
     else:
         sim_options=resistance_type
     filename=("_").join([folder,Method, sim_options])+"_alpha_disp"
     filepath=("/").join([dir_path, "Inferred_params", Electrode_save, run])
-    #noramp_fit.save_state(results_dict, filepath, filename, save_params)
+    noramp_fit.save_state(results_dict, filepath, filename, save_params)
+    """
     noramp_fit.dim_dict["alpha_mean"]=cmaes_results[noramp_fit.optim_list.index("alpha_mean")]
     #del cmaes_results[noramp_fit.optim_list.index("alpha_mean")]
     noramp_fit.def_optim_list(["E0_mean", "E0_std","k_0","Ru","Cdl","CdlE1", "CdlE2","gamma","omega","cap_phase","phase","alpha_mean", "alpha_std"])
     error=np.std(abs(np.subtract(cmaes_time, current_results)))
     mcmc_problem=pints.SingleOutputProblem(noramp_fit, time_results, current_results)
-    updated_lb=np.append([noramp_fit.param_bounds[x][0] for x in noramp_fit.optim_list],0.01*error)
+    updated_lbs=np.append([noramp_fit.param_bounds[x][0] for x in noramp_fit.optim_list],0.01*error)
     updated_ub=np.append([noramp_fit.param_bounds[x][1] for x in noramp_fit.optim_list],10*error)
     updated_b=[updated_lb, updated_ub]
     updated_b=np.sort(updated_b, axis=0)
@@ -255,4 +264,4 @@ for lcv_1 in range(2, 11):
             f=open(filepath+"/"+filename, "wb")
             np.save(f, chains)
             f.close()
-        scores[q]=rhat_mean
+        scores[q]=rhat_mean"""

@@ -5,15 +5,16 @@ import time
 from single_e_class_unified import single_electron
 from ramped_setup import FTACV_initialisation
 from harmonics_plotter import harmonics
+from multiplotter import multiplot
 import os
 import pickle
 import pints
 import pints.plot
-from rdp import rdp
 dir_path = os.path.dirname(os.path.realpath(__file__))
 types=["current", "voltage"]
 exp="Experimental-120919"
 bla="Blank-131119"
+plot=multiplot(1, 2, **{"harmonic_position":1, "num_harmonics":5, "orientation":"portrait"})
 
 exp_type=bla
 if exp_type==bla:
@@ -29,6 +30,7 @@ type2="voltage"
 rhat_mean=2
 path=("/").join([dir_path, data_path, folder, Experiment])
 files= os.listdir(path)
+from multiplotter import multiplot
 def binary_file_reader(filename):
     file=open(filename, "rb")
     binary_array=[]
@@ -94,7 +96,7 @@ for counter in range(0, len(file_nos)):
         'sampling_freq' : (1.0/400),
         'phase' : 4.949075135495371,
         "time_end": None,
-        'num_peaks': 11,
+        'num_peaks': 30,
     }
     solver_list=["Bisect", "Brent minimisation", "Newton-Raphson", "inverted"]
     likelihood_options=["timeseries", "fourier"]
@@ -154,15 +156,36 @@ for counter in range(0, len(file_nos)):
     param_set_2=[999.9999983932938, 1.3523706647576712e-05, -0.021871525678528143, 0.0007168124240944443,3*math.pi/2, 8.941765261346148]
     sets=[param_set_1, param_set_2]
     labels=["Fitted phase", "Set phase"]
-    plt.plot(blank_fit.e_nondim(voltage_results), blank_fit.i_nondim(current_results)*1e6, label="Data")
+    plot.axes_dict["col1"][0].plot(blank_fit.e_nondim(voltage_results), blank_fit.i_nondim(current_results)*1e6, label="Data")
+    harms=harmonics(range(1, 6), blank_fit.dim_dict["omega"], 0.05 )
+    blank_harms=harms.generate_harmonics(blank_fit.t_nondim(time_results), blank_fit.i_nondim(current_results)*1e6)
+
+    for z in range(0, len(blank_harms)):
+        plot.axes_dict["col2"][z].plot(blank_fit.t_nondim(time_results), blank_harms[z,:])
     for j in range(0, len(sets)):
         time_series=blank_fit.i_nondim(blank_fit.test_vals(sets[j], likelihood="timeseries"))*1e6
-        plt.plot(blank_fit.e_nondim(voltage_results), time_series, linestyle="--", label=labels[j])
-        plt.legend()
-        plt.xlabel("Voltage(V)")
-        plt.ylabel("Current($\\mu$A)")
+        syn_volts=blank_fit.e_nondim(blank_fit.define_voltages()[blank_fit.time_idx:])
+        harms=harmonics(range(1, 6), blank_fit.dim_dict["omega"], 0.05 )
+        blank_harms=harms.generate_harmonics(blank_fit.t_nondim(time_results), time_series)
+
+        plot.axes_dict["col1"][0].plot(blank_fit.e_nondim(voltage_results), time_series, linestyle="--", label=labels[j])
+        for z in range(0, len(blank_harms)):
+            plot.axes_dict["col2"][z].plot(blank_fit.t_nondim(time_results), blank_harms[z,:])
+            if z==len(blank_harms)//2:
+                plot.axes_dict["col2"][z].set_ylabel("Current($\mu$A)")
+            if z==len(blank_harms)-1:
+                plot.axes_dict["col2"][z].set_xlabel("Time(s)")
+            else:
+                plot.axes_dict["col2"][z].set_xticks([])
+            twinx=plot.axes_dict["col2"][z].twinx()
+            twinx.set_yticks([])
+            twinx.set_ylabel(str(z+1), rotation=0)
+
+    plot.axes_dict["col1"][0].legend()
+    plot.axes_dict["col1"][0].set_xlabel("Voltage(V)")
+    plot.axes_dict["col1"][0].set_ylabel("Current($\\mu$A)")
     fig=plt.gcf()
-    fig.set_size_inches((3.25, 4.5))
+    fig.set_size_inches((7, 4.5))
     plt.show()
     save_path="blank_phases.png"
     fig.savefig(save_path, dpi=500)

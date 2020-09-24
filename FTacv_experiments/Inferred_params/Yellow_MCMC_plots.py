@@ -1,3 +1,4 @@
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pints
@@ -195,27 +196,28 @@ file_numbers=["8_94","114", "209"]
 ns=[str(x) for x in range(1, 11)]
 nums=["_{0}_cv".format(x) for x in ns]
 #for i in range(0, len(concs)):
-runs=["run24"]
+runs=["run_25"]
 row, col=det_subplots(len(params1))
 idx=1
 plt.rcParams.update({'font.size': 13})
+noramp_I0=6.038052132625424e-06
 for num in nums:
     idx+=1
     for filename in files:#
         run_check=[string in filename for string in runs]
-        if True in run_check and num in filename:# and  True  in [x in filename for x in include]:
+        if "run_25" in filename and num in filename:
             #print(filename)
             number=filename[7]
-            label_idx=run_check.index(True)
+            #label_idx=run_check.index(True)
+            #print(filename)  
             chains=np.load(("/").join([electrode, folder, filename]))
+            print_vals=[np.std(chains[:, 50000:, x]) for x in range(0, len(params))]
+            print_vals[-1]=print_vals[-1]*noramp_I0*1e6
+            print(print_vals, ",")
+            #pints.plot.trace(chains)
+            #plt.show()
             #chains[1, :, ]=chains[2, :, :]
             #chains=chains[:2, :, :]
-            """
-            if number=="2":
-                plot_params(titles, chains[:, 25000:45000, :], positions=positions, label="Scan "+num)
-            else:
-                plot_params(titles, chains[:, 30000:, :], positions=positions, label="Scan "+num)
-            """
 
             #plt.hist(alpha_chain)
             #plt.show()
@@ -225,38 +227,28 @@ for num in nums:
             #vals[-1]=vals[-1]*6.038052132625424e-06*1e6
             #print(vals, ",")
             #print([np.mean(chains[1, 50000:, x]) for x in range(0, len(titles))])
+           # if label_idx==1:
+            #    plot_params(titles, chains[:, 50000:, :], positions=positions_23, label=labels[label_idx], row=row, col=col)
+            #else:
+            #    plot_params(titles, chains[:, 50000:, :], positions=positions_24, label=labels[label_idx], row=row, col=col)
+            #for i in range(0, len(chains)):
+            #    chains[i, :, -1]=chains[i, :, -1]*6.038052132625424e-06*1e6
             """
-            if label_idx==1:
-                plot_params(titles, chains[:, 50000:, :], positions=positions_23, label=labels[label_idx], row=row, col=col)
-            else:
-                plot_params(titles, chains[:, 50000:, :], positions=positions_24, label=labels[label_idx], row=row, col=col)
-            """
-            for i in range(0, len(chains)):
-                chains[i, :, -1]=chains[i, :, -1]*6.038052132625424e-06*1e6
             trace_plots(titles, chains[:, :, :], ["" for x in range(0, len(graph_titles))], rhat=True, burn_in_thresh=50000)
             plt.subplots_adjust(left=0.08, bottom=0.09, right=0.97, top=0.95, wspace=0.66, hspace=0.33)
             fig = plt.gcf()
             fig.set_size_inches((14, 9))
-            #plt.show()
+            plt.show()
             save_path="Alice"+num+"MCMC.png"
             fig.savefig(save_path, dpi=500)
-            plt.clf()
+            #plt.clf()
             img = Image.open(save_path)
             basewidth = float(img.size[0])//2
             wpercent = (basewidth/float(img.size[0]))
             hsize = int((float(img.size[1])*float(wpercent)))
             img = img.resize((int(basewidth),hsize), Image.ANTIALIAS)
             img.save(save_path, "PNG", quality=95, dpi=(500, 500))
-            flag=True
-
+            """
+            #flag=True
             #plot_params(titles, chains[:, 50000:, :], positions=range(0, len(params)), label=str(idx))
 
-        #if filename==(desired_file+concs[i]+extension):#(concs[i] in filename) and (extension in filename) and (desired_file in filename):
-
-
-
-
-            #trace_plots(titles, chains[:, :, :], graph_titles, rhat=True )
-            #plt.show()
-    #plt.subplots_adjust(left=0.08, bottom=0.09, right=0.95, top=0.92, wspace=0.30, hspace=0.33)
-#plot_params(titles, chains2)

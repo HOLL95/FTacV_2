@@ -139,7 +139,7 @@ class single_electron:
                     param_boundaries[1][i]=self.param_bounds[self.optim_list[i]][1]
 
             self.boundaries=param_boundaries
-        disp_flags=["mean", "scale", "upper"]
+        disp_flags=["std", "scale", "upper"]
         disp_check=[[y in x for y in disp_flags] for x in self.optim_list]
         if True in [True in x for x in disp_check]:
             self.simulation_options["dispersion"]=True
@@ -380,7 +380,10 @@ class single_electron:
             self.numerical_plots(solver)
         else:
             if self.simulation_options["dispersion"]==True:
+                start=time.time()
                 time_series=self.paralell_disperse(solver)
+                print((time.time()-start)/25)
+
             else:
                 time_series=solver(self.nd_param_dict, self.time_vec, self.simulation_options["method"],-1, self.bounds_val)
         if self.simulation_options["no_transient"]!=False:
